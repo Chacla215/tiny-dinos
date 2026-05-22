@@ -17,6 +17,16 @@ const SFX_PATHS := {
 @export var clamp_to_bounds: bool = false
 @export var play_bounds: Rect2 = Rect2(24, 24, 1232, 672)
 
+@export_group("Hazards")
+## "kill" = touching Water is an instant ring-out (default).
+## "lava" = Water burns: repeated damage + a shove back toward center.
+@export_enum("kill", "lava") var water_mode: String = "kill"
+@export var lava_tick_damage: int = 7
+@export var lava_tick_interval: float = 0.3
+@export var lava_knockback: float = 220.0
+## Constant drift applied to every player each frame (White Water Falls current).
+@export var global_current: Vector2 = Vector2.ZERO
+
 @onready var ice_patches: Node2D = $IcePatches
 @onready var camera: Camera2D = $Camera2D
 @onready var hud_win: Label = $HUD/WinMessage
@@ -33,6 +43,9 @@ var match_over: bool = false
 var shake_amount: float = 0.0
 var shake_remaining: float = 0.0
 
+var lava_area: Area2D = null
+var lava_tick_timers: Dictionary = {}
+
 var sfx: Dictionary = {}
 
 func _ready() -> void:
@@ -43,7 +56,14 @@ func _ready() -> void:
 			child.body_exited.connect(_on_ice_exited)
 	var water := get_node_or_null("Water")
 	if water is Area2D:
-		water.body_entered.connect(_on_water_entered)
+		if water_mode == "lava":
+			lava_area = water
+		else:
+			water.body_entered.connect(_on_water_entered)
+	var slow_zone := get_node_or_null("SlowZone")
+	if slow_zone is Area2D:
+		slow_zone.body_entered.connect(_on_slow_entered)
+		slow_zone.body_exited.connect(_on_slow_exited)
 	hud_win.text = ""
 	hud_hint.text = ""
 	_setup_active_players()
@@ -131,14 +151,35 @@ func _update_hud_bars() -> void:
 		if block_fill:
 			block_fill.scale.x = clamp(p.block_durability / p.max_block, 0.0, 1.0)
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if match_over:
 		return
 	for p in active_players:
+		p.current_push = global_current
 		if ledge_kill_enabled and not safe_rect.has_point(p.global_position):
-			handle_ledge_kill(p)
+			handle_environmental_kill(p)
 		if clamp_to_bounds:
 			p.global_position = p.global_position.clamp(play_bounds.position, play_bounds.end)
+	if lava_area:
+		_process_lava(delta)
+
+func _process_lava(delta: float) -> void:
+	var overlapping := lava_area.get_overlapping_bodies()
+	var center := play_bounds.get_center()
+	for p in active_players:
+		if not (p in overlapping):
+			lava_tick_timers[p.player_id] = 0.0
+			continue
+		var t: float = lava_tick_timers.get(p.player_id, 0.0) - delta
+		if t <= 0.0:
+			t = lava_tick_interval
+			var dir: Vector2 = (center - p.global_position).normalized()
+			var lethal: bool = p.apply_burn(lava_tick_damage, dir * lava_knockback)
+			play_sfx("hit_claw", 0.12)
+			shake(6.0, 0.08)
+			if lethal:
+				handle_environmental_kill(p)
+		lava_tick_timers[p.player_id] = t
 
 func _on_ice_entered(body: Node) -> void:
 	if body.has_method("enter_ice"):
@@ -148,13 +189,21 @@ func _on_ice_exited(body: Node) -> void:
 	if body.has_method("exit_ice"):
 		body.exit_ice()
 
+func _on_slow_entered(body: Node) -> void:
+	if body.has_method("enter_slow"):
+		body.enter_slow()
+
+func _on_slow_exited(body: Node) -> void:
+	if body.has_method("exit_slow"):
+		body.exit_slow()
+
 func _on_water_entered(body: Node) -> void:
 	if match_over:
 		return
 	if body in active_players:
-		handle_ledge_kill(body)
+		handle_environmental_kill(body)
 
-func handle_ledge_kill(victim: Node) -> void:
+func handle_environmental_kill(victim: Node) -> void:
 	var killer: Node = victim.last_damaged_by if "last_damaged_by" in victim else null
 	if killer == null and active_players.size() == 2:
 		killer = active_players[1] if victim == active_players[0] else active_players[0]

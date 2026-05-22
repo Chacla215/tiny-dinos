@@ -55,6 +55,7 @@ safe_rect = Rect2(160, 100, 960, 520)
 ledge_kill_enabled = false
 clamp_to_bounds = true
 play_bounds = Rect2(24, 24, 1232, 672)
+water_mode = "lava"
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(640, 360)

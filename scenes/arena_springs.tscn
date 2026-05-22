@@ -1,4 +1,4 @@
-[gd_scene load_steps=45 format=3]
+[gd_scene load_steps=47 format=3]
 
 [ext_resource type="Script" path="res://scripts/dino.gd" id="1_dino"]
 [ext_resource type="Script" path="res://scripts/main.gd" id="2_main"]
@@ -9,6 +9,12 @@ size = Vector2(48, 48)
 
 [sub_resource type="RectangleShape2D" id="hitbox_placeholder"]
 size = Vector2(1, 1)
+
+[sub_resource type="RectangleShape2D" id="slow_0"]
+size = Vector2(240, 170)
+
+[sub_resource type="RectangleShape2D" id="slow_1"]
+size = Vector2(240, 170)
 
 [sub_resource type="RectangleShape2D" id="water_0"]
 size = Vector2(32, 32)
@@ -304,6 +310,26 @@ shape = SubResource("water_37")
 [node name="C38" type="CollisionShape2D" parent="Water"]
 position = Vector2(1216, 688)
 shape = SubResource("water_38")
+
+[node name="SlowZone" type="Area2D" parent="."]
+
+[node name="S0" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(470, 470)
+shape = SubResource("slow_0")
+
+[node name="V0" type="Polygon2D" parent="SlowZone"]
+position = Vector2(470, 470)
+color = Color(0.3, 0.7, 0.55, 0.35)
+polygon = PackedVector2Array(-120, -85, 120, -85, 120, 85, -120, 85)
+
+[node name="S1" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(810, 250)
+shape = SubResource("slow_1")
+
+[node name="V1" type="Polygon2D" parent="SlowZone"]
+position = Vector2(810, 250)
+color = Color(0.3, 0.7, 0.55, 0.35)
+polygon = PackedVector2Array(-120, -85, 120, -85, 120, 85, -120, 85)
 
 [node name="Player1" type="CharacterBody2D" parent="."]
 position = Vector2(360, 360)

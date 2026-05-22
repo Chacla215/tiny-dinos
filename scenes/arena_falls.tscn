@@ -88,6 +88,7 @@ safe_rect = Rect2(160, 100, 960, 520)
 ledge_kill_enabled = false
 clamp_to_bounds = true
 play_bounds = Rect2(24, 24, 1232, 672)
+global_current = Vector2(0, 110)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(640, 360)
@@ -199,6 +200,48 @@ shape = SubResource("water_22")
 [node name="C23" type="CollisionShape2D" parent="Water"]
 position = Vector2(640, 688)
 shape = SubResource("water_23")
+
+[node name="CurrentHint" type="Node2D" parent="."]
+
+[node name="A0" type="Polygon2D" parent="CurrentHint"]
+position = Vector2(520, 200)
+color = Color(0.85, 0.95, 1, 0.18)
+polygon = PackedVector2Array(-16, -10, 16, -10, 0, 12)
+
+[node name="A1" type="Polygon2D" parent="CurrentHint"]
+position = Vector2(700, 180)
+color = Color(0.85, 0.95, 1, 0.18)
+polygon = PackedVector2Array(-16, -10, 16, -10, 0, 12)
+
+[node name="A2" type="Polygon2D" parent="CurrentHint"]
+position = Vector2(900, 250)
+color = Color(0.85, 0.95, 1, 0.18)
+polygon = PackedVector2Array(-16, -10, 16, -10, 0, 12)
+
+[node name="A3" type="Polygon2D" parent="CurrentHint"]
+position = Vector2(640, 350)
+color = Color(0.85, 0.95, 1, 0.18)
+polygon = PackedVector2Array(-16, -10, 16, -10, 0, 12)
+
+[node name="A4" type="Polygon2D" parent="CurrentHint"]
+position = Vector2(820, 430)
+color = Color(0.85, 0.95, 1, 0.18)
+polygon = PackedVector2Array(-16, -10, 16, -10, 0, 12)
+
+[node name="A5" type="Polygon2D" parent="CurrentHint"]
+position = Vector2(980, 330)
+color = Color(0.85, 0.95, 1, 0.18)
+polygon = PackedVector2Array(-16, -10, 16, -10, 0, 12)
+
+[node name="A6" type="Polygon2D" parent="CurrentHint"]
+position = Vector2(560, 470)
+color = Color(0.85, 0.95, 1, 0.18)
+polygon = PackedVector2Array(-16, -10, 16, -10, 0, 12)
+
+[node name="A7" type="Polygon2D" parent="CurrentHint"]
+position = Vector2(760, 540)
+color = Color(0.85, 0.95, 1, 0.18)
+polygon = PackedVector2Array(-16, -10, 16, -10, 0, 12)
 
 [node name="Player1" type="CharacterBody2D" parent="."]
 position = Vector2(360, 360)

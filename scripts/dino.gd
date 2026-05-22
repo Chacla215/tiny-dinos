@@ -128,6 +128,8 @@ var last_damaged_by: Node = null
 var hit_flash_timer: float = 0.0
 var afterimage_timer: float = 0.0
 var ice_overlap_count: int = 0
+var slow_overlap_count: int = 0
+var current_push: Vector2 = Vector2.ZERO
 
 var current_attack_damage: int = 0
 var current_attack_knockback: float = 0.0
@@ -138,6 +140,8 @@ var current_attack_hitbox_offset: float = 0.0
 var current_is_heavy: bool = false
 
 const AFTERIMAGE_INTERVAL := 0.05
+const SLOW_MOVE_FACTOR := 0.4
+const SLOW_ACCEL_FACTOR := 0.6
 
 func _ready() -> void:
 	_apply_config_preset()
@@ -268,6 +272,8 @@ func can_start_block() -> bool:
 func can_dodge() -> bool:
 	if dodge_cooldown_timer > 0.0:
 		return false
+	if slow_overlap_count > 0:
+		return false
 	if defense_state == DefenseState.DODGING or defense_state == DefenseState.GUARD_BROKEN:
 		return false
 	if attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE:
@@ -306,6 +312,7 @@ func update_movement(delta: float) -> void:
 	if defense_state == DefenseState.GUARD_BROKEN:
 		velocity = velocity.move_toward(Vector2.ZERO, ground_friction * delta)
 		move_and_slide()
+		_apply_current(delta)
 		return
 
 	var movement_locked := attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE
@@ -319,6 +326,9 @@ func update_movement(delta: float) -> void:
 	var move_factor: float = 1.0
 	if defense_state == DefenseState.BLOCKING:
 		move_factor = block_move_factor
+	if slow_overlap_count > 0:
+		move_factor *= SLOW_MOVE_FACTOR
+		accel *= SLOW_ACCEL_FACTOR
 
 	if direction != Vector2.ZERO:
 		velocity = velocity.move_toward(direction * max_speed * move_factor, accel * delta)
@@ -326,6 +336,13 @@ func update_movement(delta: float) -> void:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 
 	move_and_slide()
+	_apply_current(delta)
+
+# Environmental drift (e.g. White Water Falls current). Applied as a real
+# displacement so it respects walls and never accumulates into the velocity.
+func _apply_current(delta: float) -> void:
+	if current_push != Vector2.ZERO:
+		move_and_collide(current_push * delta)
 
 # --- Attack ---
 
@@ -511,6 +528,18 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	if hp <= 0:
 		die()
 
+# Environmental damage tick (e.g. Laughing Lava). Bypasses block/invuln since
+# you can't guard against fire, but dodge i-frames still let you slip a tick.
+# Returns true if this tick was lethal so the arena can credit the KO.
+func apply_burn(amount: int, knockback: Vector2) -> bool:
+	if defense_state == DefenseState.DODGING:
+		return false
+	hp -= amount
+	velocity += knockback
+	hit_flash_timer = 0.08
+	update_hp_bar()
+	return hp <= 0
+
 func notify_hit(damage: int) -> void:
 	var scene_root := get_tree().current_scene
 	if scene_root and scene_root.has_method("on_hit_landed"):
@@ -575,6 +604,8 @@ func update_visual() -> void:
 			color = Color(1, 1, 1, 0.35)
 		DefenseState.GUARD_BROKEN:
 			color = Color(1.4, 0.6, 1.4, 1.0)
+	if slow_overlap_count > 0 and defense_state == DefenseState.NORMAL:
+		color = Color(0.6, 0.85, 0.55, 1.0)
 	if hit_flash_timer > 0.0:
 		color = Color(1.6, 1.6, 1.6, 1.0)
 	elif invuln_timer > 0.0 and defense_state != DefenseState.DODGING:
@@ -602,6 +633,12 @@ func exit_ice() -> void:
 	if ice_overlap_count == 0:
 		current_surface = Surface.GROUND
 
+func enter_slow() -> void:
+	slow_overlap_count += 1
+
+func exit_slow() -> void:
+	slow_overlap_count = max(0, slow_overlap_count - 1)
+
 # --- Respawn ---
 
 func respawn() -> void:
@@ -609,6 +646,8 @@ func respawn() -> void:
 	velocity = Vector2.ZERO
 	current_surface = Surface.GROUND
 	ice_overlap_count = 0
+	slow_overlap_count = 0
+	current_push = Vector2.ZERO
 	hp = max_hp
 	block_durability = max_block
 	invuln_timer = invuln_duration
