@@ -1,0 +1,340 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/dino.gd" id="1_dino"]
+[ext_resource type="Script" path="res://scripts/main.gd" id="2_main"]
+
+[sub_resource type="RectangleShape2D" id="dino_shape"]
+size = Vector2(48, 48)
+
+[sub_resource type="RectangleShape2D" id="ice_shape"]
+size = Vector2(320, 220)
+
+[sub_resource type="RectangleShape2D" id="ice_shape_small"]
+size = Vector2(200, 140)
+
+[sub_resource type="RectangleShape2D" id="hitbox_placeholder"]
+size = Vector2(1, 1)
+
+[node name="Main" type="Node2D"]
+script = ExtResource("2_main")
+safe_rect = Rect2(160, 100, 960, 520)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(640, 360)
+
+[node name="Background" type="Polygon2D" parent="."]
+color = Color(0.18, 0.36, 0.5, 1)
+polygon = PackedVector2Array(0, 0, 1280, 0, 1280, 720, 0, 720)
+
+[node name="Platform" type="Polygon2D" parent="."]
+color = Color(0.85, 0.88, 0.9, 1)
+polygon = PackedVector2Array(160, 100, 1120, 100, 1120, 620, 160, 620)
+
+[node name="IcePatches" type="Node2D" parent="."]
+
+[node name="IcePatch1" type="Area2D" parent="IcePatches"]
+position = Vector2(640, 360)
+
+[node name="Visual" type="Polygon2D" parent="IcePatches/IcePatch1"]
+color = Color(0.7, 0.92, 0.98, 0.75)
+polygon = PackedVector2Array(-160, -110, 160, -110, 160, 110, -160, 110)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="IcePatches/IcePatch1"]
+shape = SubResource("ice_shape")
+
+[node name="IcePatch2" type="Area2D" parent="IcePatches"]
+position = Vector2(310, 200)
+
+[node name="Visual" type="Polygon2D" parent="IcePatches/IcePatch2"]
+color = Color(0.7, 0.92, 0.98, 0.7)
+polygon = PackedVector2Array(-100, -70, 100, -70, 100, 70, -100, 70)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="IcePatches/IcePatch2"]
+shape = SubResource("ice_shape_small")
+
+[node name="IcePatch3" type="Area2D" parent="IcePatches"]
+position = Vector2(970, 540)
+
+[node name="Visual" type="Polygon2D" parent="IcePatches/IcePatch3"]
+color = Color(0.7, 0.92, 0.98, 0.7)
+polygon = PackedVector2Array(-100, -70, 100, -70, 100, 70, -100, 70)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="IcePatches/IcePatch3"]
+shape = SubResource("ice_shape_small")
+
+[node name="SnowDrift1" type="Polygon2D" parent="."]
+color = Color(0.95, 0.97, 1.0, 0.5)
+polygon = PackedVector2Array(160, 100, 280, 110, 240, 140, 160, 130)
+
+[node name="SnowDrift2" type="Polygon2D" parent="."]
+color = Color(0.95, 0.97, 1.0, 0.5)
+polygon = PackedVector2Array(1120, 620, 1000, 610, 1040, 580, 1120, 590)
+
+[node name="Player1" type="CharacterBody2D" parent="."]
+position = Vector2(360, 360)
+script = ExtResource("1_dino")
+player_id = "p1"
+
+[node name="Polygon2D" type="Polygon2D" parent="Player1"]
+color = Color(0.4, 0.8, 0.6, 1)
+polygon = PackedVector2Array(-24, -24, 24, -24, 24, 24, -24, 24)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Player1"]
+
+[node name="PlayerMarker" type="Polygon2D" parent="Player1"]
+color = Color(1.0, 0.95, 0.4, 0.95)
+polygon = PackedVector2Array(-10, -58, 10, -58, 0, -44)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player1"]
+shape = SubResource("dino_shape")
+
+[node name="Hitbox" type="Area2D" parent="Player1"]
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player1/Hitbox"]
+shape = SubResource("hitbox_placeholder")
+disabled = true
+
+[node name="Visual" type="Polygon2D" parent="Player1/Hitbox"]
+visible = false
+
+[node name="Player2" type="CharacterBody2D" parent="."]
+position = Vector2(920, 360)
+script = ExtResource("1_dino")
+player_id = "p2"
+
+[node name="Polygon2D" type="Polygon2D" parent="Player2"]
+color = Color(0.9, 0.4, 0.4, 1)
+polygon = PackedVector2Array(-24, -24, 24, -24, 24, 24, -24, 24)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Player2"]
+
+[node name="PlayerMarker" type="Polygon2D" parent="Player2"]
+color = Color(0.4, 0.9, 1.0, 0.95)
+polygon = PackedVector2Array(-10, -58, 10, -58, 0, -44)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player2"]
+shape = SubResource("dino_shape")
+
+[node name="Hitbox" type="Area2D" parent="Player2"]
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player2/Hitbox"]
+shape = SubResource("hitbox_placeholder")
+disabled = true
+
+[node name="Visual" type="Polygon2D" parent="Player2/Hitbox"]
+visible = false
+
+[node name="Player3" type="CharacterBody2D" parent="."]
+position = Vector2(640, 220)
+script = ExtResource("1_dino")
+player_id = "p3"
+
+[node name="Polygon2D" type="Polygon2D" parent="Player3"]
+color = Color(0.95, 0.85, 0.3, 1)
+polygon = PackedVector2Array(-24, -24, 24, -24, 24, 24, -24, 24)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Player3"]
+
+[node name="PlayerMarker" type="Polygon2D" parent="Player3"]
+color = Color(0.95, 0.45, 0.85, 0.95)
+polygon = PackedVector2Array(-10, -58, 10, -58, 0, -44)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player3"]
+shape = SubResource("dino_shape")
+
+[node name="Hitbox" type="Area2D" parent="Player3"]
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player3/Hitbox"]
+shape = SubResource("hitbox_placeholder")
+disabled = true
+
+[node name="Visual" type="Polygon2D" parent="Player3/Hitbox"]
+visible = false
+
+[node name="Player4" type="CharacterBody2D" parent="."]
+position = Vector2(640, 500)
+script = ExtResource("1_dino")
+player_id = "p4"
+
+[node name="Polygon2D" type="Polygon2D" parent="Player4"]
+color = Color(0.85, 0.45, 0.3, 1)
+polygon = PackedVector2Array(-24, -24, 24, -24, 24, 24, -24, 24)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Player4"]
+
+[node name="PlayerMarker" type="Polygon2D" parent="Player4"]
+color = Color(0.45, 0.95, 0.45, 0.95)
+polygon = PackedVector2Array(-10, -58, 10, -58, 0, -44)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player4"]
+shape = SubResource("dino_shape")
+
+[node name="Hitbox" type="Area2D" parent="Player4"]
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player4/Hitbox"]
+shape = SubResource("hitbox_placeholder")
+disabled = true
+
+[node name="Visual" type="Polygon2D" parent="Player4/Hitbox"]
+visible = false
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="P1Score" type="Label" parent="HUD"]
+offset_left = 24.0
+offset_top = 16.0
+offset_right = 360.0
+offset_bottom = 64.0
+theme_override_colors/font_color = Color(0.4, 0.85, 0.55, 1)
+theme_override_font_sizes/font_size = 32
+text = "T-REX  0 / 3"
+
+[node name="P1HPBack" type="Polygon2D" parent="HUD"]
+position = Vector2(24, 70)
+color = Color(0.1, 0.1, 0.1, 0.75)
+polygon = PackedVector2Array(0, 0, 260, 0, 260, 16, 0, 16)
+
+[node name="P1HPFill" type="Polygon2D" parent="HUD"]
+position = Vector2(24, 70)
+color = Color(0.4, 0.85, 0.55, 1)
+polygon = PackedVector2Array(0, 0, 260, 0, 260, 16, 0, 16)
+
+[node name="P1BlockBack" type="Polygon2D" parent="HUD"]
+position = Vector2(24, 92)
+color = Color(0.1, 0.1, 0.1, 0.75)
+polygon = PackedVector2Array(0, 0, 260, 0, 260, 8, 0, 8)
+
+[node name="P1BlockFill" type="Polygon2D" parent="HUD"]
+position = Vector2(24, 92)
+color = Color(0.45, 0.7, 1.0, 1)
+polygon = PackedVector2Array(0, 0, 260, 0, 260, 8, 0, 8)
+
+[node name="P2Score" type="Label" parent="HUD"]
+offset_left = 920.0
+offset_top = 16.0
+offset_right = 1256.0
+offset_bottom = 64.0
+theme_override_colors/font_color = Color(0.95, 0.45, 0.45, 1)
+theme_override_font_sizes/font_size = 32
+text = "RAPTOR  0 / 3"
+horizontal_alignment = 2
+
+[node name="P2HPBack" type="Polygon2D" parent="HUD"]
+position = Vector2(1256, 70)
+color = Color(0.1, 0.1, 0.1, 0.75)
+polygon = PackedVector2Array(-260, 0, 0, 0, 0, 16, -260, 16)
+
+[node name="P2HPFill" type="Polygon2D" parent="HUD"]
+position = Vector2(1256, 70)
+color = Color(0.95, 0.45, 0.45, 1)
+polygon = PackedVector2Array(-260, 0, 0, 0, 0, 16, -260, 16)
+
+[node name="P2BlockBack" type="Polygon2D" parent="HUD"]
+position = Vector2(1256, 92)
+color = Color(0.1, 0.1, 0.1, 0.75)
+polygon = PackedVector2Array(-260, 0, 0, 0, 0, 8, -260, 8)
+
+[node name="P2BlockFill" type="Polygon2D" parent="HUD"]
+position = Vector2(1256, 92)
+color = Color(0.45, 0.7, 1.0, 1)
+polygon = PackedVector2Array(-260, 0, 0, 0, 0, 8, -260, 8)
+
+[node name="P3Score" type="Label" parent="HUD"]
+offset_left = 24.0
+offset_top = 612.0
+offset_right = 360.0
+offset_bottom = 644.0
+theme_override_colors/font_color = Color(0.95, 0.45, 0.85, 1)
+theme_override_font_sizes/font_size = 24
+text = "STEGO  0 / 3"
+
+[node name="P3HPBack" type="Polygon2D" parent="HUD"]
+position = Vector2(24, 650)
+color = Color(0.1, 0.1, 0.1, 0.75)
+polygon = PackedVector2Array(0, 0, 260, 0, 260, 14, 0, 14)
+
+[node name="P3HPFill" type="Polygon2D" parent="HUD"]
+position = Vector2(24, 650)
+color = Color(0.95, 0.45, 0.85, 1)
+polygon = PackedVector2Array(0, 0, 260, 0, 260, 14, 0, 14)
+
+[node name="P3BlockBack" type="Polygon2D" parent="HUD"]
+position = Vector2(24, 670)
+color = Color(0.1, 0.1, 0.1, 0.75)
+polygon = PackedVector2Array(0, 0, 260, 0, 260, 6, 0, 6)
+
+[node name="P3BlockFill" type="Polygon2D" parent="HUD"]
+position = Vector2(24, 670)
+color = Color(0.45, 0.7, 1.0, 1)
+polygon = PackedVector2Array(0, 0, 260, 0, 260, 6, 0, 6)
+
+[node name="P4Score" type="Label" parent="HUD"]
+offset_left = 920.0
+offset_top = 612.0
+offset_right = 1256.0
+offset_bottom = 644.0
+theme_override_colors/font_color = Color(0.45, 0.95, 0.45, 1)
+theme_override_font_sizes/font_size = 24
+text = "TRIKE  0 / 3"
+horizontal_alignment = 2
+
+[node name="P4HPBack" type="Polygon2D" parent="HUD"]
+position = Vector2(1256, 650)
+color = Color(0.1, 0.1, 0.1, 0.75)
+polygon = PackedVector2Array(-260, 0, 0, 0, 0, 14, -260, 14)
+
+[node name="P4HPFill" type="Polygon2D" parent="HUD"]
+position = Vector2(1256, 650)
+color = Color(0.45, 0.95, 0.45, 1)
+polygon = PackedVector2Array(-260, 0, 0, 0, 0, 14, -260, 14)
+
+[node name="P4BlockBack" type="Polygon2D" parent="HUD"]
+position = Vector2(1256, 670)
+color = Color(0.1, 0.1, 0.1, 0.75)
+polygon = PackedVector2Array(-260, 0, 0, 0, 0, 6, -260, 6)
+
+[node name="P4BlockFill" type="Polygon2D" parent="HUD"]
+position = Vector2(1256, 670)
+color = Color(0.45, 0.7, 1.0, 1)
+polygon = PackedVector2Array(-260, 0, 0, 0, 0, 6, -260, 6)
+
+[node name="WinMessage" type="Label" parent="HUD"]
+offset_left = 0.0
+offset_top = 280.0
+offset_right = 1280.0
+offset_bottom = 360.0
+theme_override_font_sizes/font_size = 72
+text = ""
+horizontal_alignment = 1
+
+[node name="RestartHint" type="Label" parent="HUD"]
+offset_left = 0.0
+offset_top = 400.0
+offset_right = 1280.0
+offset_bottom = 440.0
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_font_sizes/font_size = 24
+text = ""
+horizontal_alignment = 1
+
+[node name="SFX" type="Node" parent="."]
+
+[node name="Swing" type="AudioStreamPlayer" parent="SFX"]
+
+[node name="HitChomp" type="AudioStreamPlayer" parent="SFX"]
+
+[node name="HitClaw" type="AudioStreamPlayer" parent="SFX"]
+
+[node name="Block" type="AudioStreamPlayer" parent="SFX"]
+
+[node name="GuardBreak" type="AudioStreamPlayer" parent="SFX"]
+
+[node name="Dodge" type="AudioStreamPlayer" parent="SFX"]
+
+[node name="KO" type="AudioStreamPlayer" parent="SFX"]
+
+[node name="Win" type="AudioStreamPlayer" parent="SFX"]

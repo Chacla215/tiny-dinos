@@ -1,0 +1,217 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/select.gd" id="1_select"]
+
+[node name="Select" type="Node2D"]
+script = ExtResource("1_select")
+
+[node name="Background" type="Polygon2D" parent="."]
+color = Color(0.12, 0.12, 0.18, 1)
+polygon = PackedVector2Array(0, 0, 1280, 0, 1280, 720, 0, 720)
+
+[node name="Title" type="Label" parent="."]
+offset_left = 0.0
+offset_top = 12.0
+offset_right = 1280.0
+offset_bottom = 60.0
+theme_override_font_sizes/font_size = 40
+horizontal_alignment = 1
+text = "TINY DINOS"
+
+[node name="Subtitle" type="Label" parent="."]
+offset_left = 0.0
+offset_top = 64.0
+offset_right = 1280.0
+offset_bottom = 92.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+horizontal_alignment = 1
+text = "PICK YOUR DINOS"
+
+[node name="P1Panel" type="Node2D" parent="."]
+position = Vector2(320, 250)
+
+[node name="PanelBG" type="Polygon2D" parent="P1Panel"]
+color = Color(0.18, 0.18, 0.25, 1)
+polygon = PackedVector2Array(-150, -100, 150, -100, 150, 60, -150, 60)
+
+[node name="Preview" type="Polygon2D" parent="P1Panel"]
+color = Color(0.4, 0.85, 0.55, 1)
+polygon = PackedVector2Array(-50, -90, 50, -90, 50, -20, -50, -20)
+
+[node name="Header" type="Label" parent="P1Panel"]
+offset_left = -150.0
+offset_top = -130.0
+offset_right = 150.0
+offset_bottom = -105.0
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "PLAYER 1"
+
+[node name="Name" type="Label" parent="P1Panel"]
+offset_left = -150.0
+offset_top = -10.0
+offset_right = 150.0
+offset_bottom = 22.0
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+text = "T-REX"
+
+[node name="Status" type="Label" parent="P1Panel"]
+offset_left = -150.0
+offset_top = 28.0
+offset_right = 150.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+horizontal_alignment = 1
+text = "<  A  >"
+
+[node name="P2Panel" type="Node2D" parent="."]
+position = Vector2(960, 250)
+
+[node name="PanelBG" type="Polygon2D" parent="P2Panel"]
+color = Color(0.18, 0.18, 0.25, 1)
+polygon = PackedVector2Array(-150, -100, 150, -100, 150, 60, -150, 60)
+
+[node name="Preview" type="Polygon2D" parent="P2Panel"]
+color = Color(0.95, 0.45, 0.45, 1)
+polygon = PackedVector2Array(-50, -90, 50, -90, 50, -20, -50, -20)
+
+[node name="Header" type="Label" parent="P2Panel"]
+offset_left = -150.0
+offset_top = -130.0
+offset_right = 150.0
+offset_bottom = -105.0
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "PLAYER 2"
+
+[node name="Name" type="Label" parent="P2Panel"]
+offset_left = -150.0
+offset_top = -10.0
+offset_right = 150.0
+offset_bottom = 22.0
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+text = "RAPTOR"
+
+[node name="Status" type="Label" parent="P2Panel"]
+offset_left = -150.0
+offset_top = 28.0
+offset_right = 150.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+horizontal_alignment = 1
+text = "<  A  >"
+
+[node name="P3Panel" type="Node2D" parent="."]
+position = Vector2(320, 530)
+visible = false
+
+[node name="PanelBG" type="Polygon2D" parent="P3Panel"]
+color = Color(0.18, 0.18, 0.25, 1)
+polygon = PackedVector2Array(-150, -100, 150, -100, 150, 60, -150, 60)
+
+[node name="Preview" type="Polygon2D" parent="P3Panel"]
+color = Color(0.95, 0.85, 0.30, 1)
+polygon = PackedVector2Array(-50, -90, 50, -90, 50, -20, -50, -20)
+
+[node name="Header" type="Label" parent="P3Panel"]
+offset_left = -150.0
+offset_top = -130.0
+offset_right = 150.0
+offset_bottom = -105.0
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "PLAYER 3"
+
+[node name="Name" type="Label" parent="P3Panel"]
+offset_left = -150.0
+offset_top = -10.0
+offset_right = 150.0
+offset_bottom = 22.0
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+text = "TRIKE"
+
+[node name="Status" type="Label" parent="P3Panel"]
+offset_left = -150.0
+offset_top = 28.0
+offset_right = 150.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+horizontal_alignment = 1
+text = "<  A  >"
+
+[node name="P4Panel" type="Node2D" parent="."]
+position = Vector2(960, 530)
+visible = false
+
+[node name="PanelBG" type="Polygon2D" parent="P4Panel"]
+color = Color(0.18, 0.18, 0.25, 1)
+polygon = PackedVector2Array(-150, -100, 150, -100, 150, 60, -150, 60)
+
+[node name="Preview" type="Polygon2D" parent="P4Panel"]
+color = Color(0.85, 0.45, 0.30, 1)
+polygon = PackedVector2Array(-50, -90, 50, -90, 50, -20, -50, -20)
+
+[node name="Header" type="Label" parent="P4Panel"]
+offset_left = -150.0
+offset_top = -130.0
+offset_right = 150.0
+offset_bottom = -105.0
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "PLAYER 4"
+
+[node name="Name" type="Label" parent="P4Panel"]
+offset_left = -150.0
+offset_top = -10.0
+offset_right = 150.0
+offset_bottom = 22.0
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+text = "PTERRY"
+
+[node name="Status" type="Label" parent="P4Panel"]
+offset_left = -150.0
+offset_top = 28.0
+offset_right = 150.0
+offset_bottom = 56.0
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 1)
+horizontal_alignment = 1
+text = "<  A  >"
+
+[node name="IslandLabel" type="Label" parent="."]
+offset_left = 0.0
+offset_top = 622.0
+offset_right = 1280.0
+offset_bottom = 650.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+horizontal_alignment = 1
+text = "Island: ICIEST AGE"
+
+[node name="Countdown" type="Label" parent="."]
+offset_left = 0.0
+offset_top = 656.0
+offset_right = 1280.0
+offset_bottom = 690.0
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.4, 0.95, 0.5, 1)
+horizontal_alignment = 1
+text = ""
+
+[node name="Hint" type="Label" parent="."]
+offset_left = 0.0
+offset_top = 692.0
+offset_right = 1280.0
+offset_bottom = 716.0
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+horizontal_alignment = 1
+text = "<-  -> cycle      A / F / . confirm      RB / G / , cancel"
