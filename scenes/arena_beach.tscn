@@ -371,7 +371,7 @@ disabled = true
 visible = false
 
 [node name="Player4" type="CharacterBody2D" parent="."]
-position = Vector2(640, 500)
+position = Vector2(200, 150)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
