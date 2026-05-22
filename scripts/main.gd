@@ -27,6 +27,13 @@ const SFX_PATHS := {
 ## Constant drift applied to every player each frame (White Water Falls current).
 @export var global_current: Vector2 = Vector2.ZERO
 
+## Players don't physically collide (that caused latching); instead they're
+## softly pushed apart in code so you can shove against each other, not stick.
+const PLAYER_SEPARATION := 56.0
+
+## Dark backing plate behind each HUD corner so name/bars read on bright stages.
+const HUD_PANEL_COLOR := Color(0.06, 0.07, 0.11, 0.55)
+
 @onready var ice_patches: Node2D = $IcePatches
 @onready var camera: Camera2D = $Camera2D
 @onready var hud_win: Label = $HUD/WinMessage
@@ -37,8 +44,11 @@ const SFX_PATHS := {
 ]
 
 var active_players: Array[CharacterBody2D] = []
-var scores: Dictionary = {}
+var round_wins: Dictionary = {}   # rounds won this match (the displayed score)
+var dp: Dictionary = {}           # DinoPoints accrued this match (for the grade)
 var match_over: bool = false
+var round_active: bool = true
+var current_round: int = 1
 
 var shake_amount: float = 0.0
 var shake_remaining: float = 0.0
@@ -73,6 +83,7 @@ func _ready() -> void:
 	hud_hint.text = ""
 	_setup_active_players()
 	_apply_match_colors()
+	_style_hud()
 	update_score_display()
 	_load_sfx()
 
@@ -82,7 +93,8 @@ func _setup_active_players() -> void:
 		var p: CharacterBody2D = all_players[i]
 		if i < count:
 			active_players.append(p)
-			scores[p.player_id] = 0
+			round_wins[p.player_id] = 0
+			dp[p.player_id] = 0
 		else:
 			p.visible = false
 			p.set_process_input(false)
@@ -108,6 +120,34 @@ func _apply_match_colors() -> void:
 		var hp_fill := get_node_or_null("HUD/%sHPFill" % key)
 		if hp_fill:
 			hp_fill.color = color
+
+# Backing plate behind each active corner's HUD + dark text outlines, so the
+# name/score/bars and the win+restart text read on bright stages. Done in code
+# (not the scenes) so all 6 arenas get it from the one shared script.
+func _style_hud() -> void:
+	var rects := {
+		"p1": Rect2(12, 8, 300, 98),
+		"p2": Rect2(968, 8, 300, 98),
+		"p3": Rect2(12, 604, 300, 80),
+		"p4": Rect2(968, 604, 300, 80),
+	}
+	for p in active_players:
+		var pid: String = p.player_id
+		var panel := ColorRect.new()
+		panel.color = HUD_PANEL_COLOR
+		var r: Rect2 = rects.get(pid, Rect2(12, 8, 300, 98))
+		panel.position = r.position
+		panel.size = r.size
+		panel.z_index = -1
+		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		$HUD.add_child(panel)
+		var label: Label = get_node_or_null("HUD/%sScore" % pid.to_upper())
+		if label:
+			label.add_theme_constant_override("outline_size", 8)
+			label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+	for l in [hud_win, hud_hint]:
+		l.add_theme_constant_override("outline_size", 8)
+		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
 
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	if connected:
@@ -155,10 +195,16 @@ func _update_hud_bars() -> void:
 			hp_fill.scale.x = clamp(float(p.hp) / float(p.max_hp), 0.0, 1.0)
 		if block_fill:
 			block_fill.scale.x = clamp(p.block_durability / p.max_block, 0.0, 1.0)
+		var label := get_node_or_null("HUD/%sScore" % key)
+		if label:
+			var wn: String = p.weapon_name() if p.has_method("weapon_name") else ""
+			var wsuffix: String = ("   " + wn) if wn != "" else ""
+			label.text = "%s  %d / %d%s" % [_dino_name(p.player_id), round_wins.get(p.player_id, 0), kos_to_win, wsuffix]
 
 func _physics_process(delta: float) -> void:
-	if match_over:
+	if match_over or not round_active:
 		return
+	_separate_players()
 	for p in active_players:
 		p.current_push = global_current
 		if ledge_kill_enabled and not safe_rect.has_point(p.global_position):
@@ -186,6 +232,24 @@ func _process_lava(delta: float) -> void:
 				handle_environmental_kill(p)
 		lava_tick_timers[p.player_id] = t
 
+# Soft body separation: nudge any overlapping players apart so they can press
+# against each other without the hard-collision latch. move_and_collide keeps
+# the nudge from shoving anyone through a wall/obstacle.
+func _separate_players() -> void:
+	var count := active_players.size()
+	for i in range(count):
+		var a: CharacterBody2D = active_players[i]
+		for j in range(i + 1, count):
+			var b: CharacterBody2D = active_players[j]
+			var diff := b.global_position - a.global_position
+			var dist := diff.length()
+			if dist >= PLAYER_SEPARATION:
+				continue
+			var dir := diff / dist if dist > 0.01 else Vector2.RIGHT
+			var push := dir * (PLAYER_SEPARATION - dist) * 0.5
+			a.move_and_collide(-push)
+			b.move_and_collide(push)
+
 func _on_ice_entered(body: Node) -> void:
 	if body.has_method("enter_ice"):
 		body.enter_ice()
@@ -203,38 +267,83 @@ func _on_slow_exited(body: Node) -> void:
 		body.exit_slow()
 
 func _on_water_entered(body: Node) -> void:
-	if match_over:
+	if match_over or not round_active:
 		return
 	if body in active_players:
-		handle_environmental_kill(body)
+		# Deferred: this fires during physics-query flush, and the kill respawns
+		# the body (toggling collision shapes), which isn't allowed mid-flush.
+		handle_environmental_kill.call_deferred(body)
 
 func handle_environmental_kill(victim: Node) -> void:
 	var killer: Node = victim.last_damaged_by if "last_damaged_by" in victim else null
 	if killer == null and active_players.size() == 2:
 		killer = active_players[1] if victim == active_players[0] else active_players[0]
-	award_ko(killer, victim)
+	# Get them off the hazard immediately either way.
 	if victim.has_method("respawn"):
 		victim.respawn()
+	# Attributed ring-out ends the round (credits the killer). An unattributed
+	# FFA self-ring-out is neutral — just the respawn above, round continues.
+	if killer != null and killer != victim and killer in active_players:
+		award_ko(killer, victim)
 
 func report_ko(victim: Node, killer: Node) -> void:
-	if match_over:
-		return
 	award_ko(killer, victim)
 
+# A KO ends the current round (in FFA: first KO of the round wins it). The
+# killer takes the round + DP; first to kos_to_win rounds wins the match.
 func award_ko(killer: Node, victim: Node) -> void:
+	if match_over or not round_active:
+		return
+	if killer == null or killer == victim or not (killer in active_players):
+		return
+	round_active = false
+	var killer_pid: String = killer.player_id
+	dp[killer_pid] = dp.get(killer_pid, 0) + 100
+	round_wins[killer_pid] = round_wins.get(killer_pid, 0) + 1
+	update_score_display()
+	if round_wins[killer_pid] >= kos_to_win:
+		end_match(killer, _dino_name(killer_pid))
+	else:
+		_end_round(killer_pid)
+
+func _dino_name(pid: String) -> String:
+	var dino_id: String = MatchConfig.dino_choices.get(pid, "trex")
+	return MatchConfig.DINOS[dino_id].display_name
+
+func add_dp(pid: String, points: int) -> void:
+	if pid in dp:
+		dp[pid] = dp[pid] + points
+
+# Round-over interstitial → reset everyone → next round.
+func _end_round(winner_pid: String) -> void:
+	hud_win.text = "%s TAKES ROUND %d" % [_dino_name(winner_pid), current_round]
+	hud_win.add_theme_color_override("font_color", MatchConfig.PLAYER_COLORS.get(winner_pid, Color.WHITE))
+	for p in active_players:
+		p.set_physics_process(false)
+		p.set_process_input(false)
+	await get_tree().create_timer(1.6, true, false, true).timeout
 	if match_over:
 		return
-	if killer == null or killer == victim:
-		return
-	if not (killer in active_players):
-		return
-	var killer_pid: String = killer.player_id
-	scores[killer_pid] = scores.get(killer_pid, 0) + 1
-	update_score_display()
-	if scores[killer_pid] >= kos_to_win:
-		var dino_id: String = MatchConfig.dino_choices.get(killer_pid, "trex")
-		var display_name: String = MatchConfig.DINOS[dino_id].display_name
-		end_match(killer, display_name)
+	current_round += 1
+	for p in active_players:
+		p.set_physics_process(true)
+		p.set_process_input(true)
+		if p.has_method("respawn"):
+			p.respawn()
+	hud_win.text = "ROUND %d" % current_round
+	hud_win.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	round_active = true
+	await get_tree().create_timer(0.8, true, false, true).timeout
+	if not match_over:
+		hud_win.text = ""
+
+func _grade(points: int) -> String:
+	if points >= 480: return "A+"
+	if points >= 380: return "A"
+	if points >= 290: return "B"
+	if points >= 200: return "C"
+	if points >= 120: return "D"
+	return "F"
 
 func update_score_display() -> void:
 	for p in active_players:
@@ -243,14 +352,23 @@ func update_score_display() -> void:
 		var display_name: String = MatchConfig.DINOS[dino_id].display_name
 		var label := get_node_or_null("HUD/%sScore" % pid.to_upper())
 		if label:
-			label.text = "%s  %d / %d" % [display_name, scores.get(pid, 0), kos_to_win]
+			label.text = "%s  %d / %d" % [display_name, round_wins.get(pid, 0), kos_to_win]
 
 func end_match(winner: CharacterBody2D, label: String) -> void:
 	match_over = true
+	round_active = false
 	hud_win.text = "%s WINS" % label
 	var win_color: Color = MatchConfig.PLAYER_COLORS.get(winner.player_id, Color.WHITE)
 	hud_win.add_theme_color_override("font_color", win_color)
-	hud_hint.text = "press R / ENTER / START for character select"
+	# DinoPoints grade card: per-player DP + letter grade, then the restart hint.
+	var lines: Array[String] = []
+	for p in active_players:
+		var pid: String = p.player_id
+		var pts: int = dp.get(pid, 0)
+		lines.append("%s   %d DP   %s" % [_dino_name(pid), pts, _grade(pts)])
+	lines.append("")
+	lines.append("press R / ENTER / START for character select")
+	hud_hint.text = "\n".join(lines)
 	for p in active_players:
 		p.set_process_input(false)
 		p.set_physics_process(false)

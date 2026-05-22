@@ -13,6 +13,7 @@ var reaction_time: float = 0.16  # delay before reacting to your swings (s)
 var block_chance: float = 0.40   # P(block) when you swing at it in range
 var dodge_chance: float = 0.22   # P(dodge instead) when you swing at it
 var heavy_chance: float = 0.30   # fraction of its attacks that are heavy
+var special_chance: float = 0.30 # how often it reaches for its signature special
 var standoff_gap: float = 24.0   # buffer beyond attack reach it likes to hover at
 
 # --- Outputs read by the owning dino each frame ---
@@ -21,6 +22,7 @@ var block_held: bool = false
 
 var _attack_q: bool = false
 var _heavy_q: bool = false
+var _special_q: bool = false
 var _dodge_q: bool = false
 
 # --- internal timers / decisions ---
@@ -39,6 +41,11 @@ func consume_attack() -> bool:
 func consume_heavy() -> bool:
 	var v := _heavy_q
 	_heavy_q = false
+	return v
+
+func consume_special() -> bool:
+	var v := _special_q
+	_special_q = false
 	return v
 
 func consume_dodge() -> bool:
@@ -105,7 +112,10 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	if dist <= reach + 16.0 and _attack_cd <= 0.0 and owner.can_attack():
 		if target.invuln_timer <= 0.0 or randf() < 0.25:
 			move_dir = dir  # face the target on the commit frame
-			if randf() < heavy_chance and dist <= heavy_reach + 8.0:
+			var roll := randf()
+			if roll < special_chance:
+				_special_q = true  # dino gates this on cooldown via can_special()
+			elif roll < special_chance + heavy_chance and dist <= heavy_reach + 8.0:
 				_heavy_q = true
 			else:
 				_attack_q = true

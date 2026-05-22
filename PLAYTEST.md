@@ -52,6 +52,9 @@ What happened → why it felt bad/good → which knob might fix it (below).
   - Springs slow strength lives in `scripts/dino.gd`: `SLOW_MOVE_FACTOR` (0.4 = 40%
     speed). Lower = stickier.
 - **KOs to win** — `Main` node, `kos_to_win` (default 3).
+- **SFX** — placeholder sounds are synthesized by `scripts/tools/gen_sfx.py`
+  (tweak + rerun, then `godot --headless --import`). Per-sound volume is the
+  `volume_db` on each `SFX/*` AudioStreamPlayer node in the arena scene.
 - **CPU difficulty** — `scripts/dino_ai.gd`, the vars at the top: `aggression`
   (how hard it pushes + attacks), `reaction_time` (how fast it answers your
   swings), `block_chance` / `dodge_chance` (how it defends), `heavy_chance`. If

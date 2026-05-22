@@ -1,6 +1,6 @@
 extends Node
 
-const ROSTER_ORDER := ["trex", "raptor", "trike", "pterry"]
+const ROSTER_ORDER := ["trex", "raptor", "trike", "pterry", "bronto", "anky"]
 
 const PLAYER_COLORS := {
 	"p1": Color(1.00, 0.88, 0.30, 1.0),
@@ -10,7 +10,7 @@ const PLAYER_COLORS := {
 }
 
 const PLAYER_IDS := ["p1", "p2", "p3", "p4"]
-const ACTION_NAMES := ["up", "down", "left", "right", "attack", "heavy", "block", "dodge", "confirm"]
+const ACTION_NAMES := ["up", "down", "left", "right", "attack", "heavy", "special", "swap", "block", "dodge", "confirm"]
 
 const PLAYER_TINTS := {
 	"p1": Color(1.30, 1.20, 0.50),
@@ -19,9 +19,23 @@ const PLAYER_TINTS := {
 	"p4": Color(0.60, 1.20, 0.60),
 }
 
+# Weapons modify light + heavy attacks (not the signature special). Y swaps the
+# active weapon. "fists" = the dino's natural attack. Melee only for now — Bow
+# needs the projectile path (TODO). Each dino has a 2-weapon loadout (DINOS.weapons).
+const WEAPONS := {
+	"fists":     {"display_name": "FISTS",     "dmg": 1.0,  "kb": 1.0,  "range": 0,   "windup": 1.0, "recovery": 1.0},
+	"sword":     {"display_name": "SWORD",      "dmg": 1.2,  "kb": 1.1,  "range": 16,  "windup": 1.0, "recovery": 1.0},
+	"dagger":    {"display_name": "DAGGER",     "dmg": 0.7,  "kb": 0.7,  "range": -4,  "windup": 0.6, "recovery": 0.6},
+	"axe":       {"display_name": "AXE",        "dmg": 1.45, "kb": 1.25, "range": 12,  "windup": 1.25, "recovery": 1.2},
+	"mace":      {"display_name": "SPIKED MACE", "dmg": 1.4, "kb": 1.5,  "range": 10,  "windup": 1.3, "recovery": 1.3},
+	"hammer":    {"display_name": "WAR HAMMER", "dmg": 1.9,  "kb": 1.7,  "range": 10,  "windup": 1.6, "recovery": 1.5},
+	"nunchucks": {"display_name": "NUNCHUCKS",  "dmg": 0.85, "kb": 0.6,  "range": 4,   "windup": 0.5, "recovery": 0.7},
+}
+
 const DINOS := {
 	"trex": {
 		"display_name": "T-REX",
+		"weapons": ["fists", "hammer"],
 		"dino_color": Color(0.4, 0.85, 0.55, 1.0),
 		"sprite_role": "trex",
 		"sprite_scale": 3.6,
@@ -34,14 +48,14 @@ const DINOS := {
 		"ice_friction": 90.0,
 		"max_hp": 150,
 		"attack_damage": 25,
-		"attack_knockback": 520.0,
+		"attack_knockback": 460.0,
 		"attack_windup": 0.22,
 		"attack_active": 0.14,
 		"attack_recovery": 0.40,
 		"attack_hitbox_size": Vector2(80, 72),
 		"attack_hitbox_offset": 60.0,
 		"heavy_damage": 45,
-		"heavy_knockback": 850.0,
+		"heavy_knockback": 700.0,
 		"heavy_windup": 0.40,
 		"heavy_active": 0.20,
 		"heavy_recovery": 0.60,
@@ -54,9 +68,21 @@ const DINOS := {
 		"dodge_cooldown": 0.7,
 		"dodge_distance": 110.0,
 		"dodge_block_cost": 40.0,
+		"special_type": "chomp",
+		"special_damage": 28,
+		"special_knockback": 300.0,
+		"special_windup": 0.22,
+		"special_active": 0.12,
+		"special_recovery": 0.45,
+		"special_hitbox_size": Vector2(72, 64),
+		"special_hitbox_offset": 58.0,
+		"special_self_dash": 700.0,
+		"special_cooldown": 5.0,
+		"special_lifesteal": 0.5,
 	},
 	"trike": {
 		"display_name": "TRIKE",
+		"weapons": ["fists", "mace"],
 		"dino_color": Color(0.95, 0.85, 0.30, 1.0),
 		"sprite_role": "trike",
 		"sprite_scale": 1.6,
@@ -75,27 +101,34 @@ const DINOS := {
 		"attack_recovery": 0.32,
 		"attack_hitbox_size": Vector2(70, 60),
 		"attack_hitbox_offset": 50.0,
-		"heavy_attack_type": "projectile",
-		"heavy_damage": 22,
-		"heavy_knockback": 380.0,
-		"heavy_windup": 0.35,
-		"heavy_active": 0.05,
-		"heavy_recovery": 0.55,
-		"heavy_hitbox_size": Vector2(1, 1),
-		"heavy_hitbox_offset": 0.0,
+		"heavy_damage": 34,
+		"heavy_knockback": 560.0,
+		"heavy_windup": 0.30,
+		"heavy_active": 0.16,
+		"heavy_recovery": 0.52,
+		"heavy_hitbox_size": Vector2(88, 72),
+		"heavy_hitbox_offset": 56.0,
 		"heavy_self_dash": 0.0,
-		"projectile_speed": 700.0,
-		"projectile_lifetime": 1.8,
-		"projectile_color": Color(0.95, 0.85, 0.4, 1.0),
 		"max_block": 95.0,
 		"block_regen": 28.0,
 		"dodge_duration": 0.20,
 		"dodge_cooldown": 0.6,
 		"dodge_distance": 150.0,
 		"dodge_block_cost": 32.0,
+		"special_type": "headbutt",
+		"special_damage": 30,
+		"special_knockback": 650.0,
+		"special_windup": 0.30,
+		"special_active": 0.16,
+		"special_recovery": 0.55,
+		"special_hitbox_size": Vector2(90, 80),
+		"special_hitbox_offset": 60.0,
+		"special_self_dash": 1400.0,
+		"special_cooldown": 5.0,
 	},
 	"pterry": {
 		"display_name": "PTERRY",
+		"weapons": ["fists", "sword"],
 		"dino_color": Color(0.85, 0.45, 0.30, 1.0),
 		"sprite_role": "pterry",
 		"sprite_scale": 2.7,
@@ -128,9 +161,19 @@ const DINOS := {
 		"dodge_cooldown": 0.6,
 		"dodge_distance": 120.0,
 		"dodge_block_cost": 35.0,
+		"special_type": "screech",
+		"special_damage": 8,
+		"special_knockback": 250.0,
+		"special_windup": 0.20,
+		"special_active": 0.06,
+		"special_recovery": 0.50,
+		"special_radius": 220.0,
+		"special_slow_duration": 1.5,
+		"special_cooldown": 6.0,
 	},
 	"raptor": {
 		"display_name": "RAPTOR",
+		"weapons": ["fists", "dagger"],
 		"dino_color": Color(0.95, 0.45, 0.45, 1.0),
 		"sprite_role": "raptor",
 		"sprite_scale": 2.5,
@@ -163,6 +206,106 @@ const DINOS := {
 		"dodge_cooldown": 0.5,
 		"dodge_distance": 200.0,
 		"dodge_block_cost": 25.0,
+		"special_type": "dash_claw",
+		"special_damage": 20,
+		"special_knockback": 350.0,
+		"special_windup": 0.10,
+		"special_active": 0.10,
+		"special_recovery": 0.30,
+		"special_hitbox_size": Vector2(64, 52),
+		"special_hitbox_offset": 48.0,
+		"special_self_dash": 950.0,
+		"special_cooldown": 3.5,
+	},
+	"bronto": {
+		"display_name": "BRONTO",
+		"weapons": ["fists", "hammer"],
+		"dino_color": Color(0.45, 0.55, 0.85, 1.0),
+		"sprite_role": "bronto",
+		"sprite_scale": 3.2,
+		"sprite_offset_y": -16.0,
+		"hit_sfx_name": "hit_chomp",
+		"max_speed": 250.0,
+		"ground_accel": 1700.0,
+		"ground_friction": 2500.0,
+		"ice_accel": 340.0,
+		"ice_friction": 110.0,
+		"max_hp": 165,
+		"attack_damage": 20,
+		"attack_knockback": 360.0,
+		"attack_windup": 0.18,
+		"attack_active": 0.12,
+		"attack_recovery": 0.34,
+		"attack_hitbox_size": Vector2(82, 56),
+		"attack_hitbox_offset": 58.0,
+		"heavy_damage": 36,
+		"heavy_knockback": 600.0,
+		"heavy_windup": 0.34,
+		"heavy_active": 0.18,
+		"heavy_recovery": 0.55,
+		"heavy_hitbox_size": Vector2(96, 72),
+		"heavy_hitbox_offset": 60.0,
+		"heavy_self_dash": 0.0,
+		"max_block": 110.0,
+		"block_regen": 24.0,
+		"dodge_duration": 0.22,
+		"dodge_cooldown": 0.75,
+		"dodge_distance": 120.0,
+		"dodge_block_cost": 38.0,
+		"special_type": "neck_whip",
+		"special_damage": 28,
+		"special_knockback": 520.0,
+		"special_windup": 0.30,
+		"special_active": 0.16,
+		"special_recovery": 0.52,
+		"special_hitbox_size": Vector2(120, 64),
+		"special_hitbox_offset": 72.0,
+		"special_cooldown": 5.0,
+	},
+	"anky": {
+		"display_name": "ANKY",
+		"weapons": ["fists", "axe"],
+		"dino_color": Color(0.55, 0.5, 0.4, 1.0),
+		"sprite_role": "anky",
+		"sprite_scale": 2.6,
+		"sprite_offset_y": -16.0,
+		"hit_sfx_name": "hit_chomp",
+		"max_speed": 260.0,
+		"ground_accel": 2000.0,
+		"ground_friction": 3000.0,
+		"ice_accel": 400.0,
+		"ice_friction": 120.0,
+		"max_hp": 155,
+		"attack_damage": 18,
+		"attack_knockback": 320.0,
+		"attack_windup": 0.17,
+		"attack_active": 0.12,
+		"attack_recovery": 0.32,
+		"attack_hitbox_size": Vector2(74, 60),
+		"attack_hitbox_offset": 50.0,
+		"heavy_damage": 34,
+		"heavy_knockback": 560.0,
+		"heavy_windup": 0.32,
+		"heavy_active": 0.16,
+		"heavy_recovery": 0.52,
+		"heavy_hitbox_size": Vector2(88, 74),
+		"heavy_hitbox_offset": 54.0,
+		"heavy_self_dash": 0.0,
+		"max_block": 120.0,
+		"block_regen": 26.0,
+		"dodge_duration": 0.20,
+		"dodge_cooldown": 0.7,
+		"dodge_distance": 120.0,
+		"dodge_block_cost": 36.0,
+		"special_type": "tail_smash",
+		"special_damage": 26,
+		"special_knockback": 640.0,
+		"special_windup": 0.26,
+		"special_active": 0.16,
+		"special_recovery": 0.50,
+		"special_hitbox_size": Vector2(100, 80),
+		"special_hitbox_offset": 44.0,
+		"special_cooldown": 4.5,
 	},
 }
 
@@ -191,6 +334,9 @@ var island: String = "iciest_age"
 var player_count: int = 2
 ## Which slots are CPU-controlled this match. Set on the select screen.
 var cpu_players: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false}
+## pid -> chosen weapon id; the in-match loadout becomes ["fists", choice].
+## Absent (e.g. CPU slots) -> the dino's default loadout from DINOS.weapons.
+var weapon_choices: Dictionary = {}
 
 func _ready() -> void:
 	_setup_input_actions()
@@ -198,12 +344,12 @@ func _ready() -> void:
 func _setup_input_actions() -> void:
 	var p1_keys := {
 		"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D,
-		"attack": KEY_F, "heavy": KEY_H, "block": KEY_T, "dodge": KEY_G,
+		"attack": KEY_F, "heavy": KEY_H, "special": KEY_B, "swap": KEY_V, "block": KEY_T, "dodge": KEY_G,
 		"confirm": KEY_F,
 	}
 	var p2_keys := {
 		"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT,
-		"attack": KEY_PERIOD, "heavy": KEY_M, "block": KEY_COMMA, "dodge": KEY_SLASH,
+		"attack": KEY_PERIOD, "heavy": KEY_M, "special": KEY_L, "swap": KEY_SEMICOLON, "block": KEY_COMMA, "dodge": KEY_SLASH,
 		"confirm": KEY_PERIOD,
 	}
 	_register_player_actions("p1", 0, p1_keys)
@@ -211,6 +357,21 @@ func _setup_input_actions() -> void:
 	_register_player_actions("p3", 2, {})
 	_register_player_actions("p4", 3, {})
 	_register_restart_action()
+	_register_pause_action()
+
+func _register_pause_action() -> void:
+	if InputMap.has_action("pause"):
+		InputMap.action_erase_events("pause")
+	else:
+		InputMap.add_action("pause")
+	var key_event := InputEventKey.new()
+	key_event.keycode = KEY_ESCAPE
+	InputMap.action_add_event("pause", key_event)
+	for device in [0, 1, 2, 3]:
+		var btn := InputEventJoypadButton.new()
+		btn.device = device
+		btn.button_index = JOY_BUTTON_START
+		InputMap.action_add_event("pause", btn)
 
 func _register_restart_action() -> void:
 	if InputMap.has_action("restart"):
@@ -241,6 +402,8 @@ func _register_player_actions(prefix: String, device: int, keys: Dictionary) -> 
 	var joy_buttons := {
 		"attack":  JOY_BUTTON_X,
 		"heavy":   JOY_BUTTON_B,
+		"special": JOY_BUTTON_LEFT_SHOULDER,
+		"swap":    JOY_BUTTON_Y,
 		"block":   JOY_BUTTON_RIGHT_SHOULDER,
 		"dodge":   JOY_BUTTON_A,
 		"confirm": JOY_BUTTON_A,

@@ -42,6 +42,18 @@ const ANIM_LAYOUTS := {
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(99, 200, 36, 30), Rect2(2, 240, 36, 30), Rect2(48, 239, 36, 30), Rect2(99, 242, 36, 30)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(99, 242, 36, 30)]},
 	},
+	"bronto": {  # Goober (long red) from rynosaurlandcharacters
+		"sheet": SHEET_REF,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(2, 199, 34, 24), Rect2(49, 199, 34, 24)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(104, 199, 34, 24), Rect2(150, 199, 34, 24), Rect2(193, 199, 34, 24), Rect2(235, 199, 34, 24)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(235, 199, 34, 24)]},
+	},
+	"anky": {  # Tortuka (turtle) from rynosaurlandcharacters
+		"sheet": SHEET_REF,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(120, 0, 18, 30), Rect2(148, 0, 21, 30)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(120, 0, 18, 30), Rect2(148, 0, 21, 30), Rect2(175, 0, 18, 30)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(175, 0, 18, 30)]},
+	},
 }
 
 @export var max_speed: float = 320.0
@@ -75,6 +87,28 @@ const ANIM_LAYOUTS := {
 @export var projectile_speed: float = 700.0
 @export var projectile_lifetime: float = 1.5
 @export var projectile_color: Color = Color(0.95, 0.85, 0.4, 1.0)
+
+@export_group("Special")
+## Signature move on the special button. Type drives the few unique behaviors;
+## everything else is a normal melee swing with these numbers.
+## "none" | "chomp" (lifesteal) | "dash_claw" | "headbutt" | "screech" (AoE)
+@export var special_type: String = "none"
+@export var special_damage: int = 25
+@export var special_knockback: float = 350.0
+@export var special_windup: float = 0.22
+@export var special_active: float = 0.12
+@export var special_recovery: float = 0.45
+@export var special_hitbox_size: Vector2 = Vector2(80, 70)
+@export var special_hitbox_offset: float = 58.0
+@export var special_self_dash: float = 0.0
+@export var special_cooldown: float = 4.0
+@export var special_lifesteal: float = 0.0   ## chomp: heal this fraction of dmg dealt
+@export var special_radius: float = 0.0       ## screech: AoE radius
+@export var special_slow_duration: float = 0.0 ## screech: how long victims are slowed
+
+@export_group("Weapons")
+## 2-weapon loadout (ids into MatchConfig.WEAPONS). Y swaps the active one.
+@export var weapons: Array = ["fists"]
 
 @export_group("Defense")
 @export var max_block: float = 100.0
@@ -133,6 +167,7 @@ var afterimage_timer: float = 0.0
 var ice_overlap_count: int = 0
 var slow_overlap_count: int = 0
 var current_push: Vector2 = Vector2.ZERO
+var knockback_active: bool = false
 
 var current_attack_damage: int = 0
 var current_attack_knockback: float = 0.0
@@ -141,10 +176,25 @@ var current_attack_recovery: float = 0.0
 var current_attack_hitbox_size: Vector2 = Vector2.ZERO
 var current_attack_hitbox_offset: float = 0.0
 var current_is_heavy: bool = false
+var current_is_special: bool = false
+var special_cooldown_timer: float = 0.0
+var timed_slow_timer: float = 0.0  # screech-applied slow on this dino
+
+var active_weapon: int = 0
+var weapon_visual: Polygon2D = null  # held-weapon shape, oriented to facing
+var wpn_dmg: float = 1.0
+var wpn_kb: float = 1.0
+var wpn_range: float = 0.0
+var wpn_windup: float = 1.0
+var wpn_recovery: float = 1.0
 
 const AFTERIMAGE_INTERVAL := 0.05
 const SLOW_MOVE_FACTOR := 0.4
 const SLOW_ACCEL_FACTOR := 0.6
+## How fast knockback "launch" speed (the part above your normal max_speed)
+## bleeds off, regardless of surface. Stops a hit from gliding you off an ice
+## map while leaving normal ice-sliding and self-dash lunges untouched.
+const KNOCKBACK_DECEL := 2000.0
 
 func _ready() -> void:
 	_apply_config_preset()
@@ -176,6 +226,9 @@ func _apply_config_preset() -> void:
 	for key in preset:
 		if key in self:
 			set(key, preset[key])
+	# Player's chosen weapon overrides the default loadout (fists + their pick).
+	if MatchConfig.weapon_choices.has(player_id):
+		weapons = ["fists", MatchConfig.weapon_choices[player_id]]
 
 	var shape := RectangleShape2D.new()
 	shape.size = attack_hitbox_size
@@ -189,6 +242,8 @@ func _apply_config_preset() -> void:
 	hitbox_visual.color = Color(1.0, 0.95, 0.3, 0.45)
 	hitbox_visual.visible = false
 	hitbox_shape.disabled = true
+
+	_refresh_weapon()
 
 func _setup_sprite() -> void:
 	if not sprite_role in ANIM_LAYOUTS:
@@ -236,6 +291,9 @@ func _physics_process(delta: float) -> void:
 	update_sprite_animation()
 	var current_offset := current_attack_hitbox_offset if attack_phase != AttackPhase.IDLE else attack_hitbox_offset
 	hitbox.position = facing * current_offset
+	if weapon_visual and weapon_visual.visible:
+		weapon_visual.rotation = facing.angle()
+		weapon_visual.position = facing * 18.0 + Vector2(0, -6)
 
 func _action(name: String) -> String:
 	return "%s_%s" % [player_id, name]
@@ -248,6 +306,10 @@ func _process_input_actions() -> void:
 		start_attack(false)
 	if Input.is_action_just_pressed(_action("heavy")) and can_attack():
 		start_attack(true)
+	if Input.is_action_just_pressed(_action("special")) and can_special():
+		start_special()
+	if Input.is_action_just_pressed(_action("swap")):
+		_swap_weapon()
 	if Input.is_action_just_pressed(_action("block")) and can_start_block():
 		start_block()
 	elif Input.is_action_just_released(_action("block")) and defense_state == DefenseState.BLOCKING:
@@ -260,6 +322,8 @@ func _process_cpu_actions() -> void:
 		start_attack(false)
 	if ai.consume_heavy() and can_attack():
 		start_attack(true)
+	if ai.consume_special() and can_special():
+		start_special()
 	if ai.block_held and can_start_block():
 		start_block()
 	elif not ai.block_held and defense_state == DefenseState.BLOCKING:
@@ -311,10 +375,16 @@ func can_start_block() -> bool:
 	return attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
+func can_special() -> bool:
+	return special_type != "none" \
+		and special_cooldown_timer <= 0.0 \
+		and attack_phase == AttackPhase.IDLE \
+		and defense_state == DefenseState.NORMAL
+
 func can_dodge() -> bool:
 	if dodge_cooldown_timer > 0.0:
 		return false
-	if slow_overlap_count > 0:
+	if slow_overlap_count > 0 or timed_slow_timer > 0.0:
 		return false
 	if defense_state == DefenseState.DODGING or defense_state == DefenseState.GUARD_BROKEN:
 		return false
@@ -377,9 +447,19 @@ func update_movement(delta: float) -> void:
 	var move_factor: float = 1.0
 	if defense_state == DefenseState.BLOCKING:
 		move_factor = block_move_factor
-	if slow_overlap_count > 0:
+	if slow_overlap_count > 0 or timed_slow_timer > 0.0:
 		move_factor *= SLOW_MOVE_FACTOR
 		accel *= SLOW_ACCEL_FACTOR
+
+	# Bleed off knockback launch speed at a fixed rate so a big hit can't skate
+	# you across an ice map. Only the speed above max_speed is affected, so it
+	# never touches normal locomotion (and self-dash sets the flag false).
+	if knockback_active:
+		var kb_speed := velocity.length()
+		if kb_speed > max_speed:
+			velocity = velocity.normalized() * maxf(max_speed, kb_speed - KNOCKBACK_DECEL * delta)
+		else:
+			knockback_active = false
 
 	if direction != Vector2.ZERO:
 		velocity = velocity.move_toward(direction * max_speed * move_factor, accel * delta)
@@ -398,6 +478,8 @@ func _apply_current(delta: float) -> void:
 # --- Attack ---
 
 func start_attack(heavy: bool = false) -> void:
+	knockback_active = false  # self-dash lunges shouldn't be damped as knockback
+	current_is_special = false
 	current_is_heavy = heavy
 	if heavy:
 		current_attack_damage = heavy_damage
@@ -417,8 +499,81 @@ func start_attack(heavy: bool = false) -> void:
 		current_attack_hitbox_size = attack_hitbox_size
 		current_attack_hitbox_offset = attack_hitbox_offset
 		attack_timer = attack_windup
+	# Active weapon modifies light + heavy (the signature special is unaffected).
+	current_attack_damage = int(round(current_attack_damage * wpn_dmg))
+	current_attack_knockback *= wpn_kb
+	current_attack_hitbox_offset += wpn_range
+	current_attack_recovery *= wpn_recovery
+	attack_timer *= wpn_windup
 	attack_phase = AttackPhase.WINDUP
 	play_scene_sfx("swing", 0.08)
+
+func _refresh_weapon() -> void:
+	var id: String = weapons[active_weapon] if active_weapon < weapons.size() else "fists"
+	var w: Dictionary = MatchConfig.WEAPONS.get(id, {}) if MatchConfig else {}
+	wpn_dmg = w.get("dmg", 1.0)
+	wpn_kb = w.get("kb", 1.0)
+	wpn_range = w.get("range", 0)
+	wpn_windup = w.get("windup", 1.0)
+	wpn_recovery = w.get("recovery", 1.0)
+	if weapon_visual == null:
+		weapon_visual = Polygon2D.new()
+		weapon_visual.z_index = 1
+		add_child(weapon_visual)
+	var shape := _weapon_shape(id)
+	weapon_visual.polygon = shape["poly"]
+	weapon_visual.color = shape["color"]
+	weapon_visual.visible = shape["poly"].size() > 0
+
+# Simple held-weapon silhouettes (point along +X; rotated to facing in-frame).
+func _weapon_shape(id: String) -> Dictionary:
+	match id:
+		"sword":
+			return {"poly": PackedVector2Array([Vector2(-3, -2), Vector2(-3, 2), Vector2(28, 2.5), Vector2(38, 0), Vector2(28, -2.5)]), "color": Color(0.85, 0.88, 0.95)}
+		"dagger":
+			return {"poly": PackedVector2Array([Vector2(-3, -2), Vector2(-3, 2), Vector2(15, 2), Vector2(22, 0), Vector2(15, -2)]), "color": Color(0.8, 0.82, 0.88)}
+		"axe":
+			return {"poly": PackedVector2Array([Vector2(0, -2), Vector2(20, -2), Vector2(20, -13), Vector2(34, -5), Vector2(34, 5), Vector2(20, 13), Vector2(20, 2), Vector2(0, 2)]), "color": Color(0.72, 0.74, 0.8)}
+		"mace":
+			return {"poly": PackedVector2Array([Vector2(0, -2), Vector2(20, -2), Vector2(20, -9), Vector2(35, -9), Vector2(35, 9), Vector2(20, 9), Vector2(20, 2), Vector2(0, 2)]), "color": Color(0.5, 0.5, 0.56)}
+		"hammer":
+			return {"poly": PackedVector2Array([Vector2(0, -3), Vector2(22, -3), Vector2(22, -14), Vector2(42, -14), Vector2(42, 14), Vector2(22, 14), Vector2(22, 3), Vector2(0, 3)]), "color": Color(0.55, 0.55, 0.6)}
+		"nunchucks":
+			return {"poly": PackedVector2Array([Vector2(0, -2.5), Vector2(26, -2.5), Vector2(26, 2.5), Vector2(0, 2.5)]), "color": Color(0.45, 0.32, 0.2)}
+		_:
+			return {"poly": PackedVector2Array(), "color": Color.WHITE}  # fists: no held item
+
+func _swap_weapon() -> void:
+	if weapons.size() < 2:
+		return
+	active_weapon = (active_weapon + 1) % weapons.size()
+	_refresh_weapon()
+	play_scene_sfx("block", 0.12)  # quick clink
+
+func weapon_name() -> String:
+	var id: String = weapons[active_weapon] if active_weapon < weapons.size() else "fists"
+	var w: Dictionary = MatchConfig.WEAPONS.get(id, {}) if MatchConfig else {}
+	return w.get("display_name", "")
+
+# Signature move. Reuses the WINDUP→ACTIVE→RECOVERY attack flow; special_type
+# drives the few unique behaviors (lifesteal in try_hit, screech AoE in
+# update_attack). Cooldown-gated by can_special().
+func start_special() -> void:
+	special_cooldown_timer = special_cooldown
+	knockback_active = false
+	current_is_special = true
+	current_is_heavy = false
+	current_attack_damage = special_damage
+	current_attack_knockback = special_knockback
+	current_attack_active = special_active
+	current_attack_recovery = special_recovery
+	current_attack_hitbox_size = special_hitbox_size
+	current_attack_hitbox_offset = special_hitbox_offset
+	attack_timer = special_windup
+	if special_self_dash > 0.0:
+		velocity = facing * special_self_dash
+	attack_phase = AttackPhase.WINDUP
+	play_scene_sfx("swing", 0.06)
 
 func update_attack(delta: float) -> void:
 	if attack_phase == AttackPhase.ACTIVE:
@@ -435,7 +590,11 @@ func update_attack(delta: float) -> void:
 		AttackPhase.WINDUP:
 			attack_phase = AttackPhase.ACTIVE
 			attack_timer = current_attack_active
-			if current_is_heavy and heavy_attack_type == "projectile":
+			if current_is_special and special_type == "screech":
+				_do_screech()
+			elif current_is_special and special_type == "spikes":
+				_spawn_spike_volley()
+			elif current_is_heavy and heavy_attack_type == "projectile":
 				_spawn_projectile()
 			else:
 				if hitbox_shape.shape is RectangleShape2D:
@@ -443,6 +602,7 @@ func update_attack(delta: float) -> void:
 				hitbox_shape.disabled = false
 				hitbox_visual.visible = show_hitbox_debug
 				hit_targets_this_swing.clear()
+				_spawn_attack_swipe()
 		AttackPhase.ACTIVE:
 			attack_phase = AttackPhase.RECOVERY
 			attack_timer = current_attack_recovery
@@ -451,6 +611,7 @@ func update_attack(delta: float) -> void:
 		AttackPhase.RECOVERY:
 			attack_phase = AttackPhase.IDLE
 			attack_timer = 0.0
+			current_is_special = false
 
 func try_hit(body: Node) -> void:
 	if body == self:
@@ -461,6 +622,12 @@ func try_hit(body: Node) -> void:
 		return
 	hit_targets_this_swing.append(body)
 	body.take_damage(current_attack_damage, facing * current_attack_knockback, self)
+	var root := get_tree().current_scene
+	if root and root.has_method("add_dp"):
+		root.add_dp(player_id, 10)
+	if current_is_special and special_lifesteal > 0.0:
+		hp = min(max_hp, hp + int(current_attack_damage * special_lifesteal))
+		update_hp_bar()
 
 # --- Defense actions ---
 
@@ -485,6 +652,7 @@ func start_dodge() -> void:
 	# Cancel any in-progress attack so dodge takes over cleanly
 	attack_phase = AttackPhase.IDLE
 	attack_timer = 0.0
+	current_is_special = false
 	hitbox_shape.disabled = true
 	hitbox_visual.visible = false
 	play_scene_sfx("dodge", 0.1)
@@ -561,6 +729,7 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 		block_durability -= absorbed
 		var remaining: float = float(amount) - absorbed
 		velocity += knockback * block_knockback_factor
+		knockback_active = true
 		update_block_bar()
 		if block_durability <= 0.0:
 			guard_break()  # fires its own guard-break juice
@@ -578,6 +747,7 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 
 	hp -= amount
 	velocity += knockback
+	knockback_active = true
 	notify_hit(amount)
 	invuln_timer = hitstun_invuln
 	update_hp_bar()
@@ -592,6 +762,7 @@ func apply_burn(amount: int, knockback: Vector2) -> bool:
 		return false
 	hp -= amount
 	velocity += knockback
+	knockback_active = true
 	hit_flash_timer = 0.08
 	update_hp_bar()
 	return hp <= 0
@@ -607,6 +778,14 @@ func notify_blocked(damage: int) -> void:
 		scene_root.on_hit_blocked(damage)
 
 func _spawn_projectile() -> void:
+	_make_spike(facing, current_attack_damage, current_attack_knockback)
+
+# Stegosaurus Shooting Spikes: a 3-spike fan.
+func _spawn_spike_volley() -> void:
+	for ang in [-0.26, 0.0, 0.26]:
+		_make_spike(facing.rotated(ang), special_damage, special_knockback)
+
+func _make_spike(dir: Vector2, dmg: int, kb: float) -> void:
 	var projectile := Area2D.new()
 	projectile.set_script(preload("res://scripts/spike_projectile.gd"))
 
@@ -623,15 +802,102 @@ func _spawn_projectile() -> void:
 	shape_node.shape = shape
 	projectile.add_child(shape_node)
 
-	projectile.global_position = global_position + facing * 50.0
-	projectile.rotation = facing.angle()
-	projectile.travel_velocity = facing * projectile_speed
-	projectile.damage = current_attack_damage
-	projectile.knockback_force = current_attack_knockback
+	projectile.global_position = global_position + dir * 50.0
+	projectile.rotation = dir.angle()
+	projectile.travel_velocity = dir * projectile_speed
+	projectile.damage = dmg
+	projectile.knockback_force = kb
 	projectile.lifetime = projectile_lifetime
 	projectile.source = self
 
 	get_tree().current_scene.add_child(projectile)
+
+# Pterodactyl Paralyzing Screech: damage + shove + a timed slow (and dodge lock)
+# on every opponent within special_radius, plus an expanding ring for feedback.
+func _do_screech() -> void:
+	for other in get_parent().get_children():
+		if other == self or not (other is CharacterBody2D):
+			continue
+		if not ("player_id" in other) or other.player_id == player_id:
+			continue
+		if not other.visible:
+			continue
+		var to_other: Vector2 = other.global_position - global_position
+		var d := to_other.length()
+		if d > special_radius:
+			continue
+		var dir := to_other / d if d > 0.01 else Vector2.RIGHT
+		if other.has_method("take_damage"):
+			other.take_damage(special_damage, dir * special_knockback, self)
+		if other.has_method("apply_screech"):
+			other.apply_screech(special_slow_duration)
+	_spawn_screech_ring()
+
+# Called on a dino caught in a screech: slows it + locks dodge for the duration.
+func apply_screech(duration: float) -> void:
+	timed_slow_timer = maxf(timed_slow_timer, duration)
+
+func _spawn_screech_ring() -> void:
+	var ring := Polygon2D.new()
+	var pts := PackedVector2Array()
+	for i in range(28):
+		var a := TAU * i / 28.0
+		pts.append(Vector2(cos(a), sin(a)) * special_radius)
+	ring.polygon = pts
+	ring.color = Color(0.75, 0.55, 1.0, 0.4)
+	ring.global_position = global_position
+	ring.scale = Vector2(0.15, 0.15)
+	ring.z_index = -1
+	get_tree().current_scene.add_child(ring)
+	var tw := ring.create_tween()
+	tw.tween_property(ring, "scale", Vector2(1, 1), 0.25)
+	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.3)
+	tw.chain().tween_callback(ring.queue_free)
+
+# A sweeping slash arc when a melee attack goes active. Shape/size/colour/speed
+# differ by attack kind so light, heavy, and each special read distinctly.
+func _spawn_attack_swipe() -> void:
+	if current_is_special:
+		match special_type:
+			"dash_claw":  # three fanned claw rakes
+				for k in range(3):
+					_spawn_swipe(Color(0.5, 0.95, 1.0, 0.85), 48.0, 6.0, 55.0, 0.18, 42.0, (k - 1) * 18.0)
+			"chomp":
+				_spawn_swipe(Color(1.0, 0.45, 0.4, 0.85), 60.0, 22.0, 95.0, 0.20, 70.0)
+			"headbutt":
+				_spawn_swipe(Color(1.0, 0.9, 0.5, 0.85), 72.0, 26.0, 110.0, 0.24, 88.0)
+			"neck_whip":  # long, wide green sweep
+				_spawn_swipe(Color(0.55, 0.9, 0.55, 0.85), 80.0, 18.0, 150.0, 0.28, 120.0)
+			"tail_smash":  # big brown close smash
+				_spawn_swipe(Color(0.82, 0.62, 0.35, 0.9), 64.0, 30.0, 130.0, 0.22, 100.0)
+			_:
+				_spawn_swipe(Color(0.85, 0.7, 1.0, 0.8), 60.0, 18.0, 90.0, 0.20, 70.0)
+	elif current_is_heavy:  # big slow wind-up swing
+		_spawn_swipe(Color(1.0, 0.78, 0.35, 0.8), 72.0, 24.0, 108.0, 0.26, 88.0)
+	else:  # quick light flick
+		_spawn_swipe(Color(0.95, 0.97, 1.0, 0.75), 50.0, 14.0, 70.0, 0.15, 55.0)
+
+func _spawn_swipe(color: Color, radius: float, thickness: float, span_deg: float, dur: float, sweep_deg: float, offset_deg: float = 0.0) -> void:
+	var arc := Polygon2D.new()
+	var span := deg_to_rad(span_deg)
+	var pts := PackedVector2Array()
+	var steps := 10
+	for i in range(steps + 1):  # outer edge
+		var a := -span * 0.5 + span * i / steps
+		pts.append(Vector2(cos(a), sin(a)) * radius)
+	for i in range(steps + 1):  # inner edge, back the other way
+		var a := span * 0.5 - span * i / steps
+		pts.append(Vector2(cos(a), sin(a)) * (radius - thickness))
+	arc.polygon = pts
+	arc.color = color
+	arc.global_position = global_position
+	arc.rotation = facing.angle() + deg_to_rad(offset_deg) - deg_to_rad(sweep_deg) * 0.5
+	arc.z_index = 1
+	get_tree().current_scene.add_child(arc)
+	var tw := arc.create_tween()
+	tw.tween_property(arc, "rotation", arc.rotation + deg_to_rad(sweep_deg), dur)
+	tw.parallel().tween_property(arc, "modulate:a", 0.0, dur)
+	tw.chain().tween_callback(arc.queue_free)
 
 func play_scene_sfx(sound_name: String, pitch_var: float = 0.05) -> void:
 	var scene_root := get_tree().current_scene
@@ -655,6 +921,10 @@ func update_timers(delta: float) -> void:
 		dodge_cooldown_timer -= delta
 	if hit_flash_timer > 0.0:
 		hit_flash_timer -= delta
+	if special_cooldown_timer > 0.0:
+		special_cooldown_timer -= delta
+	if timed_slow_timer > 0.0:
+		timed_slow_timer -= delta
 
 func update_visual() -> void:
 	var color := Color.WHITE
@@ -665,7 +935,7 @@ func update_visual() -> void:
 			color = Color(1, 1, 1, 0.35)
 		DefenseState.GUARD_BROKEN:
 			color = Color(1.4, 0.6, 1.4, 1.0)
-	if slow_overlap_count > 0 and defense_state == DefenseState.NORMAL:
+	if (slow_overlap_count > 0 or timed_slow_timer > 0.0) and defense_state == DefenseState.NORMAL:
 		color = Color(0.6, 0.85, 0.55, 1.0)
 	if hit_flash_timer > 0.0:
 		color = Color(1.6, 1.6, 1.6, 1.0)
@@ -709,6 +979,10 @@ func respawn() -> void:
 	ice_overlap_count = 0
 	slow_overlap_count = 0
 	current_push = Vector2.ZERO
+	knockback_active = false
+	special_cooldown_timer = 0.0
+	timed_slow_timer = 0.0
+	current_is_special = false
 	hp = max_hp
 	block_durability = max_block
 	invuln_timer = invuln_duration
