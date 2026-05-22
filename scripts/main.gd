@@ -43,12 +43,17 @@ var match_over: bool = false
 var shake_amount: float = 0.0
 var shake_remaining: float = 0.0
 
+var _pause_until_ms: int = 0
+var _pause_active: bool = false
+
 var lava_area: Area2D = null
 var lava_tick_timers: Dictionary = {}
 
 var sfx: Dictionary = {}
 
 func _ready() -> void:
+	# Safety net: a scene change mid hit-pause can leave time_scale stuck low.
+	Engine.time_scale = 1.0
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	for child in ice_patches.get_children():
 		if child is Area2D:
@@ -268,19 +273,40 @@ func shake(intensity: float, duration: float) -> void:
 	shake_amount = max(shake_amount, intensity)
 	shake_remaining = max(shake_remaining, duration)
 
+# Overlap-safe freeze-frame. Concurrent calls (e.g. a killing blow fires both
+# on_hit_landed and on_ko_landed) extend to the latest end and keep the
+# strongest slow; a single watcher restores time_scale exactly once at the end.
 func hit_pause(duration: float, scale: float = 0.2) -> void:
 	if duration <= 0.0:
 		return
-	Engine.time_scale = scale
-	await get_tree().create_timer(duration, true, false, true).timeout
+	_pause_until_ms = max(_pause_until_ms, Time.get_ticks_msec() + int(duration * 1000.0))
+	var base: float = Engine.time_scale if _pause_active else 1.0
+	Engine.time_scale = min(base, scale)
+	if _pause_active:
+		return
+	_pause_active = true
+	while Time.get_ticks_msec() < _pause_until_ms:
+		# ignore_time_scale timer so the freeze lasts in real time, not game time.
+		await get_tree().create_timer(0.01, true, false, true).timeout
 	Engine.time_scale = 1.0
+	_pause_active = false
 
 func on_hit_landed(damage: int) -> void:
-	var intensity: float = float(damage) * 0.45
+	var intensity: float = min(24.0, float(damage) * 0.45)
 	var duration: float = 0.12 + float(damage) * 0.004
 	var pause_dur: float = float(damage) * 0.002
 	shake(intensity, duration)
 	hit_pause(pause_dur, 0.25)
+
+# Blocked hit: a firm thunk you feel, but no freeze — blocking shouldn't
+# interrupt the flow the way landing a clean hit does.
+func on_hit_blocked(damage: int) -> void:
+	shake(min(8.0, float(damage) * 0.25), 0.09)
+
+# Guard break: the big "you're cracked open" beat. Crunchy shake + short freeze.
+func on_guard_break() -> void:
+	shake(18.0, 0.32)
+	hit_pause(0.10, 0.2)
 
 func on_ko_landed() -> void:
 	shake(28.0, 0.5)

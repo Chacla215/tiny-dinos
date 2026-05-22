@@ -468,6 +468,9 @@ func guard_break() -> void:
 	block_durability = 0.0
 	update_block_bar()
 	play_scene_sfx("guard_break", 0.05)
+	var scene_root := get_tree().current_scene
+	if scene_root and scene_root.has_method("on_guard_break"):
+		scene_root.on_guard_break()
 
 func update_guard_break(delta: float) -> void:
 	if defense_state == DefenseState.GUARD_BROKEN:
@@ -493,7 +496,6 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	if source != null:
 		last_damaged_by = source
 	hit_flash_timer = 0.08
-	notify_hit(amount)
 
 	if defense_state == DefenseState.BLOCKING:
 		play_scene_sfx("block", 0.08)
@@ -510,7 +512,7 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 		velocity += knockback * block_knockback_factor
 		update_block_bar()
 		if block_durability <= 0.0:
-			guard_break()
+			guard_break()  # fires its own guard-break juice
 			if remaining > 0.0:
 				hp -= int(remaining)
 				velocity += knockback * (1.0 - block_knockback_factor)
@@ -518,11 +520,14 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 				if hp <= 0:
 					die()
 					return
+		else:
+			notify_blocked(amount)
 		invuln_timer = hitstun_invuln
 		return
 
 	hp -= amount
 	velocity += knockback
+	notify_hit(amount)
 	invuln_timer = hitstun_invuln
 	update_hp_bar()
 	if hp <= 0:
@@ -544,6 +549,11 @@ func notify_hit(damage: int) -> void:
 	var scene_root := get_tree().current_scene
 	if scene_root and scene_root.has_method("on_hit_landed"):
 		scene_root.on_hit_landed(damage)
+
+func notify_blocked(damage: int) -> void:
+	var scene_root := get_tree().current_scene
+	if scene_root and scene_root.has_method("on_hit_blocked"):
+		scene_root.on_hit_blocked(damage)
 
 func _spawn_projectile() -> void:
 	var projectile := Area2D.new()
