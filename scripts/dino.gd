@@ -89,6 +89,9 @@ const ANIM_LAYOUTS := {
 
 @export_group("Input")
 @export var player_id: String = "p1"
+## When true this dino is driven by dino_ai.gd instead of player input.
+@export var is_cpu: bool = false
+var ai: RefCounted = null
 
 @export_group("Appearance")
 @export var dino_color: Color = Color(0.4, 0.8, 0.6, 1.0)
@@ -145,6 +148,10 @@ const SLOW_ACCEL_FACTOR := 0.6
 
 func _ready() -> void:
 	_apply_config_preset()
+	if MatchConfig and "cpu_players" in MatchConfig and MatchConfig.cpu_players.get(player_id, false):
+		is_cpu = true
+	if is_cpu:
+		ai = preload("res://scripts/dino_ai.gd").new()
 	spawn_point = global_position
 	hp = max_hp
 	block_durability = max_block
@@ -215,8 +222,10 @@ func _setup_sprite() -> void:
 	polygon.visible = false
 
 func _physics_process(delta: float) -> void:
-	_process_input_actions()
+	if is_cpu and ai != null:
+		ai.think(self, _find_nearest_opponent(), delta)
 	update_facing()
+	_process_input_actions()
 	update_guard_break(delta)
 	update_dodge(delta)
 	update_attack(delta)
@@ -232,6 +241,9 @@ func _action(name: String) -> String:
 	return "%s_%s" % [player_id, name]
 
 func _process_input_actions() -> void:
+	if is_cpu and ai != null:
+		_process_cpu_actions()
+		return
 	if Input.is_action_just_pressed(_action("attack")) and can_attack():
 		start_attack(false)
 	if Input.is_action_just_pressed(_action("heavy")) and can_attack():
@@ -242,6 +254,36 @@ func _process_input_actions() -> void:
 		end_block()
 	if Input.is_action_just_pressed(_action("dodge")) and can_dodge():
 		start_dodge()
+
+func _process_cpu_actions() -> void:
+	if ai.consume_attack() and can_attack():
+		start_attack(false)
+	if ai.consume_heavy() and can_attack():
+		start_attack(true)
+	if ai.block_held and can_start_block():
+		start_block()
+	elif not ai.block_held and defense_state == DefenseState.BLOCKING:
+		end_block()
+	if ai.consume_dodge() and can_dodge():
+		start_dodge()
+
+# Nearest active opposing dino, or null. Active = visible (inactive slots are
+# hidden by main.gd). Used by the CPU brain as its target.
+func _find_nearest_opponent() -> Node:
+	var best: Node = null
+	var best_d := INF
+	for other in get_parent().get_children():
+		if other == self or not (other is CharacterBody2D):
+			continue
+		if not ("player_id" in other) or other.player_id == player_id:
+			continue
+		if not other.visible:
+			continue
+		var d := global_position.distance_squared_to(other.global_position)
+		if d < best_d:
+			best_d = d
+			best = other
+	return best
 
 func update_sprite_animation() -> void:
 	if not sprite.visible or sprite.sprite_frames == null:
@@ -282,6 +324,13 @@ func can_dodge() -> bool:
 		return false
 	return true
 
+# Queried by the CPU brain (dino_ai.gd).
+func is_swinging() -> bool:
+	return attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE
+
+func is_guard_broken() -> bool:
+	return defense_state == DefenseState.GUARD_BROKEN
+
 # --- Facing + input direction ---
 
 func update_facing() -> void:
@@ -290,6 +339,8 @@ func update_facing() -> void:
 		facing = dir
 
 func get_input_direction() -> Vector2:
+	if is_cpu and ai != null:
+		return ai.move_dir
 	var d := Vector2.ZERO
 	if Input.is_action_pressed(_action("up")):
 		d.y -= 1.0

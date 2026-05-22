@@ -4,7 +4,13 @@ Run the project (F5 in Godot, or the play button). It opens on the **character +
 island select** screen. Pick dinos, pick an island (P1 up/down), confirm, fight.
 First to 3 KOs wins; R / Enter / Start returns to select.
 
-Get at least one other human on a controller — solo testing hides the problems.
+Best with another human on a controller, but you can now **playtest solo vs a
+CPU**: with no second controller plugged in, the opponent slot defaults to CPU
+(orange "CPU" on its panel). Pick its dino with that slot's left/right (P2 =
+arrow keys), confirm yourself, and fight. Press a slot's heavy button (P2 = M)
+to flip it back to a human. The bot obeys every rule you do (dodge still drains
+its block bar, guard breaks still stun it), so it's fair for balance testing —
+just remember a human opponent will pressure you in ways it won't yet.
 
 ## 1. Did playtest #2's fixes land?
 
@@ -46,6 +52,10 @@ What happened → why it felt bad/good → which knob might fix it (below).
   - Springs slow strength lives in `scripts/dino.gd`: `SLOW_MOVE_FACTOR` (0.4 = 40%
     speed). Lower = stickier.
 - **KOs to win** — `Main` node, `kos_to_win` (default 3).
+- **CPU difficulty** — `scripts/dino_ai.gd`, the vars at the top: `aggression`
+  (how hard it pushes + attacks), `reaction_time` (how fast it answers your
+  swings), `block_chance` / `dodge_chance` (how it defends), `heavy_chance`. If
+  the bot feels too easy, raise `aggression` and lower `reaction_time`.
 
 For desktop dev convenience, `project.godot` is set to fullscreen
 (`window/size/mode=3`). Set it to `0` for a window.

@@ -189,6 +189,8 @@ const ISLAND_SCENES := {
 var dino_choices: Dictionary = {"p1": "trex", "p2": "raptor", "p3": "trike", "p4": "pterry"}
 var island: String = "iciest_age"
 var player_count: int = 2
+## Which slots are CPU-controlled this match. Set on the select screen.
+var cpu_players: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false}
 
 func _ready() -> void:
 	_setup_input_actions()
@@ -196,7 +198,7 @@ func _ready() -> void:
 func _setup_input_actions() -> void:
 	var p1_keys := {
 		"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D,
-		"attack": KEY_F, "heavy": KEY_V, "block": KEY_G, "dodge": KEY_SPACE,
+		"attack": KEY_F, "heavy": KEY_H, "block": KEY_T, "dodge": KEY_G,
 		"confirm": KEY_F,
 	}
 	var p2_keys := {

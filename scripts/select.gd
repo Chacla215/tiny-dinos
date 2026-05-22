@@ -10,10 +10,12 @@ const START_DELAY := 0.8
 	"p4": $P4Panel,
 }
 @onready var island_label: Label = $IslandLabel
+@onready var hint_label: Label = $Hint
 
 var indexes: Dictionary = {"p1": 0, "p2": 1, "p3": 2, "p4": 3}
 var island_idx: int = 0
 var ready_states: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false}
+var cpu_states: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false}
 var active_players: Array = []
 var start_timer: float = 0.0
 
@@ -23,28 +25,29 @@ func _ready() -> void:
 	if controller_count < 2:
 		player_count = 2
 	MatchConfig.player_count = player_count
+	# Solo (no second controller): default the opponent slot(s) to CPU so you
+	# can fight a bot without a second human. A real player reclaims a slot by
+	# pressing its heavy button (P2 = M / B).
+	var solo: bool = controller_count < 2
 	for pid in MatchConfig.PLAYER_IDS:
 		var slot_num: int = int(pid.substr(1))
 		var is_active: bool = slot_num <= player_count
 		panels[pid].visible = is_active
 		if is_active:
 			active_players.append(pid)
+			cpu_states[pid] = solo and pid != "p1"
 			indexes[pid] = clamp(indexes[pid], 0, MatchConfig.ROSTER_ORDER.size() - 1)
 			_apply_player_color_to_panel(pid)
 			_update_display(pid)
 	countdown_label.text = ""
+	hint_label.text = "<- -> pick dino     up/down island (P1)     confirm: F / A     heavy = toggle CPU"
 	island_idx = MatchConfig.ISLAND_ORDER.find(MatchConfig.island)
 	if island_idx < 0:
 		island_idx = 0
 	_update_island()
 
 func _process(delta: float) -> void:
-	var all_ready: bool = true
-	for pid in active_players:
-		if not ready_states[pid]:
-			all_ready = false
-			break
-	if all_ready:
+	if _all_ready():
 		start_timer -= delta
 		countdown_label.text = "STARTING..."
 		if start_timer <= 0.0:
@@ -60,35 +63,53 @@ func _process(delta: float) -> void:
 	for pid in active_players:
 		_handle_player_input(pid)
 
+func _all_ready() -> bool:
+	for pid in active_players:
+		if not cpu_states[pid] and not ready_states[pid]:
+			return false
+	return true
+
 func _handle_player_input(pid: String) -> void:
-	if not ready_states[pid]:
-		var idx: int = indexes[pid]
+	# Opponent slots can be flipped between HUMAN and CPU. P1 stays the human host.
+	if pid != "p1" and Input.is_action_just_pressed("%s_heavy" % pid):
+		cpu_states[pid] = not cpu_states[pid]
+		ready_states[pid] = false
+		_update_display(pid)
+		_refresh_start()
+
+	if cpu_states[pid]:
+		# A bot: still pick its dino with that slot's left/right, but it
+		# auto-readies (counts as ready in _all_ready) — no confirm needed.
 		if Input.is_action_just_pressed("%s_left" % pid):
-			idx = (idx - 1 + MatchConfig.ROSTER_ORDER.size()) % MatchConfig.ROSTER_ORDER.size()
-			_set_idx(pid, idx)
+			_cycle_dino(pid, -1)
 		elif Input.is_action_just_pressed("%s_right" % pid):
-			idx = (idx + 1) % MatchConfig.ROSTER_ORDER.size()
-			_set_idx(pid, idx)
+			_cycle_dino(pid, 1)
+		return
+
+	if not ready_states[pid]:
+		if Input.is_action_just_pressed("%s_left" % pid):
+			_cycle_dino(pid, -1)
+		elif Input.is_action_just_pressed("%s_right" % pid):
+			_cycle_dino(pid, 1)
 		if Input.is_action_just_pressed("%s_confirm" % pid):
 			_set_ready(pid, true)
 	else:
 		if Input.is_action_just_pressed("%s_block" % pid):
 			_set_ready(pid, false)
 
-func _set_idx(pid: String, idx: int) -> void:
-	indexes[pid] = idx
+func _cycle_dino(pid: String, step: int) -> void:
+	var n: int = MatchConfig.ROSTER_ORDER.size()
+	indexes[pid] = (indexes[pid] + step + n) % n
 	_update_display(pid)
 
 func _set_ready(pid: String, ready_state: bool) -> void:
 	ready_states[pid] = ready_state
-	var all_ready: bool = true
-	for active_pid in active_players:
-		if not ready_states[active_pid]:
-			all_ready = false
-			break
-	if all_ready:
-		start_timer = START_DELAY
+	_refresh_start()
 	_update_display(pid)
+
+func _refresh_start() -> void:
+	if _all_ready():
+		start_timer = START_DELAY
 
 func _update_display(pid: String) -> void:
 	var idx: int = indexes[pid]
@@ -102,7 +123,10 @@ func _update_display(pid: String) -> void:
 	name_label.text = dino.display_name
 	name_label.add_theme_color_override("font_color", dino.dino_color)
 	preview.color = dino.dino_color
-	if ready_states[pid]:
+	if cpu_states[pid]:
+		status_label.text = "CPU  <  >"
+		status_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2, 1))
+	elif ready_states[pid]:
 		status_label.text = "READY"
 		status_label.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5, 1))
 	else:
@@ -120,6 +144,8 @@ func _update_island() -> void:
 	island_label.text = "Island:  %s    (P1 up / down)" % MatchConfig.ISLAND_NAMES[MatchConfig.island]
 
 func _start_match() -> void:
+	for pid in MatchConfig.PLAYER_IDS:
+		MatchConfig.cpu_players[pid] = cpu_states.get(pid, false)
 	for pid in active_players:
 		MatchConfig.dino_choices[pid] = MatchConfig.ROSTER_ORDER[indexes[pid]]
 	var scene_path: String = MatchConfig.ISLAND_SCENES.get(MatchConfig.island, "res://scenes/main.tscn")
