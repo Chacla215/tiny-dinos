@@ -359,27 +359,6 @@ func _setup_input_actions() -> void:
 	_register_player_actions("p4", 3, {})
 	_register_restart_action()
 	_register_pause_action()
-	_register_cpu_select_actions()
-
-# Host's RIGHT stick (device 0) cycles the CPU opponent's dino on the select
-# screen. Deadzone 0.5 so a deliberate flick fires once (just_pressed), not drift.
-func _register_cpu_select_actions() -> void:
-	for action_name in ["p1_cpu_left", "p1_cpu_right"]:
-		if InputMap.has_action(action_name):
-			InputMap.action_erase_events(action_name)
-		else:
-			InputMap.add_action(action_name, 0.5)
-		InputMap.action_set_deadzone(action_name, 0.5)
-	var left := InputEventJoypadMotion.new()
-	left.device = 0
-	left.axis = JOY_AXIS_RIGHT_X
-	left.axis_value = -1.0
-	InputMap.action_add_event("p1_cpu_left", left)
-	var right := InputEventJoypadMotion.new()
-	right.device = 0
-	right.axis = JOY_AXIS_RIGHT_X
-	right.axis_value = 1.0
-	InputMap.action_add_event("p1_cpu_right", right)
 
 func _register_pause_action() -> void:
 	if InputMap.has_action("pause"):
