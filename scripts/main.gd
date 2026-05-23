@@ -26,6 +26,10 @@ const SFX_PATHS := {
 @export var lava_knockback: float = 220.0
 ## Constant drift applied to every player each frame (White Water Falls current).
 @export var global_current: Vector2 = Vector2.ZERO
+## Frozen Floes: ring-out when a player isn't standing on any Floe Area2D.
+## Dodge i-frames and post-respawn invuln suppress it (a dodge = a floe-hop).
+@export var drown_off_floes: bool = false
+@export var drown_grace: float = 0.35
 
 ## Players don't physically collide (that caused latching); instead they're
 ## softly pushed apart in code so you can shove against each other, not stick.
@@ -58,6 +62,7 @@ var _pause_active: bool = false
 
 var lava_area: Area2D = null
 var lava_tick_timers: Dictionary = {}
+var drown_timers: Dictionary = {}  # pid -> seconds spent off all floes
 
 var sfx: Dictionary = {}
 
@@ -79,6 +84,13 @@ func _ready() -> void:
 	if slow_zone is Area2D:
 		slow_zone.body_entered.connect(_on_slow_entered)
 		slow_zone.body_exited.connect(_on_slow_exited)
+	# Frozen Floes: each floe is both safe ground (floe) and slippery (ice).
+	var floe_group := get_node_or_null("Floe")
+	if floe_group:
+		for child in floe_group.get_children():
+			if child is Area2D:
+				child.body_entered.connect(_on_floe_entered)
+				child.body_exited.connect(_on_floe_exited)
 	hud_win.text = ""
 	hud_hint.text = ""
 	_setup_active_players()
@@ -213,6 +225,8 @@ func _physics_process(delta: float) -> void:
 			p.global_position = p.global_position.clamp(play_bounds.position, play_bounds.end)
 	if lava_area:
 		_process_lava(delta)
+	if drown_off_floes:
+		_process_drowning(delta)
 
 func _process_lava(delta: float) -> void:
 	var overlapping := lava_area.get_overlapping_bodies()
@@ -265,6 +279,35 @@ func _on_slow_entered(body: Node) -> void:
 func _on_slow_exited(body: Node) -> void:
 	if body.has_method("exit_slow"):
 		body.exit_slow()
+
+func _on_floe_entered(body: Node) -> void:
+	if body.has_method("enter_floe"):
+		body.enter_floe()
+	if body.has_method("enter_ice"):
+		body.enter_ice()
+
+func _on_floe_exited(body: Node) -> void:
+	if body.has_method("exit_floe"):
+		body.exit_floe()
+	if body.has_method("exit_ice"):
+		body.exit_ice()
+
+# Frozen Floes ring-out: off every floe for longer than the grace beat = drown.
+# Dodge i-frames and post-respawn invuln keep you safe (a dodge is a floe-hop).
+func _process_drowning(delta: float) -> void:
+	for p in active_players:
+		var safe: bool = p.floe_overlap_count > 0 or p.is_dodging() or p.invuln_timer > 0.0
+		if safe:
+			drown_timers[p.player_id] = 0.0
+			continue
+		var t: float = drown_timers.get(p.player_id, 0.0) + delta
+		if t >= drown_grace:
+			drown_timers[p.player_id] = 0.0
+			shake(7.0, 0.12)
+			play_sfx("ko", 0.1)
+			handle_environmental_kill(p)
+		else:
+			drown_timers[p.player_id] = t
 
 func _on_water_entered(body: Node) -> void:
 	if match_over or not round_active:

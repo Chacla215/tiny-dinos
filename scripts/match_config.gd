@@ -309,10 +309,12 @@ const DINOS := {
 	},
 }
 
-const ISLAND_ORDER := ["iciest_age", "laughing_lava", "beauty_beach", "sunny_springs", "white_water_falls", "purple_fields"]
+# Iciest Age removed from the roster 2026-05-22: the Frozen Floes redesign was
+# flat-vector and clashed with the pixel-art islands. arena_floes.tscn + the
+# floe/drown code stay in the repo (unreferenced) in case it's reskinned later.
+const ISLAND_ORDER := ["laughing_lava", "beauty_beach", "sunny_springs", "white_water_falls", "purple_fields"]
 
 const ISLAND_NAMES := {
-	"iciest_age": "ICIEST AGE",
 	"laughing_lava": "LAUGHING LAVA",
 	"beauty_beach": "BEAUTY BEACH",
 	"sunny_springs": "SUNNY SPRINGS",
@@ -321,7 +323,6 @@ const ISLAND_NAMES := {
 }
 
 const ISLAND_SCENES := {
-	"iciest_age": "res://scenes/main.tscn",
 	"laughing_lava": "res://scenes/arena_lava.tscn",
 	"beauty_beach": "res://scenes/arena_beach.tscn",
 	"sunny_springs": "res://scenes/arena_springs.tscn",
@@ -330,7 +331,7 @@ const ISLAND_SCENES := {
 }
 
 var dino_choices: Dictionary = {"p1": "trex", "p2": "raptor", "p3": "trike", "p4": "pterry"}
-var island: String = "iciest_age"
+var island: String = "laughing_lava"
 var player_count: int = 2
 ## Which slots are CPU-controlled this match. Set on the select screen.
 var cpu_players: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false}
@@ -358,6 +359,27 @@ func _setup_input_actions() -> void:
 	_register_player_actions("p4", 3, {})
 	_register_restart_action()
 	_register_pause_action()
+	_register_cpu_select_actions()
+
+# Host's RIGHT stick (device 0) cycles the CPU opponent's dino on the select
+# screen. Deadzone 0.5 so a deliberate flick fires once (just_pressed), not drift.
+func _register_cpu_select_actions() -> void:
+	for action_name in ["p1_cpu_left", "p1_cpu_right"]:
+		if InputMap.has_action(action_name):
+			InputMap.action_erase_events(action_name)
+		else:
+			InputMap.add_action(action_name, 0.5)
+		InputMap.action_set_deadzone(action_name, 0.5)
+	var left := InputEventJoypadMotion.new()
+	left.device = 0
+	left.axis = JOY_AXIS_RIGHT_X
+	left.axis_value = -1.0
+	InputMap.action_add_event("p1_cpu_left", left)
+	var right := InputEventJoypadMotion.new()
+	right.device = 0
+	right.axis = JOY_AXIS_RIGHT_X
+	right.axis_value = 1.0
+	InputMap.action_add_event("p1_cpu_right", right)
 
 func _register_pause_action() -> void:
 	if InputMap.has_action("pause"):

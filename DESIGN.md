@@ -138,3 +138,74 @@ one I can just build next; flagging the knobs only.
 ## Decisions locked by Charlie (2026-05-22)
 - Match: best-of rounds. Weapons: scope A. Tangle: add a real Stegosaurus. Roster:
   add Bronto (Neck Whip) + Anky (Tail Smash), sprites mined from existing sheets.
+
+---
+
+## 6. Island redesign — Iciest Age: "Frozen Floes"  **[BUILT → CUT]**
+
+> **Cut 2026-05-22.** Built (`arena_floes.tscn` + `Floe`/drown mechanic) but the
+> flat-vector art clashed with the pixel-art tileset islands. Charlie's call:
+> **remove Iciest Age from the roster** (now 5 islands, all pixel). Scene + code
+> kept in-repo, unreferenced — revivable only as a **pixel** reskin. The
+> floe-hop / drown-grace mechanic below is still a good idea for a future pixel arena.
+
+Reframe Iciest Age from today's single rectangular ice slab into the deck /
+concept-art vision: a **top-down frozen sea** where players fight on a scatter of
+**floating ice floes** separated by deadly water. (The card
+`assets/concept/islands/iciest_age.png` is a horizon *illustration*; this is its
+top-down gameplay translation — the floes are the white ovals in the art.)
+
+### Why it's distinct (and why it matters for balance)
+It's the roster's **only true ring-out arena** — every other island confines you
+with `clamp_to_bounds`. Here the edges are real water: knock a foe off a floe and
+they're gone. Pair that with **slippery ice footing** and it's the game's premier
+*spacing + knockback* stage. Critically, it's where **fast/fragile dinos earn
+their pick** — Raptor's top speed + long dodge make it the best floe-hopper and
+the best at recovering position, which directly answers the "why pick a low-HP
+dino" problem we flagged. Heavyweights (T-Rex/Bronto) hit hard but a whiff near
+an edge on ice can self-destruct them. Different island, different power curve.
+
+### Three interlocking mechanics
+1. **Floes are the only safe ground; the rest is water = ring-out.** A `Floe`
+   Area2D group; each floe tracks overlap like the existing ice/slow zones. A
+   player overlapping **zero** floes is *in the water*.
+2. **Drowning with a grace beat.** Water isn't instant death — ~0.35s of
+   "scrambling" before the ring-out, and **dodge i-frames suppress it entirely**.
+   So a timed dodge becomes a **leap between floes** (feeds the mobility pillar):
+   walk off lazily → drown; dash across the channel → survive. `[?]` tune grace.
+3. **Floe tops are ice.** Each floe doubles as an ice patch (existing
+   `Surface.ICE`), so footing is slidey right next to a lethal edge — knockback
+   and self-dash specials become double-edged.
+
+### Layout (1280×720, top-down)
+- **Center floe** — large ~440×300, the main brawl stage.
+- **4 corner floes** — medium ~260×190 (NW/NE/SW/SE); also the spawn pads
+  (P1 NW, P2 SE, P3 NE, P4 SW) so nobody spawns in water.
+- **2 stepping floes** — small ~150×120 between center and corners: risky shortcuts.
+- **Water channels ~90–130px** — crossable with a dodge, fatal at a walk.
+
+### Look (flat-vector — matches the hand-drawn flat direction, collision == art)
+- Water = flat deep teal (darker than the concept so floes pop and read as
+  *danger*).
+- Floes = soft pale-blue rounded `Polygon2D` with a thin lighter rim, a faint
+  inner-shadow oval, and 1–2 decorative crack `Line2D`s (echoing the card).
+  Drawn as polygons so the safe zone *is* what you see (terrain-driven rule —
+  no raster bg, stays crisp at any res).
+- Optional drifting bergs (the card's triangles) as background flavor.
+
+### Knobs / `[?]` for you
+- **Moving floes?** v1 = **static** (clean, readable). Stretch: 1–2 floes slowly
+  drift for a higher skill ceiling. *Recommend static first.*
+- **Water = kill** here (it's the ring-out stage; deadly sea reads correctly) —
+  unlike Sunny Springs' shallow spring (slow). Deaths match the art.
+- **Grace window** 0.35s default; dodge fully suppresses.
+- **Replace `main.tscn`** with this (Iciest Age *should be* this), vs. a new
+  `arena_floes.tscn`. *Recommend replace.*
+
+### Build steps (v1)
+1. Background + floe polygons (rims, inner shadow, cracks) + corner spawn pads.
+2. `Floe` Area2D group + `enter_floe/exit_floe` + `floe_overlap_count` in `dino.gd`.
+3. Drowning grace + dodge-suppression in `main.gd` (extend the existing
+   `Water` / `safe_rect` / `handle_environmental_kill` path).
+4. Mark each floe as an ice surface; wire spawns onto the corner floes.
+5. Headless-validate (`--headless --import`, scene run, exit 0).

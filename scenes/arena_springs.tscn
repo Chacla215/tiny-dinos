@@ -1,4 +1,4 @@
-[gd_scene load_steps=47 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://scripts/dino.gd" id="1_dino"]
 [ext_resource type="Script" path="res://scripts/main.gd" id="2_main"]
@@ -16,122 +16,62 @@ size = Vector2(240, 170)
 [sub_resource type="RectangleShape2D" id="slow_1"]
 size = Vector2(240, 170)
 
+[sub_resource type="RectangleShape2D" id="obs_wall"]
+size = Vector2(40, 160)
+
+[sub_resource type="RectangleShape2D" id="obs_rock"]
+size = Vector2(44, 44)
+
+[sub_resource type="RectangleShape2D" id="obs_cluster"]
+size = Vector2(72, 80)
+
 [sub_resource type="RectangleShape2D" id="water_0"]
 size = Vector2(32, 32)
 
-[sub_resource type="RectangleShape2D" id="water_1"]
-size = Vector2(64, 32)
-
 [sub_resource type="RectangleShape2D" id="water_2"]
-size = Vector2(96, 32)
-
-[sub_resource type="RectangleShape2D" id="water_3"]
 size = Vector2(96, 32)
 
 [sub_resource type="RectangleShape2D" id="water_4"]
 size = Vector2(128, 32)
 
-[sub_resource type="RectangleShape2D" id="water_5"]
-size = Vector2(128, 32)
-
 [sub_resource type="RectangleShape2D" id="water_6"]
 size = Vector2(128, 32)
-
-[sub_resource type="RectangleShape2D" id="water_7"]
-size = Vector2(64, 32)
 
 [sub_resource type="RectangleShape2D" id="water_8"]
 size = Vector2(192, 32)
 
-[sub_resource type="RectangleShape2D" id="water_9"]
-size = Vector2(128, 32)
-
 [sub_resource type="RectangleShape2D" id="water_10"]
 size = Vector2(96, 32)
-
-[sub_resource type="RectangleShape2D" id="water_11"]
-size = Vector2(192, 32)
 
 [sub_resource type="RectangleShape2D" id="water_12"]
 size = Vector2(96, 32)
 
-[sub_resource type="RectangleShape2D" id="water_13"]
-size = Vector2(192, 32)
-
 [sub_resource type="RectangleShape2D" id="water_14"]
 size = Vector2(288, 32)
-
-[sub_resource type="RectangleShape2D" id="water_15"]
-size = Vector2(160, 32)
 
 [sub_resource type="RectangleShape2D" id="water_16"]
 size = Vector2(288, 32)
 
-[sub_resource type="RectangleShape2D" id="water_17"]
-size = Vector2(32, 32)
-
 [sub_resource type="RectangleShape2D" id="water_18"]
 size = Vector2(128, 32)
-
-[sub_resource type="RectangleShape2D" id="water_19"]
-size = Vector2(32, 32)
-
-[sub_resource type="RectangleShape2D" id="water_20"]
-size = Vector2(96, 32)
 
 [sub_resource type="RectangleShape2D" id="water_21"]
 size = Vector2(160, 32)
 
-[sub_resource type="RectangleShape2D" id="water_22"]
-size = Vector2(128, 32)
-
 [sub_resource type="RectangleShape2D" id="water_23"]
 size = Vector2(32, 32)
-
-[sub_resource type="RectangleShape2D" id="water_24"]
-size = Vector2(128, 32)
-
-[sub_resource type="RectangleShape2D" id="water_25"]
-size = Vector2(96, 32)
-
-[sub_resource type="RectangleShape2D" id="water_26"]
-size = Vector2(96, 32)
 
 [sub_resource type="RectangleShape2D" id="water_27"]
 size = Vector2(96, 32)
 
-[sub_resource type="RectangleShape2D" id="water_28"]
-size = Vector2(128, 32)
-
 [sub_resource type="RectangleShape2D" id="water_29"]
 size = Vector2(32, 32)
-
-[sub_resource type="RectangleShape2D" id="water_30"]
-size = Vector2(64, 32)
 
 [sub_resource type="RectangleShape2D" id="water_31"]
 size = Vector2(32, 32)
 
-[sub_resource type="RectangleShape2D" id="water_32"]
-size = Vector2(64, 32)
-
 [sub_resource type="RectangleShape2D" id="water_33"]
 size = Vector2(32, 32)
-
-[sub_resource type="RectangleShape2D" id="water_34"]
-size = Vector2(64, 32)
-
-[sub_resource type="RectangleShape2D" id="water_35"]
-size = Vector2(96, 32)
-
-[sub_resource type="RectangleShape2D" id="water_36"]
-size = Vector2(96, 32)
-
-[sub_resource type="RectangleShape2D" id="water_37"]
-size = Vector2(96, 32)
-
-[sub_resource type="RectangleShape2D" id="water_38"]
-size = Vector2(128, 32)
 
 [node name="Main" type="Node2D"]
 script = ExtResource("2_main")
@@ -155,162 +95,6 @@ texture = ExtResource("3_bg")
 
 [node name="Water" type="Area2D" parent="."]
 
-[node name="C0" type="CollisionShape2D" parent="Water"]
-position = Vector2(656, 16)
-shape = SubResource("water_0")
-
-[node name="C1" type="CollisionShape2D" parent="Water"]
-position = Vector2(1216, 16)
-shape = SubResource("water_1")
-
-[node name="C2" type="CollisionShape2D" parent="Water"]
-position = Vector2(624, 48)
-shape = SubResource("water_2")
-
-[node name="C3" type="CollisionShape2D" parent="Water"]
-position = Vector2(1232, 48)
-shape = SubResource("water_3")
-
-[node name="C4" type="CollisionShape2D" parent="Water"]
-position = Vector2(544, 80)
-shape = SubResource("water_4")
-
-[node name="C5" type="CollisionShape2D" parent="Water"]
-position = Vector2(1216, 80)
-shape = SubResource("water_5")
-
-[node name="C6" type="CollisionShape2D" parent="Water"]
-position = Vector2(480, 112)
-shape = SubResource("water_6")
-
-[node name="C7" type="CollisionShape2D" parent="Water"]
-position = Vector2(1184, 112)
-shape = SubResource("water_7")
-
-[node name="C8" type="CollisionShape2D" parent="Water"]
-position = Vector2(384, 144)
-shape = SubResource("water_8")
-
-[node name="C9" type="CollisionShape2D" parent="Water"]
-position = Vector2(1152, 144)
-shape = SubResource("water_9")
-
-[node name="C10" type="CollisionShape2D" parent="Water"]
-position = Vector2(304, 176)
-shape = SubResource("water_10")
-
-[node name="C11" type="CollisionShape2D" parent="Water"]
-position = Vector2(1152, 176)
-shape = SubResource("water_11")
-
-[node name="C12" type="CollisionShape2D" parent="Water"]
-position = Vector2(272, 208)
-shape = SubResource("water_12")
-
-[node name="C13" type="CollisionShape2D" parent="Water"]
-position = Vector2(1152, 208)
-shape = SubResource("water_13")
-
-[node name="C14" type="CollisionShape2D" parent="Water"]
-position = Vector2(144, 240)
-shape = SubResource("water_14")
-
-[node name="C15" type="CollisionShape2D" parent="Water"]
-position = Vector2(1168, 240)
-shape = SubResource("water_15")
-
-[node name="C16" type="CollisionShape2D" parent="Water"]
-position = Vector2(144, 272)
-shape = SubResource("water_16")
-
-[node name="C17" type="CollisionShape2D" parent="Water"]
-position = Vector2(1136, 272)
-shape = SubResource("water_17")
-
-[node name="C18" type="CollisionShape2D" parent="Water"]
-position = Vector2(288, 304)
-shape = SubResource("water_18")
-
-[node name="C19" type="CollisionShape2D" parent="Water"]
-position = Vector2(1136, 304)
-shape = SubResource("water_19")
-
-[node name="C20" type="CollisionShape2D" parent="Water"]
-position = Vector2(1232, 304)
-shape = SubResource("water_20")
-
-[node name="C21" type="CollisionShape2D" parent="Water"]
-position = Vector2(400, 336)
-shape = SubResource("water_21")
-
-[node name="C22" type="CollisionShape2D" parent="Water"]
-position = Vector2(1216, 336)
-shape = SubResource("water_22")
-
-[node name="C23" type="CollisionShape2D" parent="Water"]
-position = Vector2(464, 368)
-shape = SubResource("water_23")
-
-[node name="C24" type="CollisionShape2D" parent="Water"]
-position = Vector2(1216, 368)
-shape = SubResource("water_24")
-
-[node name="C25" type="CollisionShape2D" parent="Water"]
-position = Vector2(1232, 400)
-shape = SubResource("water_25")
-
-[node name="C26" type="CollisionShape2D" parent="Water"]
-position = Vector2(1232, 432)
-shape = SubResource("water_26")
-
-[node name="C27" type="CollisionShape2D" parent="Water"]
-position = Vector2(656, 464)
-shape = SubResource("water_27")
-
-[node name="C28" type="CollisionShape2D" parent="Water"]
-position = Vector2(1216, 464)
-shape = SubResource("water_28")
-
-[node name="C29" type="CollisionShape2D" parent="Water"]
-position = Vector2(688, 496)
-shape = SubResource("water_29")
-
-[node name="C30" type="CollisionShape2D" parent="Water"]
-position = Vector2(1184, 496)
-shape = SubResource("water_30")
-
-[node name="C31" type="CollisionShape2D" parent="Water"]
-position = Vector2(688, 528)
-shape = SubResource("water_31")
-
-[node name="C32" type="CollisionShape2D" parent="Water"]
-position = Vector2(1184, 528)
-shape = SubResource("water_32")
-
-[node name="C33" type="CollisionShape2D" parent="Water"]
-position = Vector2(688, 560)
-shape = SubResource("water_33")
-
-[node name="C34" type="CollisionShape2D" parent="Water"]
-position = Vector2(1184, 560)
-shape = SubResource("water_34")
-
-[node name="C35" type="CollisionShape2D" parent="Water"]
-position = Vector2(1232, 592)
-shape = SubResource("water_35")
-
-[node name="C36" type="CollisionShape2D" parent="Water"]
-position = Vector2(1232, 624)
-shape = SubResource("water_36")
-
-[node name="C37" type="CollisionShape2D" parent="Water"]
-position = Vector2(1232, 656)
-shape = SubResource("water_37")
-
-[node name="C38" type="CollisionShape2D" parent="Water"]
-position = Vector2(1216, 688)
-shape = SubResource("water_38")
-
 [node name="SlowZone" type="Area2D" parent="."]
 
 [node name="S0" type="CollisionShape2D" parent="SlowZone"]
@@ -330,6 +114,86 @@ shape = SubResource("slow_1")
 position = Vector2(810, 250)
 color = Color(0.3, 0.7, 0.55, 0.35)
 polygon = PackedVector2Array(-120, -85, 120, -85, 120, 85, -120, 85)
+
+[node name="C0" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(656, 16)
+shape = SubResource("water_0")
+
+[node name="C2" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(624, 48)
+shape = SubResource("water_2")
+
+[node name="C4" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(544, 80)
+shape = SubResource("water_4")
+
+[node name="C6" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(480, 112)
+shape = SubResource("water_6")
+
+[node name="C8" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(384, 144)
+shape = SubResource("water_8")
+
+[node name="C10" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(304, 176)
+shape = SubResource("water_10")
+
+[node name="C12" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(272, 208)
+shape = SubResource("water_12")
+
+[node name="C14" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(144, 240)
+shape = SubResource("water_14")
+
+[node name="C16" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(144, 272)
+shape = SubResource("water_16")
+
+[node name="C18" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(288, 304)
+shape = SubResource("water_18")
+
+[node name="C21" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(400, 336)
+shape = SubResource("water_21")
+
+[node name="C23" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(464, 368)
+shape = SubResource("water_23")
+
+[node name="C27" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(656, 464)
+shape = SubResource("water_27")
+
+[node name="C29" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(688, 496)
+shape = SubResource("water_29")
+
+[node name="C31" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(688, 528)
+shape = SubResource("water_31")
+
+[node name="C33" type="CollisionShape2D" parent="SlowZone"]
+position = Vector2(688, 560)
+shape = SubResource("water_33")
+
+[node name="Obstacles" type="StaticBody2D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="O0" type="CollisionShape2D" parent="Obstacles"]
+position = Vector2(1240, 150)
+shape = SubResource("obs_wall")
+
+[node name="O1" type="CollisionShape2D" parent="Obstacles"]
+position = Vector2(1228, 384)
+shape = SubResource("obs_rock")
+
+[node name="O2" type="CollisionShape2D" parent="Obstacles"]
+position = Vector2(1224, 525)
+shape = SubResource("obs_cluster")
 
 [node name="Player1" type="CharacterBody2D" parent="."]
 position = Vector2(404, 270)

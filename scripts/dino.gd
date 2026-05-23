@@ -42,8 +42,9 @@ const ANIM_LAYOUTS := {
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(99, 200, 36, 30), Rect2(2, 240, 36, 30), Rect2(48, 239, 36, 30), Rect2(99, 242, 36, 30)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(99, 242, 36, 30)]},
 	},
-	"bronto": {  # Goober (long red) from rynosaurlandcharacters
+	"bronto": {  # Goober (long red) from rynosaurlandcharacters — drawn facing left
 		"sheet": SHEET_REF,
+		"faces_left": true,
 		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(2, 199, 34, 24), Rect2(49, 199, 34, 24)]},
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(104, 199, 34, 24), Rect2(150, 199, 34, 24), Rect2(193, 199, 34, 24), Rect2(235, 199, 34, 24)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(235, 199, 34, 24)]},
@@ -138,6 +139,9 @@ var ai: RefCounted = null
 @export var sprite_role: String = "raptor"
 @export var sprite_scale: float = 2.5
 @export var sprite_offset_y: float = -10.0
+## True when the source sprite art faces left by default (e.g. bronto/Goober).
+## Flips the flip_h logic so the dino visually faces its movement direction.
+var sprite_faces_left: bool = false
 
 @onready var polygon: Polygon2D = $Polygon2D
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -166,6 +170,7 @@ var hit_flash_timer: float = 0.0
 var afterimage_timer: float = 0.0
 var ice_overlap_count: int = 0
 var slow_overlap_count: int = 0
+var floe_overlap_count: int = 0  # Frozen Floes: >0 means standing on safe ice
 var current_push: Vector2 = Vector2.ZERO
 var knockback_active: bool = false
 
@@ -250,6 +255,7 @@ func _setup_sprite() -> void:
 		sprite.visible = false
 		return
 	var layouts = ANIM_LAYOUTS[sprite_role]
+	sprite_faces_left = layouts.get("faces_left", false)
 	var sheet_path: String = layouts.get("sheet", SHEET_PLAYER)
 	if not ResourceLoader.exists(sheet_path):
 		sprite.visible = false
@@ -260,7 +266,7 @@ func _setup_sprite() -> void:
 		return
 	var sf := SpriteFrames.new()
 	for anim_name in layouts:
-		if anim_name == "sheet":
+		if anim_name == "sheet" or anim_name == "faces_left":
 			continue
 		sf.add_animation(anim_name)
 		sf.set_animation_loop(anim_name, layouts[anim_name].loop)
@@ -352,10 +358,12 @@ func _find_nearest_opponent() -> Node:
 func update_sprite_animation() -> void:
 	if not sprite.visible or sprite.sprite_frames == null:
 		return
-	if facing.x < -0.05:
-		sprite.flip_h = true
-	elif facing.x > 0.05:
-		sprite.flip_h = false
+	# flip_h is relative to the source art's default facing: sprites drawn facing
+	# left (sprite_faces_left) need the opposite flip to face their movement.
+	if facing.x > 0.05:
+		sprite.flip_h = sprite_faces_left
+	elif facing.x < -0.05:
+		sprite.flip_h = not sprite_faces_left
 	if attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE:
 		if sprite.animation != "attack":
 			sprite.play("attack")
@@ -397,6 +405,10 @@ func can_dodge() -> bool:
 # Queried by the CPU brain (dino_ai.gd).
 func is_swinging() -> bool:
 	return attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE
+
+# Dodge i-frames double as a floe-to-floe leap on Frozen Floes (main.gd checks this).
+func is_dodging() -> bool:
+	return defense_state == DefenseState.DODGING
 
 func is_guard_broken() -> bool:
 	return defense_state == DefenseState.GUARD_BROKEN
@@ -970,6 +982,12 @@ func enter_slow() -> void:
 func exit_slow() -> void:
 	slow_overlap_count = max(0, slow_overlap_count - 1)
 
+func enter_floe() -> void:
+	floe_overlap_count += 1
+
+func exit_floe() -> void:
+	floe_overlap_count = max(0, floe_overlap_count - 1)
+
 # --- Respawn ---
 
 func respawn() -> void:
@@ -978,6 +996,7 @@ func respawn() -> void:
 	current_surface = Surface.GROUND
 	ice_overlap_count = 0
 	slow_overlap_count = 0
+	floe_overlap_count = 0
 	current_push = Vector2.ZERO
 	knockback_active = false
 	special_cooldown_timer = 0.0

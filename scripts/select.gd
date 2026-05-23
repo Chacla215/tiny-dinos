@@ -4,6 +4,22 @@ const START_DELAY := 0.8
 # Weapons you can pick (fists is always the other half of the loadout).
 const WEAPON_PICKS := ["sword", "dagger", "axe", "mace", "hammer", "nunchucks"]
 
+# The picker shows the SAME art the match uses, so pick == play. Dinos render
+# from dino.gd's ANIM_LAYOUTS; islands use each arena's actual gameplay
+# background (NOT the hand-drawn concept cards). Frozen Floes is drawn
+# procedurally, so it gets a generated preview that matches its layout.
+const DinoScript := preload("res://scripts/dino.gd")
+const ISLAND_PREVIEW := {
+	"laughing_lava":     "res://assets/tilesets/example2.png",
+	"beauty_beach":      "res://assets/tilesets/beauty_beach_bg.png",
+	"sunny_springs":     "res://assets/tilesets/example4.png",
+	"white_water_falls": "res://assets/tilesets/example3.png",
+	"purple_fields":     "res://assets/tilesets/purple_fields_bg.png",
+}
+const PANEL_Y := 430.0          # baseline for the player cards row
+const GRAPHIC_TARGET_H := 170.0 # all dino sprites scaled to this height (consistent size)
+const ISLAND_BG_WIDTH := 680.0  # centerpiece island preview width
+
 @onready var countdown_label: Label = $Countdown
 @onready var panels := {
 	"p1": $P1Panel,
@@ -13,6 +29,7 @@ const WEAPON_PICKS := ["sword", "dagger", "axe", "mace", "hammer", "nunchucks"]
 }
 @onready var island_label: Label = $IslandLabel
 @onready var hint_label: Label = $Hint
+@onready var island_bg: Sprite2D = $IslandBg
 
 var indexes: Dictionary = {"p1": 0, "p2": 1, "p3": 2, "p4": 3}
 var weapon_idx: Dictionary = {"p1": 0, "p2": 0, "p3": 0, "p4": 0}
@@ -25,27 +42,51 @@ var start_timer: float = 0.0
 
 func _ready() -> void:
 	var controller_count: int = Input.get_connected_joypads().size()
-	var player_count: int = clamp(controller_count, 2, 4)
-	if controller_count < 2:
-		player_count = 2
-	MatchConfig.player_count = player_count
 	var solo: bool = controller_count < 2
+	var initial_count: int = clamp(controller_count, 2, 4)
+	if controller_count < 2:
+		initial_count = 2
+	# Per-slot defaults: solo fills opponents with CPUs; multi-controller = humans.
 	for pid in MatchConfig.PLAYER_IDS:
-		var slot_num: int = int(pid.substr(1))
-		var is_active: bool = slot_num <= player_count
-		panels[pid].visible = is_active
-		if is_active:
-			active_players.append(pid)
-			cpu_states[pid] = solo and pid != "p1"
-			indexes[pid] = clamp(indexes[pid], 0, MatchConfig.ROSTER_ORDER.size() - 1)
-			_apply_player_color_to_panel(pid)
-			_update_display(pid)
+		cpu_states[pid] = solo and pid != "p1"
+		indexes[pid] = clamp(indexes[pid], 0, MatchConfig.ROSTER_ORDER.size() - 1)
+		_apply_player_color_to_panel(pid)
+	_apply_active_count(initial_count)
 	countdown_label.text = ""
-	hint_label.text = "<- ->  choose      A / F / .  confirm (dino > weapon > ready)      RB / G / ,  back      heavy  toggle CPU"
+	hint_label.text = "<- -> choose    A/F/. confirm    RB/G/, back    heavy human/CPU    LB/B add opponent    R-stick/V CPU dino"
 	island_idx = MatchConfig.ISLAND_ORDER.find(MatchConfig.island)
 	if island_idx < 0:
 		island_idx = 0
 	_update_island()
+
+# Activate the first n player slots (2-4); the rest are hidden. Rebuilds the row.
+func _apply_active_count(n: int) -> void:
+	MatchConfig.player_count = clamp(n, 2, 4)
+	active_players.clear()
+	for pid in MatchConfig.PLAYER_IDS:
+		var is_active: bool = int(pid.substr(1)) <= MatchConfig.player_count
+		panels[pid].visible = is_active
+		if is_active:
+			active_players.append(pid)
+	# Position cards first so _set_graphic can face each dino toward center.
+	_layout_panels()
+	for pid in active_players:
+		_update_display(pid)
+	_refresh_start()
+
+# Host adds a computer opponent (cycles 2 -> 3 -> 4 -> 2 players). Newly added
+# opponent slots default to CPU, so a solo player can fight 1-v-2 or 1-v-3.
+func _cycle_opponent_count() -> void:
+	var prev: int = MatchConfig.player_count
+	var n: int = prev + 1 if prev < 4 else 2
+	_apply_active_count(n)
+	for pid in active_players:
+		if int(pid.substr(1)) > prev and pid != "p1":
+			cpu_states[pid] = true
+			ready_states[pid] = false
+			stages[pid] = "dino"
+			_update_display(pid)
+	_refresh_start()
 
 func _process(delta: float) -> void:
 	if _all_ready():
@@ -61,8 +102,27 @@ func _process(delta: float) -> void:
 	elif Input.is_action_just_pressed("p1_down"):
 		island_idx = (island_idx + 1) % MatchConfig.ISLAND_ORDER.size()
 		_update_island()
+	# Host adds/cycles computer opponents (1-v-2, 1-v-3, ...).
+	if Input.is_action_just_pressed("p1_special"):
+		_cycle_opponent_count()
+	# Host (P1) re-picks the computer opponent's dino with the RIGHT stick
+	# (keyboard fallback: swap = V). Needed on a single controller, where a CPU
+	# slot has no input device of its own to cycle with.
+	if Input.is_action_just_pressed("p1_cpu_right"):
+		_cycle_cpu_dino(1)
+	elif Input.is_action_just_pressed("p1_cpu_left"):
+		_cycle_cpu_dino(-1)
+	if Input.is_action_just_pressed("p1_swap"):
+		_cycle_cpu_dino(1)
 	for pid in active_players:
 		_handle_player_input(pid)
+
+# Cycle the first computer opponent's dino (covers the standard solo 1v1).
+func _cycle_cpu_dino(step: int) -> void:
+	for cpid in active_players:
+		if cpu_states[cpid]:
+			_cycle_dino(cpid, step)
+			return
 
 func _all_ready() -> bool:
 	for pid in active_players:
@@ -143,14 +203,14 @@ func _update_display(pid: String) -> void:
 	var panel: Node2D = panels[pid]
 	var name_label: Label = panel.get_node("Name")
 	var status_label: Label = panel.get_node("Status")
-	var preview: Polygon2D = panel.get_node("Preview")
+	var graphic: AnimatedSprite2D = panel.get_node("Graphic")
 
 	name_label.text = dino.display_name
 	name_label.add_theme_color_override("font_color", dino.dino_color)
-	preview.color = dino.dino_color
+	_set_graphic(graphic, dino_id)
 
 	if cpu_states[pid]:
-		status_label.text = "CPU  <  >"
+		status_label.text = "CPU   (R-stick to change)"
 		status_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2, 1))
 		return
 	match stages[pid]:
@@ -173,6 +233,65 @@ func _apply_player_color_to_panel(pid: String) -> void:
 func _update_island() -> void:
 	MatchConfig.island = MatchConfig.ISLAND_ORDER[island_idx]
 	island_label.text = "Island:  %s    (P1 up / down)" % MatchConfig.ISLAND_NAMES[MatchConfig.island]
+	_set_island_bg(MatchConfig.island)
+
+# --- Concept-art helpers ---
+
+# Spread the active player cards evenly across the screen in a single row.
+func _layout_panels() -> void:
+	var n: int = active_players.size()
+	for i in range(n):
+		var pid: String = active_players[i]
+		panels[pid].position = Vector2(1280.0 * (i + 0.5) / n, PANEL_Y)
+
+# Show the dino's in-game sprite (idle anim) so the picker matches the match.
+# Built from the same ANIM_LAYOUTS the dino uses, scaled to a consistent height.
+func _set_graphic(graphic: AnimatedSprite2D, dino_id: String) -> void:
+	var dino: Dictionary = MatchConfig.DINOS.get(dino_id, {})
+	var role: String = dino.get("sprite_role", "")
+	var layouts: Dictionary = DinoScript.ANIM_LAYOUTS
+	if not layouts.has(role):
+		graphic.sprite_frames = null
+		return
+	var layout: Dictionary = layouts[role]
+	var sheet_path: String = layout.get("sheet", "")
+	if not ResourceLoader.exists(sheet_path):
+		graphic.sprite_frames = null
+		return
+	var sheet: Texture2D = load(sheet_path)
+	var idle: Dictionary = layout.get("idle", {})
+	var rects: Array = idle.get("rects", [])
+	if rects.is_empty():
+		graphic.sprite_frames = null
+		return
+	var sf := SpriteFrames.new()
+	sf.remove_animation("default")
+	sf.add_animation("idle")
+	sf.set_animation_loop("idle", true)
+	sf.set_animation_speed("idle", idle.get("speed", 4.0))
+	for r in rects:
+		var at := AtlasTexture.new()
+		at.atlas = sheet
+		at.region = r
+		sf.add_frame("idle", at)
+	graphic.sprite_frames = sf
+	var s: float = GRAPHIC_TARGET_H / rects[0].size.y
+	graphic.scale = Vector2(s, s)
+	# Face toward screen center: left-side dinos look right, right-side look left.
+	var faces_left_art: bool = layout.get("faces_left", false)
+	var on_left: bool = graphic.get_parent().position.x < 640.0
+	graphic.flip_h = faces_left_art if on_left else not faces_left_art
+	graphic.play("idle")
+
+# Dimmed island concept art behind the cards, so players preview the arena.
+func _set_island_bg(island_id: String) -> void:
+	var path: String = ISLAND_PREVIEW.get(island_id, "")
+	if path == "" or not ResourceLoader.exists(path):
+		island_bg.texture = null
+		return
+	var tex: Texture2D = load(path)
+	island_bg.texture = tex
+	island_bg.scale = Vector2(ISLAND_BG_WIDTH / tex.get_width(), ISLAND_BG_WIDTH / tex.get_width())
 
 func _start_match() -> void:
 	MatchConfig.weapon_choices = {}
