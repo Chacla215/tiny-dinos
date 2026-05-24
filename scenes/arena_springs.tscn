@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/dino.gd" id="1_dino"]
 [ext_resource type="Script" path="res://scripts/main.gd" id="2_main"]
-[ext_resource type="Texture2D" path="res://assets/tilesets/example4.png" id="3_bg"]
+[ext_resource type="Texture2D" path="res://assets/tilesets/sunny_springs_bg.png" id="3_bg"]
 
 [sub_resource type="RectangleShape2D" id="dino_shape"]
 size = Vector2(48, 48)
@@ -78,10 +78,11 @@ script = ExtResource("2_main")
 safe_rect = Rect2(160, 100, 960, 520)
 ledge_kill_enabled = false
 clamp_to_bounds = true
-play_bounds = Rect2(24, 24, 1232, 672)
+play_bounds = Rect2(-32, 110, 1344, 640)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(640, 360)
+zoom = Vector2(0.8333, 0.8333)
 
 [node name="Background" type="Polygon2D" parent="."]
 color = Color(0.3, 0.5, 0.35, 1)

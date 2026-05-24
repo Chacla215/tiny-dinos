@@ -16,10 +16,10 @@ const TITLE_SCENE := "res://scenes/title.tscn"
 const HINT_PAD := "A CONFIRM    B BACK (TO TITLE)    LB ADD OPPONENT    P1 PICKS EACH CPU'S DINO + WEAPON"
 const HINT_KEY := "F / . CONFIRM    H / M BACK (TO TITLE)    B ADD OPPONENT    P1 PICKS EACH CPU'S DINO + WEAPON"
 const ISLAND_PREVIEW := {
-	"laughing_lava":     "res://assets/tilesets/example2.png",
+	"laughing_lava":     "res://assets/tilesets/laughing_lava_bg.png",
 	"beauty_beach":      "res://assets/tilesets/beauty_beach_bg.png",
-	"sunny_springs":     "res://assets/tilesets/example4.png",
-	"white_water_falls": "res://assets/tilesets/example3.png",
+	"sunny_springs":     "res://assets/tilesets/sunny_springs_bg.png",
+	"white_water_falls": "res://assets/tilesets/white_water_falls_bg.png",
 	"purple_fields":     "res://assets/tilesets/purple_fields_bg.png",
 }
 const PANEL_Y := 430.0          # baseline for the player cards row
