@@ -1,10 +1,19 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/title.gd" id="1_title"]
 [ext_resource type="Script" path="res://scripts/controls_diagram.gd" id="2_diagram"]
+[ext_resource type="Texture2D" uid="uid://bv1q0435ghpxm" path="res://assets/sprites/title_tiny.png" id="2_tiny"]
+[ext_resource type="Texture2D" uid="uid://cac8sdgxbdsoh" path="res://assets/sprites/title_dinos.png" id="3_dinos"]
+
+[sub_resource type="Gradient" id="Gradient_dust"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.88, 0.82, 0.68, 0.9, 0.82, 0.76, 0.62, 0.55, 0.78, 0.72, 0.58, 0)
 
 [node name="Title" type="Node2D"]
 script = ExtResource("1_title")
+
+[node name="ShakeCam" type="Camera2D" parent="."]
+position = Vector2(640, 360)
 
 [node name="Background" type="Polygon2D" parent="."]
 color = Color(0.1, 0.1, 0.15, 1)
@@ -16,7 +25,7 @@ modulate = Color(0.5, 0.5, 0.58, 1)
 
 [node name="Vignette" type="Polygon2D" parent="."]
 color = Color(0.08, 0.08, 0.13, 0.45)
-polygon = PackedVector2Array(0, 0, 1280, 0, 1280, 720, 0, 720)
+polygon = PackedVector2Array(-40, -40, 1320, -40, 1320, 760, -40, 760)
 
 [node name="LeftDino" type="Node2D" parent="."]
 position = Vector2(220, 430)
@@ -32,38 +41,60 @@ texture_filter = 1
 
 [node name="Logo" type="Node2D" parent="."]
 
-[node name="TitleLabel" type="Label" parent="Logo"]
-offset_left = 0.0
-offset_top = 66.0
-offset_right = 1280.0
-offset_bottom = 188.0
-theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
-theme_override_constants/outline_size = 12
-theme_override_font_sizes/font_size = 96
-horizontal_alignment = 1
-vertical_alignment = 1
-text = "TINY DINOS"
+[node name="Dinos" type="Sprite2D" parent="Logo"]
+texture_filter = 1
+position = Vector2(640, 307.5)
+texture = ExtResource("3_dinos")
+
+[node name="Tiny" type="Sprite2D" parent="Logo"]
+texture_filter = 1
+position = Vector2(640, 108.5)
+texture = ExtResource("2_tiny")
+
+[node name="SubtitleBanner" type="Polygon2D" parent="Logo"]
+color = Color(0.13, 0.12, 0.17, 0.92)
+polygon = PackedVector2Array(452, 414, 828, 414, 828, 452, 452, 452)
 
 [node name="Subtitle" type="Label" parent="Logo"]
 offset_left = 0.0
-offset_top = 196.0
+offset_top = 417.0
 offset_right = 1280.0
-offset_bottom = 228.0
-theme_override_colors/font_color = Color(0.8, 0.8, 0.85, 1)
+offset_bottom = 451.0
+theme_override_colors/font_color = Color(0.82, 0.82, 0.88, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
-theme_override_constants/outline_size = 6
+theme_override_constants/outline_size = 5
 theme_override_font_sizes/font_size = 22
 horizontal_alignment = 1
+vertical_alignment = 1
 text = "TOP-DOWN DINO BRAWLER"
+
+[node name="Dust" type="CPUParticles2D" parent="."]
+position = Vector2(640, 214)
+emitting = false
+amount = 60
+lifetime = 0.65
+one_shot = true
+explosiveness = 1.0
+emission_shape = 3
+emission_rect_extents = Vector2(252, 6)
+direction = Vector2(0, -1)
+spread = 86.0
+gravity = Vector2(0, 660)
+initial_velocity_min = 80.0
+initial_velocity_max = 330.0
+damping_min = 25.0
+damping_max = 75.0
+scale_amount_min = 2.0
+scale_amount_max = 7.0
+color_ramp = SubResource("Gradient_dust")
 
 [node name="Menu" type="Node2D" parent="."]
 
 [node name="PlayItem" type="Label" parent="Menu"]
 offset_left = 0.0
-offset_top = 332.0
+offset_top = 468.0
 offset_right = 1280.0
-offset_bottom = 382.0
+offset_bottom = 518.0
 theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
 theme_override_constants/outline_size = 8
@@ -74,9 +105,9 @@ text = "PLAY"
 
 [node name="HowToItem" type="Label" parent="Menu"]
 offset_left = 0.0
-offset_top = 402.0
+offset_top = 530.0
 offset_right = 1280.0
-offset_bottom = 452.0
+offset_bottom = 580.0
 theme_override_colors/font_color = Color(0.72, 0.72, 0.78, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
 theme_override_constants/outline_size = 8
@@ -87,9 +118,9 @@ text = "HOW TO PLAY"
 
 [node name="QuitItem" type="Label" parent="Menu"]
 offset_left = 0.0
-offset_top = 472.0
+offset_top = 592.0
 offset_right = 1280.0
-offset_bottom = 522.0
+offset_bottom = 642.0
 theme_override_colors/font_color = Color(0.72, 0.72, 0.78, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
 theme_override_constants/outline_size = 8
