@@ -15,6 +15,10 @@ var dodge_chance: float = 0.22   # P(dodge instead) when you swing at it
 var heavy_chance: float = 0.30   # fraction of its attacks that are heavy
 var special_chance: float = 0.30 # how often it reaches for its signature special
 var standoff_gap: float = 24.0   # buffer beyond attack reach it likes to hover at
+var throw_chance: float = 0.22   # P(hurl the weapon) on a clean mid-range opening
+
+const THROW_RANGE := 540.0       # max distance it will throw a weapon from
+const WEAPON_SEEK_RANGE := 440.0 # how far it'll detour to reclaim a dropped weapon
 
 # --- Outputs read by the owning dino each frame ---
 var move_dir: Vector2 = Vector2.ZERO
@@ -24,10 +28,13 @@ var _attack_q: bool = false
 var _heavy_q: bool = false
 var _special_q: bool = false
 var _dodge_q: bool = false
+var _throw_q: bool = false
+var _pickup_q: bool = false
 
 # --- internal timers / decisions ---
 var _decide_t: float = 0.0
 var _attack_cd: float = 0.0
+var _throw_cd: float = 0.0
 var _react_cd: float = 0.0
 var _block_t: float = 0.0
 var _strafe: float = 1.0
@@ -53,10 +60,21 @@ func consume_dodge() -> bool:
 	_dodge_q = false
 	return v
 
+func consume_throw() -> bool:
+	var v := _throw_q
+	_throw_q = false
+	return v
+
+func consume_pickup() -> bool:
+	var v := _pickup_q
+	_pickup_q = false
+	return v
+
 func think(owner: Node, target: Node, delta: float) -> void:
 	move_dir = Vector2.ZERO
 	block_held = false
 	_attack_cd = maxf(0.0, _attack_cd - delta)
+	_throw_cd = maxf(0.0, _throw_cd - delta)
 	_react_cd = maxf(0.0, _react_cd - delta)
 	_block_t = maxf(0.0, _block_t - delta)
 	_decide_t -= delta
@@ -108,6 +126,27 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	else:
 		move_dir = (perp * 0.6 + dir * 0.2).normalized()
 
+	# Weapon scavenging: snatch a dropped weapon underfoot, and when disarmed go
+	# fetch the nearest one rather than fist-fighting for the rest of the round.
+	var disarmed: bool = owner._active_weapon_id() == "fists"
+	var loot: Node = _nearest_pickup(owner)
+	if loot != null:
+		var loot_d: float = owner.global_position.distance_to(loot.global_position)
+		if loot_d <= owner.PICKUP_RADIUS and (disarmed or "fists" in owner.weapons):
+			_pickup_q = true
+		elif disarmed and loot_d <= WEAPON_SEEK_RANGE:
+			move_dir = _avoid(owner, (loot.global_position - owner.global_position).normalized())
+
+	# Ranged poke: hurl the weapon at mid range, but only when it won't clear the
+	# platform edge on a miss and be wasted (see _throw_safe).
+	if not disarmed and _throw_cd <= 0.0 and owner.can_throw() \
+			and dist > reach + standoff_gap and dist < THROW_RANGE \
+			and target.invuln_timer <= 0.0 \
+			and randf() < throw_chance and _throw_safe(owner, dir, dist):
+		move_dir = dir  # face the target on the release frame
+		_throw_q = true
+		_throw_cd = randf_range(2.2, 3.6)
+
 	# Attack when in range and off cooldown. Mostly avoid swinging into i-frames.
 	if dist <= reach + 16.0 and _attack_cd <= 0.0 and owner.can_attack():
 		if target.invuln_timer <= 0.0 or randf() < 0.25:
@@ -152,3 +191,32 @@ func _avoid(owner: Node, desired: Vector2) -> Vector2:
 	elif pos.y > rect.end.y - m:
 		steer.y -= 1.0
 	return steer.normalized() if steer.length() > 0.05 else Vector2.ZERO
+
+# Nearest weapon resting on the ground (a thrown one that came to rest), or null.
+func _nearest_pickup(owner: Node) -> Node:
+	var best: Node = null
+	var best_d := INF
+	for item in owner.get_tree().get_nodes_in_group("weapon_pickups"):
+		if not is_instance_valid(item) or not item.is_grounded():
+			continue
+		var d: float = owner.global_position.distance_squared_to(item.global_position)
+		if d < best_d:
+			best_d = d
+			best = item
+	return best
+
+# True when a weapon thrown toward the target would still come down on the
+# platform (a miss stays recoverable) rather than sailing off the edge.
+func _throw_safe(owner: Node, dir: Vector2, dist: float) -> bool:
+	var rect := _get_arena_rect(owner)
+	var landing: Vector2 = owner.global_position + dir * (dist + 140.0)
+	return rect.has_point(landing)
+
+func _get_arena_rect(owner: Node) -> Rect2:
+	var arena := owner.get_parent()
+	if arena:
+		if "ledge_kill_enabled" in arena and arena.ledge_kill_enabled:
+			return arena.safe_rect
+		if "play_bounds" in arena:
+			return arena.play_bounds
+	return Rect2(-100000, -100000, 200000, 200000)  # unbounded arena: always safe

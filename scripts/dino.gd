@@ -187,6 +187,7 @@ var timed_slow_timer: float = 0.0  # screech-applied slow on this dino
 
 var active_weapon: int = 0
 var weapon_visual: Polygon2D = null  # held-weapon shape, oriented to facing
+var initial_weapons: Array = []      # loadout to restore on respawn
 var wpn_dmg: float = 1.0
 var wpn_kb: float = 1.0
 var wpn_range: float = 0.0
@@ -201,12 +202,22 @@ const SLOW_ACCEL_FACTOR := 0.6
 ## map while leaving normal ice-sliding and self-dash lunges untouched.
 const KNOCKBACK_DECEL := 2000.0
 
+## Throw (RT) / pickup (LT). A thrown weapon flies fast and lands harder than
+## the same weapon swung — but whiff it off the platform and it's gone. Damage
+## scales off this dino's weapon-modified light hit, so heavier loadouts throw
+## for more (and have more to lose). PICKUP_RADIUS is how close you grab from.
+const THROW_SPEED := 920.0
+const THROW_DAMAGE_MULT := 1.6
+const THROW_KB_MULT := 1.55
+const PICKUP_RADIUS := 120.0
+
 func _ready() -> void:
 	_apply_config_preset()
 	if MatchConfig and "cpu_players" in MatchConfig and MatchConfig.cpu_players.get(player_id, false):
 		is_cpu = true
 	if is_cpu:
 		ai = preload("res://scripts/dino_ai.gd").new()
+		_equip_default_weapon()  # CPUs commit to their weapon (no human swap input)
 	spawn_point = global_position
 	hp = max_hp
 	block_durability = max_block
@@ -248,6 +259,10 @@ func _apply_config_preset() -> void:
 	hitbox_visual.visible = false
 	hitbox_shape.disabled = true
 
+	# Preset loadouts come straight from the const DINOS table (read-only), and
+	# throw/pickup mutate the slots — so work on a private mutable copy.
+	weapons = weapons.duplicate()
+	initial_weapons = weapons.duplicate()  # restored each life after throws
 	_refresh_weapon()
 
 func _setup_sprite() -> void:
@@ -316,6 +331,10 @@ func _process_input_actions() -> void:
 		start_special()
 	if Input.is_action_just_pressed(_action("swap")):
 		_swap_weapon()
+	if Input.is_action_just_pressed(_action("throw")) and can_throw():
+		throw_weapon()
+	if Input.is_action_just_pressed(_action("pickup")) and can_pickup():
+		try_pickup()
 	if Input.is_action_just_pressed(_action("block")) and can_start_block():
 		start_block()
 	elif Input.is_action_just_released(_action("block")) and defense_state == DefenseState.BLOCKING:
@@ -324,6 +343,10 @@ func _process_input_actions() -> void:
 		start_dodge()
 
 func _process_cpu_actions() -> void:
+	if ai.consume_throw() and can_throw():
+		throw_weapon()
+	if ai.consume_pickup() and can_pickup():
+		try_pickup()
 	if ai.consume_attack() and can_attack():
 		start_attack(false)
 	if ai.consume_heavy() and can_attack():
@@ -388,6 +411,15 @@ func can_special() -> bool:
 		and special_cooldown_timer <= 0.0 \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
+
+func can_throw() -> bool:
+	return _active_weapon_id() != "fists" \
+		and attack_phase == AttackPhase.IDLE \
+		and defense_state == DefenseState.NORMAL
+
+func can_pickup() -> bool:
+	return defense_state != DefenseState.DODGING \
+		and defense_state != DefenseState.GUARD_BROKEN
 
 func can_dodge() -> bool:
 	if dodge_cooldown_timer > 0.0:
@@ -532,28 +564,78 @@ func _refresh_weapon() -> void:
 		weapon_visual = Polygon2D.new()
 		weapon_visual.z_index = 1
 		add_child(weapon_visual)
-	var shape := _weapon_shape(id)
-	weapon_visual.polygon = shape["poly"]
-	weapon_visual.color = shape["color"]
-	weapon_visual.visible = shape["poly"].size() > 0
+	var shape: Dictionary = MatchConfig.weapon_shape(id) if MatchConfig else {}
+	var poly: PackedVector2Array = shape.get("poly", PackedVector2Array())
+	weapon_visual.polygon = poly
+	weapon_visual.color = shape.get("color", Color.WHITE)
+	weapon_visual.visible = poly.size() > 0
 
-# Simple held-weapon silhouettes (point along +X; rotated to facing in-frame).
-func _weapon_shape(id: String) -> Dictionary:
-	match id:
-		"sword":
-			return {"poly": PackedVector2Array([Vector2(-3, -2), Vector2(-3, 2), Vector2(28, 2.5), Vector2(38, 0), Vector2(28, -2.5)]), "color": Color(0.85, 0.88, 0.95)}
-		"dagger":
-			return {"poly": PackedVector2Array([Vector2(-3, -2), Vector2(-3, 2), Vector2(15, 2), Vector2(22, 0), Vector2(15, -2)]), "color": Color(0.8, 0.82, 0.88)}
-		"axe":
-			return {"poly": PackedVector2Array([Vector2(0, -2), Vector2(20, -2), Vector2(20, -13), Vector2(34, -5), Vector2(34, 5), Vector2(20, 13), Vector2(20, 2), Vector2(0, 2)]), "color": Color(0.72, 0.74, 0.8)}
-		"mace":
-			return {"poly": PackedVector2Array([Vector2(0, -2), Vector2(20, -2), Vector2(20, -9), Vector2(35, -9), Vector2(35, 9), Vector2(20, 9), Vector2(20, 2), Vector2(0, 2)]), "color": Color(0.5, 0.5, 0.56)}
-		"hammer":
-			return {"poly": PackedVector2Array([Vector2(0, -3), Vector2(22, -3), Vector2(22, -14), Vector2(42, -14), Vector2(42, 14), Vector2(22, 14), Vector2(22, 3), Vector2(0, 3)]), "color": Color(0.55, 0.55, 0.6)}
-		"nunchucks":
-			return {"poly": PackedVector2Array([Vector2(0, -2.5), Vector2(26, -2.5), Vector2(26, 2.5), Vector2(0, 2.5)]), "color": Color(0.45, 0.32, 0.2)}
-		_:
-			return {"poly": PackedVector2Array(), "color": Color.WHITE}  # fists: no held item
+func _active_weapon_id() -> String:
+	return weapons[active_weapon] if active_weapon < weapons.size() else "fists"
+
+# Point active_weapon at the first real (non-fists) slot. CPUs call this so they
+# spawn already wielding their loadout weapon instead of waiting for a swap input.
+func _equip_default_weapon() -> void:
+	for i in range(weapons.size()):
+		if weapons[i] != "fists":
+			active_weapon = i
+			break
+	_refresh_weapon()
+
+# Throw (RT): hurl the active weapon as a spinning projectile, then revert that
+# slot to fists. Lands harder than a swing with the same weapon (THROW_*_MULT),
+# but can sail off the platform edge and be lost (see weapon_item.gd).
+func throw_weapon() -> void:
+	var id := _active_weapon_id()
+	if id == "fists":
+		return
+	var base_dmg := int(round(attack_damage * wpn_dmg))
+	var dmg := int(round(base_dmg * THROW_DAMAGE_MULT))
+	var kb := attack_knockback * wpn_kb * THROW_KB_MULT
+	_spawn_thrown_weapon(id, dmg, kb)
+	weapons[active_weapon] = "fists"
+	_refresh_weapon()
+	play_scene_sfx("swing", 0.05)
+
+func _spawn_thrown_weapon(id: String, dmg: int, kb: float) -> void:
+	var item := Area2D.new()
+	item.set_script(preload("res://scripts/weapon_item.gd"))
+	item.weapon_id = id
+	item.travel_velocity = facing * THROW_SPEED
+	item.damage = dmg
+	item.knockback_force = kb
+	item.source = self
+	get_tree().current_scene.add_child(item)
+	item.global_position = global_position + facing * 40.0 + Vector2(0, -6)
+	item.rotation = facing.angle()
+
+# Pickup (LT): grab the nearest weapon resting on the ground within reach and
+# equip it (filling a free fists slot, or replacing the active one).
+func try_pickup() -> void:
+	var best: Node = null
+	var best_d := PICKUP_RADIUS * PICKUP_RADIUS
+	for item in get_tree().get_nodes_in_group("weapon_pickups"):
+		if not is_instance_valid(item) or not item.is_grounded():
+			continue
+		var d: float = global_position.distance_squared_to(item.global_position)
+		if d < best_d:
+			best_d = d
+			best = item
+	if best == null:
+		return
+	var slot := _pickup_slot()
+	weapons[slot] = best.weapon_id
+	active_weapon = slot
+	best.consume()
+	_refresh_weapon()
+	play_scene_sfx("block", 0.1)  # quick clink as it's grabbed
+
+# Prefer dropping a pickup into an empty (fists) slot; otherwise the active one.
+func _pickup_slot() -> int:
+	for i in range(weapons.size()):
+		if weapons[i] == "fists":
+			return i
+	return active_weapon
 
 func _swap_weapon() -> void:
 	if weapons.size() < 2:
@@ -1015,5 +1097,12 @@ func respawn() -> void:
 	hitbox_visual.visible = false
 	last_damaged_by = null
 	hit_flash_timer = 0.0
+	if not initial_weapons.is_empty():
+		weapons = initial_weapons.duplicate()
+		active_weapon = 0
+		if is_cpu:
+			_equip_default_weapon()  # CPUs come back armed; humans re-draw on fists
+		else:
+			_refresh_weapon()
 	update_hp_bar()
 	update_block_bar()
