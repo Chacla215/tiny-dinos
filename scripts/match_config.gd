@@ -10,7 +10,7 @@ const PLAYER_COLORS := {
 }
 
 const PLAYER_IDS := ["p1", "p2", "p3", "p4"]
-const ACTION_NAMES := ["up", "down", "left", "right", "attack", "heavy", "special", "swap", "block", "dodge", "confirm"]
+const ACTION_NAMES := ["up", "down", "left", "right", "attack", "heavy", "special", "swap", "block", "dodge", "pickup", "throw", "confirm"]
 
 const PLAYER_TINTS := {
 	"p1": Color(1.30, 1.20, 0.50),
@@ -346,11 +346,13 @@ func _setup_input_actions() -> void:
 	var p1_keys := {
 		"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D,
 		"attack": KEY_F, "heavy": KEY_H, "special": KEY_B, "swap": KEY_V, "block": KEY_T, "dodge": KEY_G,
+		"pickup": KEY_Q, "throw": KEY_E,
 		"confirm": KEY_F,
 	}
 	var p2_keys := {
 		"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT,
 		"attack": KEY_PERIOD, "heavy": KEY_M, "special": KEY_L, "swap": KEY_SEMICOLON, "block": KEY_COMMA, "dodge": KEY_SLASH,
+		"pickup": KEY_O, "throw": KEY_P,
 		"confirm": KEY_PERIOD,
 	}
 	_register_player_actions("p1", 0, p1_keys)
@@ -409,6 +411,12 @@ func _register_player_actions(prefix: String, device: int, keys: Dictionary) -> 
 		"dodge":   JOY_BUTTON_A,
 		"confirm": JOY_BUTTON_A,
 	}
+	# Analog triggers (LT/RT) rest at 0 and climb to 1 when squeezed, so they're
+	# bound as positive-axis motions rather than buttons.
+	var joy_triggers := {
+		"pickup": JOY_AXIS_TRIGGER_LEFT,
+		"throw":  JOY_AXIS_TRIGGER_RIGHT,
+	}
 	for action_name in ACTION_NAMES:
 		var full := "%s_%s" % [prefix, action_name]
 		if InputMap.has_action(full):
@@ -436,3 +444,29 @@ func _register_player_actions(prefix: String, device: int, keys: Dictionary) -> 
 			btn.device = device
 			btn.button_index = joy_buttons[action_name]
 			InputMap.action_add_event(full, btn)
+		if action_name in joy_triggers:
+			var trigger := InputEventJoypadMotion.new()
+			trigger.device = device
+			trigger.axis = joy_triggers[action_name]
+			trigger.axis_value = 1.0
+			InputMap.action_add_event(full, trigger)
+
+# Held-weapon silhouettes (point along +X). The dino rotates these to its facing
+# while held; weapon_item.gd reuses them for the thrown/dropped weapon so a sword
+# on the ground reads as the same sword you were carrying. Empty poly = fists.
+func weapon_shape(id: String) -> Dictionary:
+	match id:
+		"sword":
+			return {"poly": PackedVector2Array([Vector2(-3, -2), Vector2(-3, 2), Vector2(28, 2.5), Vector2(38, 0), Vector2(28, -2.5)]), "color": Color(0.85, 0.88, 0.95)}
+		"dagger":
+			return {"poly": PackedVector2Array([Vector2(-3, -2), Vector2(-3, 2), Vector2(15, 2), Vector2(22, 0), Vector2(15, -2)]), "color": Color(0.8, 0.82, 0.88)}
+		"axe":
+			return {"poly": PackedVector2Array([Vector2(0, -2), Vector2(20, -2), Vector2(20, -13), Vector2(34, -5), Vector2(34, 5), Vector2(20, 13), Vector2(20, 2), Vector2(0, 2)]), "color": Color(0.72, 0.74, 0.8)}
+		"mace":
+			return {"poly": PackedVector2Array([Vector2(0, -2), Vector2(20, -2), Vector2(20, -9), Vector2(35, -9), Vector2(35, 9), Vector2(20, 9), Vector2(20, 2), Vector2(0, 2)]), "color": Color(0.5, 0.5, 0.56)}
+		"hammer":
+			return {"poly": PackedVector2Array([Vector2(0, -3), Vector2(22, -3), Vector2(22, -14), Vector2(42, -14), Vector2(42, 14), Vector2(22, 14), Vector2(22, 3), Vector2(0, 3)]), "color": Color(0.55, 0.55, 0.6)}
+		"nunchucks":
+			return {"poly": PackedVector2Array([Vector2(0, -2.5), Vector2(26, -2.5), Vector2(26, 2.5), Vector2(0, 2.5)]), "color": Color(0.45, 0.32, 0.2)}
+		_:
+			return {"poly": PackedVector2Array(), "color": Color.WHITE}  # fists: no held item

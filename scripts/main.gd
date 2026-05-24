@@ -368,6 +368,7 @@ func _end_round(winner_pid: String) -> void:
 	if match_over:
 		return
 	current_round += 1
+	_clear_world_weapons()
 	for p in active_players:
 		p.set_physics_process(true)
 		p.set_process_input(true)
@@ -379,6 +380,12 @@ func _end_round(winner_pid: String) -> void:
 	await get_tree().create_timer(0.8, true, false, true).timeout
 	if not match_over:
 		hud_win.text = ""
+
+# Wipe any thrown/dropped weapons so each round starts on a clean platform.
+func _clear_world_weapons() -> void:
+	for item in get_tree().get_nodes_in_group("weapon_items"):
+		if is_instance_valid(item):
+			item.queue_free()
 
 func _grade(points: int) -> String:
 	if points >= 480: return "A+"
