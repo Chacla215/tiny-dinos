@@ -1,0 +1,175 @@
+extends Node2D
+
+# Front door: pick a mode, then drop into character select. The two hero dinos
+# are rendered from the SAME pixel art the match uses (dino.gd's ANIM_LAYOUTS),
+# so the title reads as "this is the game you'll play" — same rule as the picker.
+const DinoScript := preload("res://scripts/dino.gd")
+const SELECT_SCENE := "res://scenes/select.tscn"
+const BACKDROP_PATH := "res://assets/tilesets/beauty_beach_bg.png"
+
+# Two crowd-pleasers flanking the logo, facing center (echoes the versus screen).
+const LEFT_DINO := "trex"
+const RIGHT_DINO := "raptor"
+const DINO_TARGET_H := 220.0          # both sprites normalized to this height
+
+const ACCENT := Color(1.0, 0.88, 0.30, 1.0)   # P1 yellow = the "selected" color
+const DIM_TEXT := Color(0.72, 0.72, 0.78, 1.0)
+
+# Menu nav accepts EITHER keyboard set, ALL four controllers, and the engine's
+# default ui_* actions — so any player on any pad can drive the front end.
+const UP := ["ui_up", "p1_up", "p2_up", "p3_up", "p4_up"]
+const DOWN := ["ui_down", "p1_down", "p2_down", "p3_down", "p4_down"]
+const CONFIRM := ["ui_accept", "restart", "p1_confirm", "p2_confirm", "p3_confirm", "p4_confirm"]
+# Back = B button (heavy) + ESC (ui_cancel) — matches the "B / ESC" on-screen hint.
+const BACK := ["ui_cancel", "p1_heavy", "p2_heavy", "p3_heavy", "p4_heavy"]
+
+@onready var logo: Node2D = $Logo
+@onready var backdrop: Sprite2D = $Backdrop
+@onready var prompt: Label = $Prompt
+@onready var howto_panel: Node2D = $HowToPanel
+@onready var left_graphic: AnimatedSprite2D = $LeftDino/Graphic
+@onready var right_graphic: AnimatedSprite2D = $RightDino/Graphic
+
+var menu_items: Array = []   # [{label: Label, base: String, action: String}]
+var selected: int = 0
+var howto_open: bool = false
+var t: float = 0.0
+var logo_base_y: float = 0.0
+var nav_prev_dir: int = 0
+
+func _ready() -> void:
+	# Defensive: returning here from a hit-paused match can leave time_scale low.
+	Engine.time_scale = 1.0
+	logo_base_y = logo.position.y
+	_setup_backdrop()
+	_setup_dino(left_graphic, LEFT_DINO, true)
+	_setup_dino(right_graphic, RIGHT_DINO, false)
+	menu_items = [
+		{"label": $Menu/PlayItem, "base": "PLAY", "action": "play"},
+		{"label": $Menu/HowToItem, "base": "HOW TO PLAY", "action": "howto"},
+		{"label": $Menu/QuitItem, "base": "QUIT", "action": "quit"},
+	]
+	# Scale the selected item from its own center, not its top-left corner.
+	for item in menu_items:
+		var l: Label = item.label
+		l.pivot_offset = Vector2(640.0, (l.offset_bottom - l.offset_top) / 2.0)
+	howto_panel.visible = false
+	_refresh_menu()
+
+func _process(delta: float) -> void:
+	t += delta
+	# Idle life: logo bobs, dinos bob out of phase, backdrop sways, prompt pulses.
+	logo.position.y = logo_base_y + sin(t * 1.6) * 6.0
+	left_graphic.position.y = sin(t * 2.2) * 7.0
+	right_graphic.position.y = sin(t * 2.2 + PI) * 7.0
+	backdrop.position.x = 640.0 + sin(t * 0.3) * 18.0
+	prompt.modulate.a = 0.55 + 0.45 * (0.5 + 0.5 * sin(t * 3.0))
+
+	if howto_open:
+		if _just(BACK) or _just(CONFIRM):
+			_close_howto()
+		return
+
+	_handle_nav(delta)
+	if _just(CONFIRM):
+		_activate(menu_items[selected]["action"])
+
+	# Gentle pulse on whichever item is highlighted.
+	for i in range(menu_items.size()):
+		var l: Label = menu_items[i]["label"]
+		l.scale = Vector2.ONE * (1.06 + 0.03 * sin(t * 5.0)) if i == selected else Vector2.ONE
+
+# Single press = single move, no auto-repeat. Fires only on the edge where the
+# held direction changes, so holding does nothing and the analog stick crossing
+# its deadzone twice can't double-trigger.
+func _handle_nav(_delta: float) -> void:
+	var dir: int = 1 if _held(DOWN) else (-1 if _held(UP) else 0)
+	if dir == nav_prev_dir:
+		return
+	nav_prev_dir = dir
+	if dir != 0:
+		selected = (selected + dir + menu_items.size()) % menu_items.size()
+		_refresh_menu()
+
+func _just(actions: Array) -> bool:
+	for a in actions:
+		if InputMap.has_action(a) and Input.is_action_just_pressed(a):
+			return true
+	return false
+
+func _held(actions: Array) -> bool:
+	for a in actions:
+		if InputMap.has_action(a) and Input.is_action_pressed(a):
+			return true
+	return false
+
+func _refresh_menu() -> void:
+	for i in range(menu_items.size()):
+		var l: Label = menu_items[i]["label"]
+		if i == selected:
+			l.text = ">   %s   <" % menu_items[i]["base"]
+			l.add_theme_color_override("font_color", ACCENT)
+		else:
+			l.text = menu_items[i]["base"]
+			l.add_theme_color_override("font_color", DIM_TEXT)
+
+func _activate(action: String) -> void:
+	match action:
+		"play":
+			get_tree().change_scene_to_file(SELECT_SCENE)
+		"howto":
+			_open_howto()
+		"quit":
+			get_tree().quit()
+
+func _open_howto() -> void:
+	howto_open = true
+	howto_panel.visible = true
+
+func _close_howto() -> void:
+	howto_open = false
+	howto_panel.visible = false
+
+func _setup_backdrop() -> void:
+	if not ResourceLoader.exists(BACKDROP_PATH):
+		return
+	var tex: Texture2D = load(BACKDROP_PATH)
+	backdrop.texture = tex
+	# Cover the screen with a little margin so the sway never reveals an edge.
+	var cover: float = max(1280.0 / tex.get_width(), 720.0 / tex.get_height()) * 1.08
+	backdrop.scale = Vector2(cover, cover)
+
+# Build a looping idle from dino.gd's ANIM_LAYOUTS, scaled to a uniform height
+# and flipped to face screen center. Mirrors select.gd's _set_graphic.
+func _setup_dino(graphic: AnimatedSprite2D, dino_id: String, on_left: bool) -> void:
+	var dino: Dictionary = MatchConfig.DINOS.get(dino_id, {})
+	var role: String = dino.get("sprite_role", "")
+	var layouts: Dictionary = DinoScript.ANIM_LAYOUTS
+	if not layouts.has(role):
+		return
+	var layout: Dictionary = layouts[role]
+	var sheet_path: String = layout.get("sheet", "")
+	if not ResourceLoader.exists(sheet_path):
+		return
+	var sheet: Texture2D = load(sheet_path)
+	var idle: Dictionary = layout.get("idle", {})
+	var rects: Array = idle.get("rects", [])
+	if rects.is_empty():
+		return
+	var sf := SpriteFrames.new()
+	sf.remove_animation("default")
+	sf.add_animation("idle")
+	sf.set_animation_loop("idle", true)
+	sf.set_animation_speed("idle", idle.get("speed", 4.0))
+	for r in rects:
+		var at := AtlasTexture.new()
+		at.atlas = sheet
+		at.region = r
+		sf.add_frame("idle", at)
+	graphic.sprite_frames = sf
+	var s: float = DINO_TARGET_H / rects[0].size.y
+	graphic.scale = Vector2(s, s)
+	# Left-side dino looks right, right-side looks left — they square off.
+	var faces_left_art: bool = layout.get("faces_left", false)
+	graphic.flip_h = faces_left_art if on_left else not faces_left_art
+	graphic.play("idle")

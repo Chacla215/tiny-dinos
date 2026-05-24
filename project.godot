@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Tiny Dinos"
 config/description="A top-down competitive multiplayer dino combat game by Charlie Clark."
-run/main_scene="res://scenes/select.tscn"
+run/main_scene="res://scenes/title.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 
 [autoload]
