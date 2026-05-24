@@ -24,11 +24,18 @@ const CONFIRM := ["ui_accept", "restart", "p1_confirm", "p2_confirm", "p3_confir
 const BACK := ["ui_cancel", "p1_heavy", "p2_heavy", "p3_heavy", "p4_heavy"]
 
 @onready var logo: Node2D = $Logo
+@onready var tiny: Sprite2D = $Logo/Tiny       # animated independently in the intro
+@onready var dinos: Sprite2D = $Logo/Dinos
 @onready var backdrop: Sprite2D = $Backdrop
 @onready var prompt: Label = $Prompt
 @onready var howto_panel: Node2D = $HowToPanel
 @onready var left_graphic: AnimatedSprite2D = $LeftDino/Graphic
 @onready var right_graphic: AnimatedSprite2D = $RightDino/Graphic
+@onready var cam: Camera2D = $ShakeCam
+@onready var dust: CPUParticles2D = $Dust
+
+const SHAKE_DUR := 0.42           # screen-shake length, seconds
+const SHAKE_MAG := 22.0           # peak shake offset, px
 
 var menu_items: Array = []   # [{label: Label, base: String, action: String}]
 var selected: int = 0
@@ -36,6 +43,10 @@ var howto_open: bool = false
 var t: float = 0.0
 var logo_base_y: float = 0.0
 var nav_prev_dir: int = 0
+var intro_done: bool = false      # gates the idle bob until the slam finishes
+var tiny_rest: Vector2            # logo-local resting spots, captured from the scene
+var dinos_rest: Vector2
+var shake_left: float = 0.0       # seconds of screen-shake remaining
 
 func _ready() -> void:
 	# Defensive: returning here from a hit-paused match can leave time_scale low.
@@ -59,14 +70,30 @@ func _ready() -> void:
 	# Plugging/unplugging a pad swaps the bottom prompt between gamepad and keyboard.
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 
+	# TINY drops in and slams onto DINOS every time the title screen opens.
+	tiny_rest = tiny.position
+	dinos_rest = dinos.position
+	_play_intro()
+
 func _process(delta: float) -> void:
 	t += delta
 	# Idle life: logo bobs, dinos bob out of phase, backdrop sways, prompt pulses.
-	logo.position.y = logo_base_y + sin(t * 1.6) * 6.0
+	# Hold the logo bob until the slam-in intro has settled.
+	if intro_done:
+		logo.position.y = logo_base_y + sin(t * 1.6) * 6.0
 	left_graphic.position.y = sin(t * 2.2) * 7.0
 	right_graphic.position.y = sin(t * 2.2 + PI) * 7.0
 	backdrop.position.x = 640.0 + sin(t * 0.3) * 18.0
 	prompt.modulate.a = 0.55 + 0.45 * (0.5 + 0.5 * sin(t * 3.0))
+
+	# Decaying screen-shake, kicked by the slam impact.
+	if shake_left > 0.0:
+		shake_left -= delta
+		var k: float = clampf(shake_left / SHAKE_DUR, 0.0, 1.0)
+		var mag: float = SHAKE_MAG * k * k        # ease the shake out
+		cam.offset = Vector2(randf_range(-mag, mag), randf_range(-mag, mag))
+	else:
+		cam.offset = Vector2.ZERO
 
 	if howto_open:
 		if _just(BACK) or _just(CONFIRM):
@@ -141,6 +168,45 @@ func _open_howto() -> void:
 func _close_howto() -> void:
 	howto_open = false
 	howto_panel.visible = false
+
+# Intro: TINY drops from above and slams onto DINOS, which squashes flat and
+# springs back, launching TINY into a few decaying bounces before it settles
+# into the idle float. Pure Tween — one sequential chain with parallel beats.
+func _play_intro() -> void:
+	tiny.position = Vector2(tiny_rest.x, -240.0)   # start well above the screen
+	tiny.scale = Vector2.ONE
+	dinos.scale = Vector2.ONE
+	var tw := create_tween()
+	# 1) The fall — accelerate hard into the impact.
+	tw.tween_property(tiny, "position:y", tiny_rest.y, 0.40) \
+		.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_IN)
+	# Impact beat — kick the screen-shake and dust the instant TINY lands.
+	tw.tween_callback(_on_impact)
+	# 2) Collapse — DINOS flattens like a tennis ball + dips; TINY drives down into it.
+	tw.tween_property(dinos, "scale", Vector2(1.36, 0.46), 0.09) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(dinos, "position:y", dinos_rest.y + 12.0, 0.09)
+	tw.parallel().tween_property(tiny, "scale", Vector2(1.10, 0.90), 0.09)
+	tw.parallel().tween_property(tiny, "position:y", tiny_rest.y + 70.0, 0.09) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	# 3) Spring back — DINOS rebounds tall and launches TINY high.
+	tw.tween_property(dinos, "scale", Vector2(0.84, 1.20), 0.15) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(dinos, "position:y", dinos_rest.y, 0.15)
+	tw.parallel().tween_property(tiny, "scale", Vector2.ONE, 0.12)
+	tw.parallel().tween_property(tiny, "position:y", tiny_rest.y - 95.0, 0.18) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	# 4) Settle — DINOS wobbles elastically back to round; TINY bounces to rest.
+	tw.tween_property(dinos, "scale", Vector2.ONE, 0.34) \
+		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(tiny, "position:y", tiny_rest.y, 0.60) \
+		.set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.finished.connect(func() -> void: intro_done = true)
+
+# Fired by the tween exactly when TINY lands: shake the screen and puff dust.
+func _on_impact() -> void:
+	shake_left = SHAKE_DUR
+	dust.restart()
 
 func _setup_backdrop() -> void:
 	if not ResourceLoader.exists(BACKDROP_PATH):
