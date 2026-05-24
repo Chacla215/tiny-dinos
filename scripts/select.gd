@@ -9,6 +9,12 @@ const WEAPON_PICKS := ["sword", "dagger", "axe", "mace", "hammer", "nunchucks"]
 # background (NOT the hand-drawn concept cards). Frozen Floes is drawn
 # procedurally, so it gets a generated preview that matches its layout.
 const DinoScript := preload("res://scripts/dino.gd")
+const TITLE_SCENE := "res://scenes/title.tscn"
+# Bottom-of-screen control hint: show ONLY the device in use. Any connected
+# controller switches the front end to gamepad prompts; otherwise the keyboard
+# ("computer") layout is shown.
+const HINT_PAD := "A CONFIRM    B BACK (TO TITLE)    LB ADD OPPONENT    P1 PICKS EACH CPU'S DINO + WEAPON"
+const HINT_KEY := "F / . CONFIRM    H / M BACK (TO TITLE)    B ADD OPPONENT    P1 PICKS EACH CPU'S DINO + WEAPON"
 const ISLAND_PREVIEW := {
 	"laughing_lava":     "res://assets/tilesets/example2.png",
 	"beauty_beach":      "res://assets/tilesets/beauty_beach_bg.png",
@@ -39,21 +45,25 @@ var ready_states: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": fal
 var cpu_states: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false}
 var active_players: Array = []
 var start_timer: float = 0.0
+# Everyone is locked in AND the host has pressed the Ready/START button: the
+# match is counting down. Until then we hold on the Ready gate (see _process).
+var launch_armed: bool = false
 
 func _ready() -> void:
 	var controller_count: int = Input.get_connected_joypads().size()
-	var solo: bool = controller_count < 2
 	var initial_count: int = clamp(controller_count, 2, 4)
 	if controller_count < 2:
 		initial_count = 2
-	# Per-slot defaults: solo fills opponents with CPUs; multi-controller = humans.
 	for pid in MatchConfig.PLAYER_IDS:
-		cpu_states[pid] = solo and pid != "p1"
 		indexes[pid] = clamp(indexes[pid], 0, MatchConfig.ROSTER_ORDER.size() - 1)
 		_apply_player_color_to_panel(pid)
+	# Each opponent is HUMAN only if its own controller is plugged in, else CPU.
+	_refresh_cpu_assignment()
 	_apply_active_count(initial_count)
 	countdown_label.text = ""
-	hint_label.text = "<- -> choose    A/F/. confirm    RB/G/, back    heavy human/CPU    LB/B add opponent    P1 picks each CPU's dino + weapon"
+	_update_hint()
+	# Plugging/unplugging a pad re-decides which slots are human and which prompts show.
+	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	island_idx = MatchConfig.ISLAND_ORDER.find(MatchConfig.island)
 	if island_idx < 0:
 		island_idx = 0
@@ -82,7 +92,7 @@ func _cycle_opponent_count() -> void:
 	_apply_active_count(n)
 	for pid in active_players:
 		if int(pid.substr(1)) > prev and pid != "p1":
-			cpu_states[pid] = true
+			cpu_states[pid] = not _controller_present(int(pid.substr(1)) - 1)
 			ready_states[pid] = false
 			stages[pid] = "dino"
 	_refresh_displays()
@@ -90,11 +100,9 @@ func _cycle_opponent_count() -> void:
 
 func _process(delta: float) -> void:
 	if _all_ready():
-		start_timer -= delta
-		countdown_label.text = "STARTING..."
-		if start_timer <= 0.0:
-			_start_match()
+		_process_launch(delta)
 		return
+	launch_armed = false
 	countdown_label.text = ""
 	if Input.is_action_just_pressed("p1_up"):
 		island_idx = (island_idx - 1 + MatchConfig.ISLAND_ORDER.size()) % MatchConfig.ISLAND_ORDER.size()
@@ -105,14 +113,6 @@ func _process(delta: float) -> void:
 	# Host adds/cycles computer opponents (1-v-2, 1-v-3, ...).
 	if Input.is_action_just_pressed("p1_special"):
 		_cycle_opponent_count()
-	# Opponent slots can be flipped HUMAN <-> CPU before they're locked in.
-	for pid in active_players:
-		if pid != "p1" and Input.is_action_just_pressed("%s_heavy" % pid):
-			cpu_states[pid] = not cpu_states[pid]
-			ready_states[pid] = false
-			stages[pid] = "dino"
-			_refresh_displays()
-			_refresh_start()
 	# P1 (the host) configures their own fighter first, then every CPU's dino
 	# AND weapon, all on the LEFT stick. Human opponents pick on their own pads.
 	var target: String = _host_focus()
@@ -126,6 +126,43 @@ func _process(delta: float) -> void:
 	for pid in active_players:
 		if pid != "p1" and not cpu_states[pid]:
 			_drive_slot(pid, pid, false)
+
+# Every fighter has locked a dino + weapon. Hold on a Ready/START gate so the
+# host can eyeball the whole line-up -- nobody drops into the match until the
+# Ready button (confirm) is pressed. Back reopens a pick so it can be changed.
+func _process_launch(delta: float) -> void:
+	if launch_armed:
+		start_timer -= delta
+		countdown_label.text = "STARTING..."
+		if start_timer <= 0.0:
+			_start_match()
+		return
+	var on_pad: bool = not Input.get_connected_joypads().is_empty()
+	var keys: Array = ["A", "B"] if on_pad else ["F", "H"]
+	countdown_label.text = "EVERYONE READY?    %s  START      %s  BACK" % keys
+	if Input.is_action_just_pressed("p1_confirm"):
+		launch_armed = true
+		start_timer = START_DELAY
+		return
+	# Host (B) reopens the last fighter it locked; a human (their B) reopens theirs.
+	if Input.is_action_just_pressed("p1_heavy"):
+		_reopen_last_host_pick()
+		return
+	for pid in active_players:
+		if pid != "p1" and not cpu_states[pid] and Input.is_action_just_pressed("%s_heavy" % pid):
+			stages[pid] = "weapon"
+			_set_ready(pid, false)
+			return
+
+# Step the last host-controlled fighter (P1, or the last CPU) back to its weapon
+# pick so the host can change it; this drops us out of the Ready gate.
+func _reopen_last_host_pick() -> void:
+	var q: Array = _host_queue()
+	if q.is_empty():
+		return
+	var pid: String = q[q.size() - 1]
+	stages[pid] = "weapon"
+	_set_ready(pid, false)
 
 # The slots P1 configures, in order: P1's own fighter, then each CPU opponent.
 # Human opponents are absent here -- they drive their own slots with their pads.
@@ -156,7 +193,9 @@ func _drive_slot(pid: String, src: String, host_edit: bool) -> void:
 	var left := Input.is_action_just_pressed("%s_left" % src)
 	var right := Input.is_action_just_pressed("%s_right" % src)
 	var confirm := Input.is_action_just_pressed("%s_confirm" % src)
-	var back := Input.is_action_just_pressed("%s_block" % src)
+	# Back is B (heavy) -- matches the title screen's back button. (RB now flips
+	# an opponent human/CPU, so B is free here.)
+	var back := Input.is_action_just_pressed("%s_heavy" % src)
 
 	match stages[pid]:
 		"dino":
@@ -165,8 +204,13 @@ func _drive_slot(pid: String, src: String, host_edit: bool) -> void:
 			if confirm:
 				stages[pid] = "weapon"
 				_refresh_displays()
-			elif back and host_edit:
-				_host_back_to_prev(pid)
+			elif back:
+				if host_edit:
+					_host_back_to_prev(pid)
+				elif pid == "p1":
+					# Host is at the very first pick with nothing left to undo,
+					# so backing out leaves the select screen for the title.
+					_return_to_title()
 		"weapon":
 			if left: _cycle_weapon(pid, -1)
 			elif right: _cycle_weapon(pid, 1)
@@ -212,8 +256,10 @@ func _refresh_displays() -> void:
 		_update_display(pid)
 
 func _refresh_start() -> void:
-	if _all_ready():
-		start_timer = START_DELAY
+	# Reaching "all ready" no longer starts the match on its own -- the Ready/START
+	# gate in _process does. Any change before launch disarms a pending start.
+	if not _all_ready():
+		launch_armed = false
 
 func _weapon_label(pid: String) -> String:
 	var wid: String = WEAPON_PICKS[weapon_idx[pid]]
@@ -241,17 +287,17 @@ func _update_display(pid: String) -> void:
 	var waiting: bool = is_cpu and not ready_states[pid] and _host_focus() != pid
 	panel.modulate = Color(1, 1, 1, 0.4) if waiting else Color(1, 1, 1, 1)
 	if waiting:
-		status_label.text = "CPU   .   up next"
+		status_label.text = "CPU   .   UP NEXT"
 		status_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2, 1))
 		return
 
 	var prefix: String = "CPU   " if is_cpu else ""
 	match stages[pid]:
 		"dino":
-			status_label.text = "%s<  PICK DINO  >" % prefix
+			status_label.text = "%sPICK DINO" % prefix
 			status_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85, 1))
 		"weapon":
-			status_label.text = "%s<  %s  >" % [prefix, _weapon_label(pid)]
+			status_label.text = "%s%s" % [prefix, _weapon_label(pid)]
 			status_label.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0, 1))
 		"ready":
 			status_label.text = "%sREADY  -  %s" % [prefix, _weapon_label(pid)]
@@ -265,7 +311,7 @@ func _apply_player_color_to_panel(pid: String) -> void:
 
 func _update_island() -> void:
 	MatchConfig.island = MatchConfig.ISLAND_ORDER[island_idx]
-	island_label.text = "Island:  %s    (P1 up / down)" % MatchConfig.ISLAND_NAMES[MatchConfig.island]
+	island_label.text = "ISLAND:  %s    (P1 UP / DOWN)" % MatchConfig.ISLAND_NAMES[MatchConfig.island]
 	_set_island_bg(MatchConfig.island)
 
 # --- Concept-art helpers ---
@@ -325,6 +371,36 @@ func _set_island_bg(island_id: String) -> void:
 	var tex: Texture2D = load(path)
 	island_bg.texture = tex
 	island_bg.scale = Vector2(ISLAND_BG_WIDTH / tex.get_width(), ISLAND_BG_WIDTH / tex.get_width())
+
+# A controller is "present" for a slot when that slot's device id is plugged in
+# (p1->0, p2->1, ...). Drives both HUMAN/CPU assignment and which hint shows.
+func _controller_present(device: int) -> bool:
+	return device in Input.get_connected_joypads()
+
+# Opponents (p2..p4) are HUMAN only when their own controller is connected,
+# otherwise CPU; P1 (host) is always human. A slot whose role flips is reset so
+# its new driver (P1 or that human) picks from scratch.
+func _refresh_cpu_assignment() -> void:
+	for pid in MatchConfig.PLAYER_IDS:
+		var should_cpu: bool = pid != "p1" and not _controller_present(int(pid.substr(1)) - 1)
+		if cpu_states[pid] != should_cpu:
+			cpu_states[pid] = should_cpu
+			ready_states[pid] = false
+			stages[pid] = "dino"
+
+# A pad was plugged in or removed: re-decide human/CPU slots and refresh prompts.
+func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
+	_refresh_cpu_assignment()
+	_refresh_displays()
+	_refresh_start()
+	_update_hint()
+
+# Gamepad prompts when any controller is connected, keyboard prompts otherwise.
+func _update_hint() -> void:
+	hint_label.text = HINT_PAD if not Input.get_connected_joypads().is_empty() else HINT_KEY
+
+func _return_to_title() -> void:
+	get_tree().change_scene_to_file(TITLE_SCENE)
 
 func _start_match() -> void:
 	MatchConfig.weapon_choices = {}
