@@ -55,6 +55,9 @@ func _ready() -> void:
 		l.pivot_offset = Vector2(640.0, (l.offset_bottom - l.offset_top) / 2.0)
 	howto_panel.visible = false
 	_refresh_menu()
+	_update_prompt()
+	# Plugging/unplugging a pad swaps the bottom prompt between gamepad and keyboard.
+	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 
 func _process(delta: float) -> void:
 	t += delta
@@ -102,6 +105,15 @@ func _held(actions: Array) -> bool:
 		if InputMap.has_action(a) and Input.is_action_pressed(a):
 			return true
 	return false
+
+# Show only the device in use: gamepad prompt if any controller is connected,
+# keyboard ("computer") prompt otherwise.
+func _update_prompt() -> void:
+	var on_pad: bool = not Input.get_connected_joypads().is_empty()
+	prompt.text = "UP / DOWN  SELECT      A  CONFIRM" if on_pad else "UP / DOWN  SELECT      ENTER  CONFIRM"
+
+func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
+	_update_prompt()
 
 func _refresh_menu() -> void:
 	for i in range(menu_items.size()):
