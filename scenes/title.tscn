@@ -1,0 +1,195 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/title.gd" id="1_title"]
+
+[node name="Title" type="Node2D"]
+script = ExtResource("1_title")
+
+[node name="Background" type="Polygon2D" parent="."]
+color = Color(0.1, 0.1, 0.15, 1)
+polygon = PackedVector2Array(0, 0, 1280, 0, 1280, 720, 0, 720)
+
+[node name="Backdrop" type="Sprite2D" parent="."]
+position = Vector2(640, 360)
+modulate = Color(0.5, 0.5, 0.58, 1)
+
+[node name="Vignette" type="Polygon2D" parent="."]
+color = Color(0.08, 0.08, 0.13, 0.45)
+polygon = PackedVector2Array(0, 0, 1280, 0, 1280, 720, 0, 720)
+
+[node name="LeftDino" type="Node2D" parent="."]
+position = Vector2(220, 430)
+
+[node name="Graphic" type="AnimatedSprite2D" parent="LeftDino"]
+texture_filter = 1
+
+[node name="RightDino" type="Node2D" parent="."]
+position = Vector2(1060, 430)
+
+[node name="Graphic" type="AnimatedSprite2D" parent="RightDino"]
+texture_filter = 1
+
+[node name="Logo" type="Node2D" parent="."]
+
+[node name="TitleLabel" type="Label" parent="Logo"]
+offset_left = 0.0
+offset_top = 66.0
+offset_right = 1280.0
+offset_bottom = 188.0
+theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 96
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "TINY DINOS"
+
+[node name="Subtitle" type="Label" parent="Logo"]
+offset_left = 0.0
+offset_top = 196.0
+offset_right = 1280.0
+offset_bottom = 228.0
+theme_override_colors/font_color = Color(0.8, 0.8, 0.85, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+text = "TOP-DOWN DINO BRAWLER"
+
+[node name="Menu" type="Node2D" parent="."]
+
+[node name="PlayItem" type="Label" parent="Menu"]
+offset_left = 0.0
+offset_top = 332.0
+offset_right = 1280.0
+offset_bottom = 382.0
+theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "PLAY"
+
+[node name="HowToItem" type="Label" parent="Menu"]
+offset_left = 0.0
+offset_top = 402.0
+offset_right = 1280.0
+offset_bottom = 452.0
+theme_override_colors/font_color = Color(0.72, 0.72, 0.78, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "HOW TO PLAY"
+
+[node name="QuitItem" type="Label" parent="Menu"]
+offset_left = 0.0
+offset_top = 472.0
+offset_right = 1280.0
+offset_bottom = 522.0
+theme_override_colors/font_color = Color(0.72, 0.72, 0.78, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "QUIT"
+
+[node name="Prompt" type="Label" parent="."]
+offset_left = 0.0
+offset_top = 656.0
+offset_right = 1280.0
+offset_bottom = 686.0
+theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "UP / DOWN  select      A / ENTER  confirm"
+
+[node name="HowToPanel" type="Node2D" parent="."]
+visible = false
+
+[node name="Dim" type="Polygon2D" parent="HowToPanel"]
+color = Color(0.04, 0.04, 0.07, 0.85)
+polygon = PackedVector2Array(0, 0, 1280, 0, 1280, 720, 0, 720)
+
+[node name="Panel" type="Polygon2D" parent="HowToPanel"]
+color = Color(0.12, 0.13, 0.2, 0.98)
+polygon = PackedVector2Array(200, 80, 1080, 80, 1080, 640, 200, 640)
+
+[node name="Heading" type="Label" parent="HowToPanel"]
+offset_left = 200.0
+offset_top = 100.0
+offset_right = 1080.0
+offset_bottom = 150.0
+theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
+theme_override_font_sizes/font_size = 40
+horizontal_alignment = 1
+text = "HOW TO PLAY"
+
+[node name="ColAction" type="Label" parent="HowToPanel"]
+offset_left = 300.0
+offset_top = 200.0
+offset_right = 600.0
+offset_bottom = 560.0
+theme_override_colors/font_color = Color(0.7, 0.95, 1, 1)
+theme_override_constants/line_spacing = 12
+theme_override_font_sizes/font_size = 22
+text = "ACTION
+Move
+Attack
+Heavy
+Special
+Block
+Dodge
+Swap Weapon
+Pause"
+
+[node name="ColPad" type="Label" parent="HowToPanel"]
+offset_left = 620.0
+offset_top = 200.0
+offset_right = 860.0
+offset_bottom = 560.0
+theme_override_colors/font_color = Color(0.95, 0.95, 0.98, 1)
+theme_override_constants/line_spacing = 12
+theme_override_font_sizes/font_size = 22
+text = "CONTROLLER
+L-Stick / D-Pad
+X
+B
+LB
+RB
+A
+Y
+Start"
+
+[node name="ColKey" type="Label" parent="HowToPanel"]
+offset_left = 880.0
+offset_top = 200.0
+offset_right = 1040.0
+offset_bottom = 560.0
+theme_override_colors/font_color = Color(0.95, 0.95, 0.98, 1)
+theme_override_constants/line_spacing = 12
+theme_override_font_sizes/font_size = 22
+text = "KEYBOARD (P1 / P2)
+WASD / Arrows
+F  /  .
+H  /  M
+B  /  L
+T  /  ,
+G  /  /
+V  /  ;
+Esc"
+
+[node name="Footer" type="Label" parent="HowToPanel"]
+offset_left = 200.0
+offset_top = 580.0
+offset_right = 1080.0
+offset_bottom = 630.0
+theme_override_colors/font_color = Color(0.8, 0.8, 0.85, 1)
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "Ring out your opponents — first to 3 rounds wins.     ( B / ESC  to go back )"
