@@ -1,7 +1,7 @@
 extends Node
 ## Global pause. Autoload with process_mode ALWAYS so it keeps running while the
 ## rest of the tree is paused. Toggles get_tree().paused on the "pause" action
-## (controller Start / keyboard Escape), but only inside an active match.
+## (controller Start), but only inside an active match.
 
 var _layer: CanvasLayer
 var _dim: ColorRect

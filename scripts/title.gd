@@ -15,13 +15,12 @@ const DINO_TARGET_H := 220.0          # both sprites normalized to this height
 const ACCENT := Color(1.0, 0.88, 0.30, 1.0)   # P1 yellow = the "selected" color
 const DIM_TEXT := Color(0.72, 0.72, 0.78, 1.0)
 
-# Menu nav accepts EITHER keyboard set, ALL four controllers, and the engine's
-# default ui_* actions — so any player on any pad can drive the front end.
-const UP := ["ui_up", "p1_up", "p2_up", "p3_up", "p4_up"]
-const DOWN := ["ui_down", "p1_down", "p2_down", "p3_down", "p4_down"]
-const CONFIRM := ["ui_accept", "restart", "p1_confirm", "p2_confirm", "p3_confirm", "p4_confirm"]
-# Back = B button (heavy) + ESC (ui_cancel) — matches the "B / ESC" on-screen hint.
-const BACK := ["ui_cancel", "p1_heavy", "p2_heavy", "p3_heavy", "p4_heavy"]
+# Gamepad-only: any of the four controllers can drive the front end.
+const UP := ["p1_up", "p2_up", "p3_up", "p4_up"]
+const DOWN := ["p1_down", "p2_down", "p3_down", "p4_down"]
+const CONFIRM := ["p1_confirm", "p2_confirm", "p3_confirm", "p4_confirm"]
+# Back = B button (heavy) on any pad — matches the on-screen "B  Back" hint.
+const BACK := ["p1_heavy", "p2_heavy", "p3_heavy", "p4_heavy"]
 
 @onready var logo: Node2D = $Logo
 @onready var tiny: Sprite2D = $Logo/Tiny       # animated independently in the intro
@@ -66,9 +65,7 @@ func _ready() -> void:
 		l.pivot_offset = Vector2(640.0, (l.offset_bottom - l.offset_top) / 2.0)
 	howto_panel.visible = false
 	_refresh_menu()
-	_update_prompt()
-	# Plugging/unplugging a pad swaps the bottom prompt between gamepad and keyboard.
-	Input.joy_connection_changed.connect(_on_joy_connection_changed)
+	prompt.text = "UP / DOWN  SELECT      A  CONFIRM"
 
 	# TINY drops in and slams onto DINOS every time the title screen opens.
 	tiny_rest = tiny.position
@@ -132,15 +129,6 @@ func _held(actions: Array) -> bool:
 		if InputMap.has_action(a) and Input.is_action_pressed(a):
 			return true
 	return false
-
-# Show only the device in use: gamepad prompt if any controller is connected,
-# keyboard ("computer") prompt otherwise.
-func _update_prompt() -> void:
-	var on_pad: bool = not Input.get_connected_joypads().is_empty()
-	prompt.text = "UP / DOWN  SELECT      A  CONFIRM" if on_pad else "UP / DOWN  SELECT      ENTER  CONFIRM"
-
-func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
-	_update_prompt()
 
 func _refresh_menu() -> void:
 	for i in range(menu_items.size()):

@@ -10,11 +10,8 @@ const WEAPON_PICKS := ["sword", "dagger", "axe", "mace", "hammer", "nunchucks"]
 # procedurally, so it gets a generated preview that matches its layout.
 const DinoScript := preload("res://scripts/dino.gd")
 const TITLE_SCENE := "res://scenes/title.tscn"
-# Bottom-of-screen control hint: show ONLY the device in use. Any connected
-# controller switches the front end to gamepad prompts; otherwise the keyboard
-# ("computer") layout is shown.
+# Bottom-of-screen control hint. The game is gamepad-only, so this is constant.
 const HINT_PAD := "A CONFIRM    B BACK (TO TITLE)    LB ADD OPPONENT    P1 PICKS EACH CPU'S DINO + WEAPON"
-const HINT_KEY := "F / . CONFIRM    H / M BACK (TO TITLE)    B ADD OPPONENT    P1 PICKS EACH CPU'S DINO + WEAPON"
 const ISLAND_PREVIEW := {
 	"laughing_lava":     "res://assets/tilesets/example2.png",
 	"beauty_beach":      "res://assets/tilesets/beauty_beach_bg.png",
@@ -395,9 +392,9 @@ func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
 	_refresh_start()
 	_update_hint()
 
-# Gamepad prompts when any controller is connected, keyboard prompts otherwise.
+# Gamepad-only, so the hint never changes.
 func _update_hint() -> void:
-	hint_label.text = HINT_PAD if not Input.get_connected_joypads().is_empty() else HINT_KEY
+	hint_label.text = HINT_PAD
 
 func _return_to_title() -> void:
 	get_tree().change_scene_to_file(TITLE_SCENE)

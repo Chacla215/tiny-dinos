@@ -343,22 +343,12 @@ func _ready() -> void:
 	_setup_input_actions()
 
 func _setup_input_actions() -> void:
-	var p1_keys := {
-		"up": KEY_W, "down": KEY_S, "left": KEY_A, "right": KEY_D,
-		"attack": KEY_F, "heavy": KEY_H, "special": KEY_B, "swap": KEY_V, "block": KEY_T, "dodge": KEY_G,
-		"pickup": KEY_Q, "throw": KEY_E,
-		"confirm": KEY_F,
-	}
-	var p2_keys := {
-		"up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT,
-		"attack": KEY_PERIOD, "heavy": KEY_M, "special": KEY_L, "swap": KEY_SEMICOLON, "block": KEY_COMMA, "dodge": KEY_SLASH,
-		"pickup": KEY_O, "throw": KEY_P,
-		"confirm": KEY_PERIOD,
-	}
-	_register_player_actions("p1", 0, p1_keys)
-	_register_player_actions("p2", 1, p2_keys)
-	_register_player_actions("p3", 2, {})
-	_register_player_actions("p4", 3, {})
+	# Gamepad-only: all four players drive the game from controllers. There are no
+	# keyboard bindings — _register_player_actions wires pad buttons/axes only.
+	_register_player_actions("p1", 0)
+	_register_player_actions("p2", 1)
+	_register_player_actions("p3", 2)
+	_register_player_actions("p4", 3)
 	_register_restart_action()
 	_register_pause_action()
 
@@ -367,9 +357,6 @@ func _register_pause_action() -> void:
 		InputMap.action_erase_events("pause")
 	else:
 		InputMap.add_action("pause")
-	var key_event := InputEventKey.new()
-	key_event.keycode = KEY_ESCAPE
-	InputMap.action_add_event("pause", key_event)
 	for device in [0, 1, 2, 3]:
 		var btn := InputEventJoypadButton.new()
 		btn.device = device
@@ -381,17 +368,13 @@ func _register_restart_action() -> void:
 		InputMap.action_erase_events("restart")
 	else:
 		InputMap.add_action("restart")
-	for keycode in [KEY_R, KEY_ENTER]:
-		var key_event := InputEventKey.new()
-		key_event.keycode = keycode
-		InputMap.action_add_event("restart", key_event)
-	for device in [0, 1]:
+	for device in [0, 1, 2, 3]:
 		var btn := InputEventJoypadButton.new()
 		btn.device = device
 		btn.button_index = JOY_BUTTON_START
 		InputMap.action_add_event("restart", btn)
 
-func _register_player_actions(prefix: String, device: int, keys: Dictionary) -> void:
+func _register_player_actions(prefix: String, device: int) -> void:
 	var joy_dpad := {
 		"up": JOY_BUTTON_DPAD_UP, "down": JOY_BUTTON_DPAD_DOWN,
 		"left": JOY_BUTTON_DPAD_LEFT, "right": JOY_BUTTON_DPAD_RIGHT,
@@ -424,10 +407,6 @@ func _register_player_actions(prefix: String, device: int, keys: Dictionary) -> 
 		else:
 			InputMap.add_action(full, 0.3)
 		InputMap.action_set_deadzone(full, 0.3)
-		if action_name in keys:
-			var key_event := InputEventKey.new()
-			key_event.keycode = keys[action_name]
-			InputMap.action_add_event(full, key_event)
 		if action_name in joy_dpad:
 			var btn := InputEventJoypadButton.new()
 			btn.device = device

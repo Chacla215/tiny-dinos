@@ -417,7 +417,7 @@ func end_match(winner: CharacterBody2D, label: String) -> void:
 		var pts: int = dp.get(pid, 0)
 		lines.append("%s   %d DP   %s" % [_dino_name(pid), pts, _grade(pts)])
 	lines.append("")
-	lines.append("press R / ENTER / START for character select")
+	lines.append("press START for character select")
 	hud_hint.text = "\n".join(lines)
 	for p in active_players:
 		p.set_process_input(false)
