@@ -19,7 +19,7 @@ const PLAYER_TINTS := {
 	"p4": Color(0.60, 1.20, 0.60),
 }
 
-# Weapons modify light + heavy attacks (not the signature special). Y swaps the
+# Weapons modify light + heavy attacks (not the signature special). RB swaps the
 # active weapon. "fists" = the dino's natural attack. Melee only for now — Bow
 # needs the projectile path (TODO). Each dino has a 2-weapon loadout (DINOS.weapons).
 const WEAPONS := {
@@ -389,8 +389,8 @@ func _register_player_actions(prefix: String, device: int) -> void:
 		"attack":  JOY_BUTTON_X,
 		"heavy":   JOY_BUTTON_B,
 		"special": JOY_BUTTON_LEFT_SHOULDER,
-		"swap":    JOY_BUTTON_Y,
-		"block":   JOY_BUTTON_RIGHT_SHOULDER,
+		"swap":    JOY_BUTTON_RIGHT_SHOULDER,
+		"block":   JOY_BUTTON_Y,
 		"dodge":   JOY_BUTTON_A,
 		"confirm": JOY_BUTTON_A,
 	}
