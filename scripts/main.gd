@@ -12,6 +12,13 @@ const SFX_PATHS := {
 }
 
 @export var safe_rect: Rect2 = Rect2(160, 100, 960, 520)
+## Island-shaped ring-out boundary in WORLD coords. When this has 3+ points it
+## REPLACES safe_rect: ring-out becomes point-in-polygon, so a round/irregular
+## island reads true to its painted shoreline instead of a rectangle inscribed
+## in it. Generate the points with scripts/tools/gen_safe_zone.py.
+@export var safe_polygon: PackedVector2Array = PackedVector2Array()
+## Outline the live ring-out boundary on-screen (red) for tuning. Leave off in builds.
+@export var debug_draw_safe_zone: bool = false
 @export var kos_to_win: int = 3
 @export var ledge_kill_enabled: bool = true
 @export var clamp_to_bounds: bool = false
@@ -98,6 +105,7 @@ func _ready() -> void:
 	_style_hud()
 	update_score_display()
 	_load_sfx()
+	_build_debug_boundary()  # red ring-out outline when debug_draw_safe_zone is on
 
 func _setup_active_players() -> void:
 	var count: int = MatchConfig.player_count
@@ -218,9 +226,12 @@ func _physics_process(delta: float) -> void:
 		return
 	_separate_players()
 	for p in active_players:
+		if p.is_falling:
+			continue  # tumbling off-screen; its own _physics_process drives it
 		p.current_push = global_current
-		if ledge_kill_enabled and not safe_rect.has_point(p.global_position):
-			handle_environmental_kill(p)
+		if ledge_kill_enabled and not _in_safe_zone(p.global_position):
+			_ringout(p)
+			continue
 		if clamp_to_bounds:
 			p.global_position = p.global_position.clamp(play_bounds.position, play_bounds.end)
 	if lava_area:
@@ -253,8 +264,12 @@ func _separate_players() -> void:
 	var count := active_players.size()
 	for i in range(count):
 		var a: CharacterBody2D = active_players[i]
+		if a.is_falling:
+			continue
 		for j in range(i + 1, count):
 			var b: CharacterBody2D = active_players[j]
+			if b.is_falling:
+				continue
 			var diff := b.global_position - a.global_position
 			var dist := diff.length()
 			if dist >= PLAYER_SEPARATION:
@@ -316,6 +331,117 @@ func _on_water_entered(body: Node) -> void:
 		# Deferred: this fires during physics-query flush, and the kill respawns
 		# the body (toggling collision shapes), which isn't allowed mid-flush.
 		handle_environmental_kill.call_deferred(body)
+
+# True while a player is standing on safe ground. A 3+ point safe_polygon (an
+# island-shaped boundary) wins over the rectangular safe_rect when present.
+func _in_safe_zone(pos: Vector2) -> bool:
+	if safe_polygon.size() >= 3:
+		return Geometry2D.is_point_in_polygon(pos, safe_polygon)
+	return safe_rect.has_point(pos)
+
+# Public alias so a sky-launched dino can test when it has clawed back in.
+func is_in_safe_zone(pos: Vector2) -> bool:
+	return _in_safe_zone(pos)
+
+# Center of the play area — picks the side a ring-out launches toward.
+func _safe_center() -> Vector2:
+	if safe_polygon.size() >= 3:
+		var sum := Vector2.ZERO
+		for p in safe_polygon:
+			sum += p
+		return sum / safe_polygon.size()
+	return safe_rect.get_center()
+
+# Tuning aid: trace the live ring-out boundary so you can see exactly where the
+# island ends versus where the art's shoreline is painted. A high-z Line2D (not
+# _draw, which renders under the background sprite). Off in real builds.
+func _build_debug_boundary() -> void:
+	if not debug_draw_safe_zone:
+		return
+	# Floe arena (drown-off-floes): outline each safe floe, not a ring-out boundary.
+	if drown_off_floes:
+		var floes := get_node_or_null("Floe")
+		if floes:
+			for f in floes.get_children():
+				if not (f is Area2D):
+					continue
+				for c in f.get_children():
+					if c is CollisionPolygon2D and (c as CollisionPolygon2D).polygon.size() >= 2:
+						var fp: PackedVector2Array = (c as CollisionPolygon2D).polygon
+						var fl := PackedVector2Array()
+						for v in fp:
+							fl.append(f.position + c.position + v)
+						fl.append(f.position + c.position + fp[0])
+						_add_debug_outline(fl)
+		return
+	# Ring-out boundary.
+	var loop := PackedVector2Array()
+	if safe_polygon.size() >= 3:
+		loop = safe_polygon.duplicate()
+		loop.append(safe_polygon[0])
+	else:
+		var r := safe_rect
+		loop = PackedVector2Array([r.position, Vector2(r.end.x, r.position.y),
+			r.end, Vector2(r.position.x, r.end.y), r.position])
+	_add_debug_outline(loop)
+	# Each cover block, so collision can be checked against the painted boulder.
+	var obstacles := get_node_or_null("Obstacles")
+	if obstacles:
+		for c in obstacles.get_children():
+			if not (c is CollisionShape2D):
+				continue
+			var o: Vector2 = c.position
+			if c.shape is RectangleShape2D:
+				var hs: Vector2 = (c.shape as RectangleShape2D).size * 0.5
+				_add_debug_outline(PackedVector2Array([
+					o + Vector2(-hs.x, -hs.y), o + Vector2(hs.x, -hs.y),
+					o + Vector2(hs.x, hs.y), o + Vector2(-hs.x, hs.y),
+					o + Vector2(-hs.x, -hs.y)]))
+			elif c.shape is ConvexPolygonShape2D:
+				var pts: PackedVector2Array = (c.shape as ConvexPolygonShape2D).points
+				if pts.size() >= 2:
+					var loop2 := PackedVector2Array()
+					for v in pts:
+						loop2.append(o + v)
+					loop2.append(o + pts[0])
+					_add_debug_outline(loop2)
+
+func _add_debug_outline(loop: PackedVector2Array) -> void:
+	var line := Line2D.new()
+	line.points = loop
+	line.width = 3.0
+	line.default_color = Color(1.0, 0.2, 0.2, 0.9)
+	line.z_index = 100
+	add_child(line)
+
+# Crossed the island boundary: start the off-screen tumble. Kill credit is
+# captured NOW (respawn later clears last_damaged_by) and settled in
+# on_ringout_complete once the fall finishes, so the KO lands with the drop.
+func _ringout(victim: Node) -> void:
+	if victim.is_falling:
+		return
+	var killer: Node = victim.last_damaged_by if "last_damaged_by" in victim else null
+	if killer == null and active_players.size() == 2:
+		killer = active_players[1] if victim == active_players[0] else active_players[0]
+	victim.ringout_killer = killer
+	play_sfx("ko", 0.0)
+	shake(7.0, 0.18)
+	# Crossed the upper half → launched into the sky (recoverable). Else drop.
+	var center := _safe_center()
+	var go_up: bool = victim.global_position.y < center.y
+	victim.begin_ringout(go_up, center.y)
+
+func on_ringout_complete(victim: Node) -> void:
+	var killer: Node = victim.ringout_killer
+	victim.ringout_killer = null
+	if victim.has_method("respawn"):
+		victim.respawn()
+	if killer != null and killer != victim and killer in active_players:
+		award_ko(killer, victim)
+
+# The dino mashed its way back onto the field — no KO, no respawn, keeps its HP.
+func on_ringout_recovered(victim: Node) -> void:
+	victim.ringout_killer = null
 
 func handle_environmental_kill(victim: Node) -> void:
 	var killer: Node = victim.last_damaged_by if "last_damaged_by" in victim else null
