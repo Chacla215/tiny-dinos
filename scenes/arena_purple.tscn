@@ -10,50 +10,11 @@ size = Vector2(48, 48)
 [sub_resource type="RectangleShape2D" id="hitbox_placeholder"]
 size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="water_0"]
-size = Vector2(32, 32)
-
-[sub_resource type="RectangleShape2D" id="water_1"]
-size = Vector2(32, 32)
-
-[sub_resource type="RectangleShape2D" id="water_2"]
-size = Vector2(192, 32)
-
-[sub_resource type="RectangleShape2D" id="water_3"]
-size = Vector2(256, 32)
-
-[sub_resource type="RectangleShape2D" id="water_4"]
-size = Vector2(320, 32)
-
-[sub_resource type="RectangleShape2D" id="water_5"]
-size = Vector2(352, 32)
-
-[sub_resource type="RectangleShape2D" id="water_6"]
-size = Vector2(416, 32)
-
-[sub_resource type="RectangleShape2D" id="water_7"]
-size = Vector2(480, 32)
-
-[sub_resource type="RectangleShape2D" id="water_8"]
-size = Vector2(416, 32)
-
-[sub_resource type="RectangleShape2D" id="water_9"]
-size = Vector2(384, 32)
-
-[sub_resource type="RectangleShape2D" id="water_10"]
-size = Vector2(352, 32)
-
-[sub_resource type="RectangleShape2D" id="water_11"]
-size = Vector2(384, 32)
-
-[sub_resource type="RectangleShape2D" id="obs_block"]
-size = Vector2(64, 64)
-
 [node name="Main" type="Node2D"]
 script = ExtResource("2_main")
-safe_rect = Rect2(160, 100, 960, 520)
-ledge_kill_enabled = false
-clamp_to_bounds = true
+safe_rect = Rect2(175, 325, 950, 350)
+ledge_kill_enabled = true
+clamp_to_bounds = false
 play_bounds = Rect2(-32, 110, 1344, 640)
 
 [node name="Camera2D" type="Camera2D" parent="."]
@@ -70,116 +31,8 @@ texture = ExtResource("3_bg")
 
 [node name="IcePatches" type="Node2D" parent="."]
 
-[node name="Water" type="Area2D" parent="."]
-
-[node name="C0" type="CollisionShape2D" parent="Water"]
-position = Vector2(624, 368)
-shape = SubResource("water_0")
-
-[node name="C1" type="CollisionShape2D" parent="Water"]
-position = Vector2(688, 368)
-shape = SubResource("water_1")
-
-[node name="C2" type="CollisionShape2D" parent="Water"]
-position = Vector2(640, 400)
-shape = SubResource("water_2")
-
-[node name="C3" type="CollisionShape2D" parent="Water"]
-position = Vector2(640, 432)
-shape = SubResource("water_3")
-
-[node name="C4" type="CollisionShape2D" parent="Water"]
-position = Vector2(640, 464)
-shape = SubResource("water_4")
-
-[node name="C5" type="CollisionShape2D" parent="Water"]
-position = Vector2(656, 496)
-shape = SubResource("water_5")
-
-[node name="C6" type="CollisionShape2D" parent="Water"]
-position = Vector2(688, 528)
-shape = SubResource("water_6")
-
-[node name="C7" type="CollisionShape2D" parent="Water"]
-position = Vector2(688, 560)
-shape = SubResource("water_7")
-
-[node name="C8" type="CollisionShape2D" parent="Water"]
-position = Vector2(624, 592)
-shape = SubResource("water_8")
-
-[node name="C9" type="CollisionShape2D" parent="Water"]
-position = Vector2(608, 624)
-shape = SubResource("water_9")
-
-[node name="C10" type="CollisionShape2D" parent="Water"]
-position = Vector2(592, 656)
-shape = SubResource("water_10")
-
-[node name="C11" type="CollisionShape2D" parent="Water"]
-position = Vector2(608, 688)
-shape = SubResource("water_11")
-
-[node name="Obstacles" type="StaticBody2D" parent="."]
-collision_layer = 2
-collision_mask = 0
-
-[node name="O0" type="CollisionShape2D" parent="Obstacles"]
-position = Vector2(240, 240)
-shape = SubResource("obs_block")
-
-[node name="V0" type="Polygon2D" parent="Obstacles"]
-position = Vector2(240, 240)
-color = Color(0.28, 0.16, 0.36, 0.95)
-polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
-
-[node name="O1" type="CollisionShape2D" parent="Obstacles"]
-position = Vector2(1040, 240)
-shape = SubResource("obs_block")
-
-[node name="V1" type="Polygon2D" parent="Obstacles"]
-position = Vector2(1040, 240)
-color = Color(0.28, 0.16, 0.36, 0.95)
-polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
-
-[node name="O2" type="CollisionShape2D" parent="Obstacles"]
-position = Vector2(470, 360)
-shape = SubResource("obs_block")
-
-[node name="V2" type="Polygon2D" parent="Obstacles"]
-position = Vector2(470, 360)
-color = Color(0.28, 0.16, 0.36, 0.95)
-polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
-
-[node name="O3" type="CollisionShape2D" parent="Obstacles"]
-position = Vector2(810, 360)
-shape = SubResource("obs_block")
-
-[node name="V3" type="Polygon2D" parent="Obstacles"]
-position = Vector2(810, 360)
-color = Color(0.28, 0.16, 0.36, 0.95)
-polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
-
-[node name="O4" type="CollisionShape2D" parent="Obstacles"]
-position = Vector2(300, 520)
-shape = SubResource("obs_block")
-
-[node name="V4" type="Polygon2D" parent="Obstacles"]
-position = Vector2(300, 520)
-color = Color(0.28, 0.16, 0.36, 0.95)
-polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
-
-[node name="O5" type="CollisionShape2D" parent="Obstacles"]
-position = Vector2(980, 520)
-shape = SubResource("obs_block")
-
-[node name="V5" type="Polygon2D" parent="Obstacles"]
-position = Vector2(980, 520)
-color = Color(0.28, 0.16, 0.36, 0.95)
-polygon = PackedVector2Array(-32, -32, 32, -32, 32, 32, -32, 32)
-
 [node name="Player1" type="CharacterBody2D" parent="."]
-position = Vector2(360, 360)
+position = Vector2(330, 430)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -211,7 +64,7 @@ disabled = true
 visible = false
 
 [node name="Player2" type="CharacterBody2D" parent="."]
-position = Vector2(920, 360)
+position = Vector2(950, 430)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -243,7 +96,7 @@ disabled = true
 visible = false
 
 [node name="Player3" type="CharacterBody2D" parent="."]
-position = Vector2(640, 220)
+position = Vector2(490, 620)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -275,7 +128,7 @@ disabled = true
 visible = false
 
 [node name="Player4" type="CharacterBody2D" parent="."]
-position = Vector2(200, 150)
+position = Vector2(800, 620)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
