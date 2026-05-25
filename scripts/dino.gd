@@ -108,7 +108,7 @@ const ANIM_LAYOUTS := {
 @export var special_slow_duration: float = 0.0 ## screech: how long victims are slowed
 
 @export_group("Weapons")
-## 2-weapon loadout (ids into MatchConfig.WEAPONS). Y swaps the active one.
+## 2-weapon loadout (ids into MatchConfig.WEAPONS). RB swaps the active one.
 @export var weapons: Array = ["fists"]
 
 @export_group("Defense")
