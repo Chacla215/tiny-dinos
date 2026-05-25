@@ -210,7 +210,7 @@ func _draw_callouts() -> void:
 	# Pause — Menu button, dropped to a centered label just below the pad.
 	draw_circle(a_menu, 3.0, LINE)
 	draw_polyline(PackedVector2Array([a_menu, Vector2(640.0, 484.0)]), LINE, 2.0, true)
-	_pair(Vector2(640.0, 487.0), "MENU", "PAUSE", SYS, A_CENTER, 19)
+	_label(Vector2(640.0, 487.0), "MENU / PAUSE", 19, SYS, A_CENTER)
 
 # Left-edge callout: dot at the button, a line out to the gutter, then a label
 # right-aligned with its right edge at rx and centered vertically on ly.
