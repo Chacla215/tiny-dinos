@@ -328,15 +328,17 @@ def icon_flame(d, cx, cy, r, petal, core):
 
 
 def draw_title(base, name, gtop, gbot, accent, icon=None,
-               icon_petal=(255, 255, 255, 255), icon_core=(255, 255, 255, 255)):
+               icon_petal=(255, 255, 255, 255), icon_core=(255, 255, 255, 255),
+               max_w=880):
     """Bake '<NAME>' + a 'BATTLE GROUND' banner centred in the top frame band.
-    Auto-shrinks the name so it stays clear of the corner HUD score labels."""
+    Auto-shrinks the name (incl. its flanking icons) so it stays clear of the
+    corner HUD score labels. Pass a smaller max_w for long names (e.g. 3-word)."""
     size = 96
     tmp = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
     tw = tmp.textbbox((0, 0), name.upper(),
                       font=ImageFont.truetype(FONT, size), stroke_width=7)[2]
-    if tw > 880:                                   # keep within ~880px centre
-        size = max(54, int(size * 880 / tw))
+    if tw > max_w:                                 # keep within the centre band
+        size = max(46, int(size * max_w / tw))
     title = text_block(name.upper(), ImageFont.truetype(FONT, size),
                        gtop, gbot)
     tx, ty = (W - title.width) // 2, 24

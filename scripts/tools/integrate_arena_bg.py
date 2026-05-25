@@ -24,14 +24,14 @@ import gen_island_bgs as g   # W, H, OFF, draw_title, icon_flower, ...
 
 DEBUG = os.environ.get("DEBUG") == "1"
 
-# --- per-island config (Purple Fields) -------------------------------------
-SRC = "/Users/charlie/.claude/image-cache/15bc98a7-b342-472d-8601-e233fc1b4728/2.png"
-DST = "assets/tilesets/purple_fields_bg.png"
-DEBUG_DST = "scripts/tools/_purple_debug.png"
-TITLE = "PURPLE FIELDS"
-TITLE_ARGS = dict(gtop=(250, 244, 255), gbot=(192, 150, 232), accent=(150, 92, 196),
-                  icon=g.icon_flower, icon_petal=(214, 150, 230, 255),
-                  icon_core=(252, 224, 96, 255))
+# --- per-island config (Iciest Age / Frozen Floes) --------------------------
+SRC = "/Users/charlie/.claude/image-cache/15bc98a7-b342-472d-8601-e233fc1b4728/19.png"
+DST = "assets/tilesets/iciest_floes_bg.png"
+DEBUG_DST = "scripts/tools/_floes_debug.png"
+TITLE = "ICIEST AGE"
+TITLE_ARGS = dict(gtop=(236, 248, 255), gbot=(150, 200, 240), accent=(58, 110, 170),
+                  icon=g.icon_drop, icon_petal=(190, 226, 255, 255),
+                  icon_core=(255, 255, 255, 255))
 
 # Candidate gameplay safe zone + spawns, in WORLD coords (tune via DEBUG preview).
 SAFE_RECT = (175, 325, 950, 350)         # x, y, w, h
