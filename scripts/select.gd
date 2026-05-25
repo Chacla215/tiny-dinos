@@ -21,6 +21,7 @@ const ISLAND_PREVIEW := {
 	"sunny_springs":     "res://assets/tilesets/sunny_springs_bg.png",
 	"white_water_falls": "res://assets/tilesets/white_water_falls_bg.png",
 	"purple_fields":     "res://assets/tilesets/purple_fields_bg.png",
+	"iciest_age":        "res://assets/tilesets/iciest_floes_bg.png",
 }
 const PANEL_Y := 430.0          # baseline for the player cards row
 const GRAPHIC_TARGET_H := 170.0 # all dino sprites scaled to this height (consistent size)

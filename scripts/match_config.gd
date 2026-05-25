@@ -309,10 +309,12 @@ const DINOS := {
 	},
 }
 
-# Iciest Age removed from the roster 2026-05-22: the Frozen Floes redesign was
-# flat-vector and clashed with the pixel-art islands. arena_floes.tscn + the
-# floe/drown code stay in the repo (unreferenced) in case it's reskinned later.
-const ISLAND_ORDER := ["laughing_lava", "beauty_beach", "sunny_springs", "white_water_falls", "purple_fields"]
+# Iciest Age (Frozen Floes) re-added to the roster 2026-05-24. It was cut on
+# 2026-05-22 only because its flat-vector art clashed with the pixel-art islands;
+# with every island moving to the new pixel-art look that conflict is gone. Its
+# unique mechanic (drown_off_floes) lives in arena_floes.tscn. The lush pixel-art
+# background is still pending -- the procedural floe art is a placeholder for now.
+const ISLAND_ORDER := ["laughing_lava", "beauty_beach", "sunny_springs", "white_water_falls", "purple_fields", "iciest_age"]
 
 const ISLAND_NAMES := {
 	"laughing_lava": "LAUGHING LAVA",
@@ -320,6 +322,7 @@ const ISLAND_NAMES := {
 	"sunny_springs": "SUNNY SPRINGS",
 	"white_water_falls": "WHITE WATER FALLS",
 	"purple_fields": "PURPLE FIELDS",
+	"iciest_age": "ICIEST AGE",
 }
 
 const ISLAND_SCENES := {
@@ -328,6 +331,7 @@ const ISLAND_SCENES := {
 	"sunny_springs": "res://scenes/arena_springs.tscn",
 	"white_water_falls": "res://scenes/arena_falls.tscn",
 	"purple_fields": "res://scenes/arena_purple.tscn",
+	"iciest_age": "res://scenes/arena_floes.tscn",
 }
 
 var dino_choices: Dictionary = {"p1": "trex", "p2": "raptor", "p3": "trike", "p4": "pterry"}
