@@ -73,3 +73,60 @@ reviving the distinctive floe mechanic.
 
 Purple Fields, Sunny Springs, Beauty Beach, White Water Falls, Laughing Lava use the
 single-island composition. Their SCENE blocks belong here too — add when finalized.
+
+## Purple Fields — regen with cover rocks (v2)
+
+Replaces the v1 open-plaza art. Goal: same lavender cherry-blossom island, but the
+field now carries **a few distinct rock formations** so the game can drop matching
+**collision cover blocks on visible stone** (v1 was an open field — invisible walls
+had nothing to anchor to). The play boundary is now an island-shaped `safe_polygon`
+(see main.gd), so the painted island edge should read as a clean **rounded / oval
+field** that fills the widescreen — wider than tall, NOT a small circle.
+
+```
+SCENE: a single rounded OVAL island that fills the frame width — a circular
+stone-paved plaza ringed by lush grass and lavender/pink wildflowers, surrounded
+on all sides by calm PURPLE-LAVENDER water with small waterfalls spilling off the
+rim. A large blossoming cherry/sakura tree stands at the TOP-CENTER as the focal
+landmark (pink canopy kept high and calm for the title). Two wooden bridges enter
+from the left and right edges. Place 4 to 5 DISTINCT MOSSY BOULDER CLUSTERS on the
+field as cover — sit them around the mid-ring of the plaza (roughly the four sides,
+plus one lower-center), each a clear chunky knee-to-waist-high rock pile that reads
+as solid blocking cover. KEEP THE EXACT CENTER OF THE PLAZA OPEN (no rock in the
+middle) and keep the boulders clearly separated from each other so fighters can weave
+between them. Soft purple dusk lighting, sakura petals drifting. High contrast
+between the pale stone plaza, the boulders, and the dark water so everything reads.
+```
+
+**Integration (after generating):**
+1. Drop the chosen image in, point `integrate_arena_bg.py` `SRC` at it, run it to
+   resize + bake the `PURPLE FIELDS` title → `assets/tilesets/purple_fields_bg.png`,
+   then `godot --headless --import`.
+2. Re-trace the boundary: edit `gen_safe_zone.py` CENTER/RX/RY to the new oval,
+   run it, paste the printed `safe_polygon` into `arena_purple.tscn`.
+3. Add a `StaticBody2D` cover block per painted boulder (world coords from the
+   `gen_safe_zone.py` preview's OBSTACLES overlay); these are the "blocks".
+4. Turn `debug_draw_safe_zone` back off before shipping.
+
+## Purple Fields — OPEN plaza, no rocks (v3, chosen 2026-05-25)
+
+Charlie cut the cover rocks — wants the same gorgeous v2 island (full sakura tree,
+waterfalls, bridges, the oval cliff-lip boundary he confirmed) but a CLEAN, OPEN
+fighting field with NO rocks/boulders on it. Regenerate, then integrate (steps 1-2
+above; skip the cover-block step). Feed the v2 image back as a style reference so it
+matches, and append this to the shared style block:
+
+```
+SCENE: a single rounded OVAL island that fills the frame width — a large, fully OPEN
+circular stone-paved plaza with a faint concentric ring/mandala motif, ringed by lush
+grass and lavender/pink wildflowers, surrounded by calm PURPLE-LAVENDER water with
+waterfalls spilling off the rim. A large blossoming cherry/sakura tree stands at the
+TOP-CENTER as the focal landmark, with a low wooden fence + stone steps at its base,
+and two purple sakura banners flanking it. Two wooden bridges enter from the left and
+right edges. The plaza floor is COMPLETELY CLEAR AND UNOBSTRUCTED — NO rocks, NO
+boulders, NO stones, NO obstacles anywhere on the playing field. Soft purple dusk
+lighting, drifting sakura petals. High contrast between the pale stone plaza and the
+dark water.
+```
+
+Negative prompt — ADD: `rocks, boulders, stones, rock formations, obstacles on the floor`.

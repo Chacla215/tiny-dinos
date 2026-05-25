@@ -25,7 +25,7 @@ import gen_island_bgs as g   # W, H, OFF, draw_title, icon_flower, ...
 DEBUG = os.environ.get("DEBUG") == "1"
 
 # --- per-island config (Purple Fields) -------------------------------------
-SRC = "/Users/charlie/.claude/image-cache/45deba9c-396c-4d48-bdc2-1992db434ed9/3.png"
+SRC = "/Users/charlie/.claude/image-cache/15bc98a7-b342-472d-8601-e233fc1b4728/2.png"
 DST = "assets/tilesets/purple_fields_bg.png"
 DEBUG_DST = "scripts/tools/_purple_debug.png"
 TITLE = "PURPLE FIELDS"
