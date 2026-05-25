@@ -358,6 +358,22 @@ func _safe_center() -> Vector2:
 func _build_debug_boundary() -> void:
 	if not debug_draw_safe_zone:
 		return
+	# Floe arena (drown-off-floes): outline each safe floe, not a ring-out boundary.
+	if drown_off_floes:
+		var floes := get_node_or_null("Floe")
+		if floes:
+			for f in floes.get_children():
+				if not (f is Area2D):
+					continue
+				for c in f.get_children():
+					if c is CollisionPolygon2D and (c as CollisionPolygon2D).polygon.size() >= 2:
+						var fp: PackedVector2Array = (c as CollisionPolygon2D).polygon
+						var fl := PackedVector2Array()
+						for v in fp:
+							fl.append(f.position + c.position + v)
+						fl.append(f.position + c.position + fp[0])
+						_add_debug_outline(fl)
+		return
 	# Ring-out boundary.
 	var loop := PackedVector2Array()
 	if safe_polygon.size() >= 3:
