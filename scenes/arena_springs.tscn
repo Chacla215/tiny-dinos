@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/dino.gd" id="1_dino"]
 [ext_resource type="Script" path="res://scripts/main.gd" id="2_main"]
@@ -10,74 +10,13 @@ size = Vector2(48, 48)
 [sub_resource type="RectangleShape2D" id="hitbox_placeholder"]
 size = Vector2(1, 1)
 
-[sub_resource type="RectangleShape2D" id="slow_0"]
-size = Vector2(240, 170)
-
-[sub_resource type="RectangleShape2D" id="slow_1"]
-size = Vector2(240, 170)
-
-[sub_resource type="RectangleShape2D" id="obs_wall"]
-size = Vector2(40, 160)
-
-[sub_resource type="RectangleShape2D" id="obs_rock"]
-size = Vector2(44, 44)
-
-[sub_resource type="RectangleShape2D" id="obs_cluster"]
-size = Vector2(72, 80)
-
-[sub_resource type="RectangleShape2D" id="water_0"]
-size = Vector2(32, 32)
-
-[sub_resource type="RectangleShape2D" id="water_2"]
-size = Vector2(96, 32)
-
-[sub_resource type="RectangleShape2D" id="water_4"]
-size = Vector2(128, 32)
-
-[sub_resource type="RectangleShape2D" id="water_6"]
-size = Vector2(128, 32)
-
-[sub_resource type="RectangleShape2D" id="water_8"]
-size = Vector2(192, 32)
-
-[sub_resource type="RectangleShape2D" id="water_10"]
-size = Vector2(96, 32)
-
-[sub_resource type="RectangleShape2D" id="water_12"]
-size = Vector2(96, 32)
-
-[sub_resource type="RectangleShape2D" id="water_14"]
-size = Vector2(288, 32)
-
-[sub_resource type="RectangleShape2D" id="water_16"]
-size = Vector2(288, 32)
-
-[sub_resource type="RectangleShape2D" id="water_18"]
-size = Vector2(128, 32)
-
-[sub_resource type="RectangleShape2D" id="water_21"]
-size = Vector2(160, 32)
-
-[sub_resource type="RectangleShape2D" id="water_23"]
-size = Vector2(32, 32)
-
-[sub_resource type="RectangleShape2D" id="water_27"]
-size = Vector2(96, 32)
-
-[sub_resource type="RectangleShape2D" id="water_29"]
-size = Vector2(32, 32)
-
-[sub_resource type="RectangleShape2D" id="water_31"]
-size = Vector2(32, 32)
-
-[sub_resource type="RectangleShape2D" id="water_33"]
-size = Vector2(32, 32)
-
 [node name="Main" type="Node2D"]
 script = ExtResource("2_main")
 safe_rect = Rect2(160, 100, 960, 520)
-ledge_kill_enabled = false
-clamp_to_bounds = true
+safe_polygon = PackedVector2Array(1177, 407, 1170, 446, 1151, 485, 1119, 521, 1075, 555, 1021, 584, 957, 610, 885, 631, 808, 646, 727, 655, 643, 658, 559, 655, 478, 646, 401, 631, 329, 610, 265, 584, 211, 555, 167, 521, 135, 485, 116, 446, 109, 407, 116, 368, 135, 329, 167, 293, 211, 259, 265, 230, 329, 204, 401, 183, 478, 168, 559, 159, 643, 156, 727, 159, 808, 168, 885, 183, 957, 204, 1021, 230, 1075, 259, 1119, 293, 1151, 329, 1170, 368)
+debug_draw_safe_zone = false
+ledge_kill_enabled = true
+clamp_to_bounds = false
 play_bounds = Rect2(-32, 110, 1344, 640)
 
 [node name="Camera2D" type="Camera2D" parent="."]
@@ -94,110 +33,8 @@ texture = ExtResource("3_bg")
 
 [node name="IcePatches" type="Node2D" parent="."]
 
-[node name="Water" type="Area2D" parent="."]
-
-[node name="SlowZone" type="Area2D" parent="."]
-
-[node name="S0" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(470, 470)
-shape = SubResource("slow_0")
-
-[node name="V0" type="Polygon2D" parent="SlowZone"]
-position = Vector2(470, 470)
-color = Color(0.3, 0.7, 0.55, 0.35)
-polygon = PackedVector2Array(-120, -85, 120, -85, 120, 85, -120, 85)
-
-[node name="S1" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(810, 250)
-shape = SubResource("slow_1")
-
-[node name="V1" type="Polygon2D" parent="SlowZone"]
-position = Vector2(810, 250)
-color = Color(0.3, 0.7, 0.55, 0.35)
-polygon = PackedVector2Array(-120, -85, 120, -85, 120, 85, -120, 85)
-
-[node name="C0" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(656, 16)
-shape = SubResource("water_0")
-
-[node name="C2" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(624, 48)
-shape = SubResource("water_2")
-
-[node name="C4" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(544, 80)
-shape = SubResource("water_4")
-
-[node name="C6" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(480, 112)
-shape = SubResource("water_6")
-
-[node name="C8" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(384, 144)
-shape = SubResource("water_8")
-
-[node name="C10" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(304, 176)
-shape = SubResource("water_10")
-
-[node name="C12" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(272, 208)
-shape = SubResource("water_12")
-
-[node name="C14" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(144, 240)
-shape = SubResource("water_14")
-
-[node name="C16" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(144, 272)
-shape = SubResource("water_16")
-
-[node name="C18" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(288, 304)
-shape = SubResource("water_18")
-
-[node name="C21" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(400, 336)
-shape = SubResource("water_21")
-
-[node name="C23" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(464, 368)
-shape = SubResource("water_23")
-
-[node name="C27" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(656, 464)
-shape = SubResource("water_27")
-
-[node name="C29" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(688, 496)
-shape = SubResource("water_29")
-
-[node name="C31" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(688, 528)
-shape = SubResource("water_31")
-
-[node name="C33" type="CollisionShape2D" parent="SlowZone"]
-position = Vector2(688, 560)
-shape = SubResource("water_33")
-
-[node name="Obstacles" type="StaticBody2D" parent="."]
-collision_layer = 2
-collision_mask = 0
-
-[node name="O0" type="CollisionShape2D" parent="Obstacles"]
-position = Vector2(1240, 150)
-shape = SubResource("obs_wall")
-
-[node name="O1" type="CollisionShape2D" parent="Obstacles"]
-position = Vector2(1228, 384)
-shape = SubResource("obs_rock")
-
-[node name="O2" type="CollisionShape2D" parent="Obstacles"]
-position = Vector2(1224, 525)
-shape = SubResource("obs_cluster")
-
 [node name="Player1" type="CharacterBody2D" parent="."]
-position = Vector2(404, 270)
+position = Vector2(440, 330)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -229,7 +66,7 @@ disabled = true
 visible = false
 
 [node name="Player2" type="CharacterBody2D" parent="."]
-position = Vector2(944, 390)
+position = Vector2(850, 330)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -261,7 +98,7 @@ disabled = true
 visible = false
 
 [node name="Player3" type="CharacterBody2D" parent="."]
-position = Vector2(296, 474)
+position = Vector2(440, 500)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -293,7 +130,7 @@ disabled = true
 visible = false
 
 [node name="Player4" type="CharacterBody2D" parent="."]
-position = Vector2(660, 400)
+position = Vector2(850, 500)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
