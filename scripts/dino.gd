@@ -174,6 +174,17 @@ var floe_overlap_count: int = 0  # Frozen Floes: >0 means standing on safe ice
 var current_push: Vector2 = Vector2.ZERO
 var knockback_active: bool = false
 
+# Ring-out: shoved off the island, the dino either tumbles off the BOTTOM (sides
+# + low edge, a clean KO) or gets sucked UP and spirals into the sky off the TOP.
+# The sky launch is escapable — mash to fight the pull back into the safe zone.
+# main.gd starts it (begin_ringout) and is told when it ends/recovers.
+var is_falling: bool = false
+var fall_timer: float = 0.0
+var fall_up: bool = false        # true = sky launch (recoverable), false = drop
+var fall_center_y: float = 0.0   # arena center, for height-based shrink/fade
+var spiral_angle: float = 0.0
+var ringout_killer: Node = null
+
 var current_attack_damage: int = 0
 var current_attack_knockback: float = 0.0
 var current_attack_active: float = 0.0
@@ -201,6 +212,28 @@ const SLOW_ACCEL_FACTOR := 0.6
 ## bleeds off, regardless of surface. Stops a hit from gliding you off an ice
 ## map while leaving normal ice-sliding and self-dash lunges untouched.
 const KNOCKBACK_DECEL := 2000.0
+
+## Ring-out fall tuning: how long the downward tumble lasts, downward accel, the
+## initial downward pop, and tumble spin (radians/sec).
+const FALL_DURATION := 0.75
+const FALL_GRAVITY := 2800.0
+const FALL_INITIAL_VY := 260.0
+const FALL_SPIN := 9.0
+
+## Sky launch (top-edge ring-out): a constant UPWARD pull sucks the dino into the
+## sky; mashing kicks it back down. Escape past SKY_ESCAPE_Y (off the top) = KO;
+## re-entering the safe zone = recovered. Spiral = swirl while rising.
+const SKY_PULL := 720.0          # upward acceleration (px/s^2) — the suction
+const SKY_INITIAL_VY := 200.0    # initial upward pop
+const SKY_ESCAPE_Y := -200.0     # world Y past the top edge = fully rung out
+const SKY_MAX_TIME := 3.0         # safety cap on the sky struggle (failsafe KO)
+const SKY_SPIRAL_SPEED := 12.0   # swirl frequency (rad/s)
+const SKY_SPIRAL_AMP := 150.0    # swirl sideways speed (px/s)
+const MASH_BOOST := 235.0        # downward kick per button mash
+const CPU_MASH_CHANCE := 0.11    # per-frame chance a CPU mashes to recover
+const RECOVER_INVULN := 0.6      # i-frames after clawing back onto the field
+## Buttons that count as a recovery mash.
+const MASH_ACTIONS := ["attack", "heavy", "dodge", "special"]
 
 ## Throw (RT) / pickup (LT). A thrown weapon flies fast and lands harder than
 ## the same weapon swung — but whiff it off the platform and it's gone. Damage
@@ -298,6 +331,9 @@ func _setup_sprite() -> void:
 	polygon.visible = false
 
 func _physics_process(delta: float) -> void:
+	if is_falling:
+		_process_fall(delta)
+		return
 	if is_cpu and ai != null:
 		ai.think(self, _find_nearest_opponent(), delta)
 	update_facing()
@@ -801,6 +837,8 @@ func update_block_regen(delta: float) -> void:
 # --- Damage ---
 
 func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
+	if is_falling:
+		return
 	if invuln_timer > 0.0:
 		return
 	if defense_state == DefenseState.DODGING:
@@ -998,6 +1036,105 @@ func play_scene_sfx(sound_name: String, pitch_var: float = 0.05) -> void:
 	if scene_root and scene_root.has_method("play_sfx"):
 		scene_root.play_sfx(sound_name, pitch_var)
 
+# --- Ring-out fall ---
+
+# Begin a ring-out. main.gd calls this when the dino crosses the island boundary
+# (instead of an instant respawn) and owns the kill credit (ringout_killer).
+# go_up = launched off the TOP (spiral into the sky, recoverable by mashing);
+# otherwise the dino tumbles off the bottom (a clean KO). center_y feeds the
+# height-based shrink/fade of the sky launch.
+func begin_ringout(go_up: bool = false, center_y: float = 360.0) -> void:
+	if is_falling:
+		return
+	is_falling = true
+	fall_up = go_up
+	fall_center_y = center_y
+	fall_timer = SKY_MAX_TIME if go_up else FALL_DURATION
+	spiral_angle = 0.0
+	# Off the field: can't be hit, can't hit, no lingering states.
+	invuln_timer = FALL_DURATION + 1.0
+	attack_phase = AttackPhase.IDLE
+	attack_timer = 0.0
+	defense_state = DefenseState.NORMAL
+	knockback_active = false
+	current_push = Vector2.ZERO
+	hitbox_shape.disabled = true
+	hitbox_visual.visible = false
+	if weapon_visual:
+		weapon_visual.visible = false
+	velocity.y = -SKY_INITIAL_VY if go_up else maxf(velocity.y, FALL_INITIAL_VY)
+
+func _process_fall(delta: float) -> void:
+	if fall_up:
+		_process_sky_launch(delta)
+		return
+	# Plain drop off the bottom — not recoverable.
+	velocity.y += FALL_GRAVITY * delta
+	global_position += velocity * delta
+	rotation += FALL_SPIN * delta
+	scale = scale.move_toward(Vector2(0.35, 0.35), delta * 1.1)
+	modulate.a = clampf(fall_timer / FALL_DURATION, 0.0, 1.0)  # fade as it drops
+	fall_timer -= delta
+	if fall_timer <= 0.0:
+		_finish_ringout()
+
+# Sucked into the sky: constant upward pull + a swirl. Mashing kicks the dino
+# back down; claw back into the safe zone to recover, or escape off the top = KO.
+func _process_sky_launch(delta: float) -> void:
+	velocity.y -= SKY_PULL * delta
+	spiral_angle += SKY_SPIRAL_SPEED * delta
+	velocity.x = sin(spiral_angle) * SKY_SPIRAL_AMP
+	if _ringout_mash_pressed():
+		velocity.y += MASH_BOOST
+	global_position += velocity * delta
+	rotation += FALL_SPIN * delta
+	# Shrink + fade the higher it gets; mashing back down restores it.
+	var span: float = maxf(fall_center_y - SKY_ESCAPE_Y, 1.0)
+	var t: float = clampf((fall_center_y - global_position.y) / span, 0.0, 1.0)
+	scale = Vector2.ONE.lerp(Vector2(0.35, 0.35), t)
+	modulate.a = lerpf(1.0, 0.2, t)
+	var scene_root := get_tree().current_scene
+	# Clawed back over the field → recover (keep HP, no KO).
+	if velocity.y > 0.0 and scene_root and scene_root.has_method("is_in_safe_zone") \
+			and scene_root.is_in_safe_zone(global_position):
+		_recover_ringout(scene_root)
+		return
+	# Escaped off the top, descended past the field beside it, or ran out of
+	# struggle time → a completed ring-out (KO).
+	fall_timer -= delta
+	if global_position.y <= SKY_ESCAPE_Y or global_position.y >= fall_center_y + 320.0 \
+			or fall_timer <= 0.0:
+		_finish_ringout()
+
+# A recovery mash: any of the action buttons this frame (CPUs flail randomly).
+func _ringout_mash_pressed() -> bool:
+	if is_cpu:
+		return randf() < CPU_MASH_CHANCE
+	for a in MASH_ACTIONS:
+		if Input.is_action_just_pressed(_action(a)):
+			return true
+	return false
+
+func _recover_ringout(scene_root: Node) -> void:
+	is_falling = false
+	fall_up = false
+	rotation = 0.0
+	scale = Vector2.ONE
+	modulate = Color.WHITE
+	velocity = Vector2.ZERO
+	invuln_timer = RECOVER_INVULN
+	hitbox_shape.disabled = true
+	hitbox_visual.visible = false
+	if scene_root and scene_root.has_method("on_ringout_recovered"):
+		scene_root.on_ringout_recovered(self)  # cancels the pending KO credit
+
+func _finish_ringout() -> void:
+	var scene_root := get_tree().current_scene
+	if scene_root and scene_root.has_method("on_ringout_complete"):
+		scene_root.on_ringout_complete(self)  # main respawns + credits the kill
+	else:
+		respawn()
+
 func die() -> void:
 	var scene_root := get_tree().current_scene
 	if scene_root and scene_root.has_method("on_ko_landed"):
@@ -1073,6 +1210,13 @@ func exit_floe() -> void:
 # --- Respawn ---
 
 func respawn() -> void:
+	is_falling = false
+	fall_up = false
+	fall_timer = 0.0
+	spiral_angle = 0.0
+	rotation = 0.0
+	scale = Vector2.ONE
+	modulate = Color.WHITE
 	global_position = spawn_point
 	velocity = Vector2.ZERO
 	current_surface = Surface.GROUND
