@@ -5,6 +5,7 @@ extends Node2D
 # so the title reads as "this is the game you'll play" — same rule as the picker.
 const DinoScript := preload("res://scripts/dino.gd")
 const SELECT_SCENE := "res://scenes/select.tscn"
+const CREATOR_SCENE := "res://scenes/ralph_creator.tscn"
 const BACKDROP_PATH := "res://assets/tilesets/beauty_beach_bg.png"
 
 # Two crowd-pleasers flanking the logo, facing center (echoes the versus screen).
@@ -56,6 +57,7 @@ func _ready() -> void:
 	_setup_dino(right_graphic, RIGHT_DINO, false)
 	menu_items = [
 		{"label": $Menu/PlayItem, "base": "PLAY", "action": "play"},
+		{"label": $Menu/CharacterItem, "base": "CHARACTER", "action": "creator"},
 		{"label": $Menu/HowToItem, "base": "HOW TO PLAY", "action": "howto"},
 		{"label": $Menu/QuitItem, "base": "QUIT", "action": "quit"},
 	]
@@ -144,6 +146,8 @@ func _activate(action: String) -> void:
 	match action:
 		"play":
 			get_tree().change_scene_to_file(SELECT_SCENE)
+		"creator":
+			get_tree().change_scene_to_file(CREATOR_SCENE)
 		"howto":
 			_open_howto()
 		"quit":
@@ -201,8 +205,9 @@ func _setup_backdrop() -> void:
 		return
 	var tex: Texture2D = load(BACKDROP_PATH)
 	backdrop.texture = tex
-	# Cover the screen with a little margin so the sway never reveals an edge.
-	var cover: float = max(1280.0 / tex.get_width(), 720.0 / tex.get_height()) * 1.08
+	# Zoom in (and the scene node sits high, y=205) so the arena art's baked
+	# "BEAUTY BEACH" heading band is cropped off the top, behind the logo.
+	var cover: float = max(1280.0 / tex.get_width(), 720.0 / tex.get_height()) * 1.5
 	backdrop.scale = Vector2(cover, cover)
 
 # Build a looping idle from dino.gd's ANIM_LAYOUTS, scaled to a uniform height

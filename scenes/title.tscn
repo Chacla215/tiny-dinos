@@ -20,7 +20,7 @@ color = Color(0.1, 0.1, 0.15, 1)
 polygon = PackedVector2Array(0, 0, 1280, 0, 1280, 720, 0, 720)
 
 [node name="Backdrop" type="Sprite2D" parent="."]
-position = Vector2(640, 360)
+position = Vector2(640, 205)
 modulate = Color(0.5, 0.5, 0.58, 1)
 
 [node name="Vignette" type="Polygon2D" parent="."]
@@ -92,9 +92,9 @@ color_ramp = SubResource("Gradient_dust")
 
 [node name="PlayItem" type="Label" parent="Menu"]
 offset_left = 0.0
-offset_top = 468.0
+offset_top = 458.0
 offset_right = 1280.0
-offset_bottom = 518.0
+offset_bottom = 502.0
 theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
 theme_override_constants/outline_size = 8
@@ -103,11 +103,24 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text = "PLAY"
 
+[node name="CharacterItem" type="Label" parent="Menu"]
+offset_left = 0.0
+offset_top = 506.0
+offset_right = 1280.0
+offset_bottom = 550.0
+theme_override_colors/font_color = Color(0.72, 0.72, 0.78, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "CHARACTER"
+
 [node name="HowToItem" type="Label" parent="Menu"]
 offset_left = 0.0
-offset_top = 530.0
+offset_top = 554.0
 offset_right = 1280.0
-offset_bottom = 580.0
+offset_bottom = 598.0
 theme_override_colors/font_color = Color(0.72, 0.72, 0.78, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
 theme_override_constants/outline_size = 8
@@ -118,9 +131,9 @@ text = "HOW TO PLAY"
 
 [node name="QuitItem" type="Label" parent="Menu"]
 offset_left = 0.0
-offset_top = 592.0
+offset_top = 602.0
 offset_right = 1280.0
-offset_bottom = 642.0
+offset_bottom = 646.0
 theme_override_colors/font_color = Color(0.72, 0.72, 0.78, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
 theme_override_constants/outline_size = 8
