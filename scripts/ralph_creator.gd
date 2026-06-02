@@ -1,0 +1,810 @@
+extends Control
+## Character screen: roster grid (entry) → per-dino profile.
+## Built programmatically + data-driven so AI-generated hero/skin PNGs slot in
+## as they land. Gamepad-only:
+##   GRID:   D-pad navigates,  A opens profile,  B → title
+##   PROFILE: ◀▶ cycles skins (Ralph only for now),  B → grid
+## The grid features Ralph (mascot) + the 6 playable dinos. Ralph's profile is
+## hand-curated; the others derive stats from MatchConfig.DINOS and use their
+## in-match pixel sprite as the portrait until AI hero art lands at
+## assets/concept/<dino>/<dino>_hero.png. Prompts: scripts/tools/dino_art_prompts.md.
+## File kept as ralph_creator.{gd,tscn} for minimum churn (was Ralph-only).
+
+const DinoScript := preload("res://scripts/dino.gd")
+const TITLE_SCENE := "res://scenes/title.tscn"
+const RALPH_DIR := "res://assets/concept/ralph/"
+const RALPH_HERO := RALPH_DIR + "ralph_hero.png"
+
+# ---- palette (dark slate + gold, from the creator-screen target) ----
+const BG := Color("12151f")
+const PANEL := Color("212838")
+const PANEL_IN := Color("171b27")
+const BORDER := Color("3c4660")
+const GOLD := Color("e6c878")
+const GOLD_DK := Color("8a6f32")
+const TEXT := Color("dce2ec")
+const TEXT_DIM := Color("8b95a8")
+const GREEN := Color("7fd06a")
+
+# Grid: Ralph first as featured mascot, then the 6 playable dinos. Two rows.
+const GRID_ROWS := [
+	["ralph", "trex", "raptor", "trike"],
+	["pterry", "bronto", "anky"],
+]
+
+# Ralph's per-skin art (real PNGs where they exist; tinted swatch placeholder
+# otherwise). Each other dino's skins live in its own profile dict below.
+const RALPH_SKINS := [
+	{"name": "EXPLORER", "tint": Color("8cc47a"), "img": RALPH_DIR + "ralph_hero.png", "rarity": "COMMON"},
+	{"name": "CRYSTAL",  "tint": Color("8fd6e8"), "img": "",                              "rarity": "RARE"},
+	{"name": "VOLCANO",  "tint": Color("4a4650"), "img": "",                              "rarity": "RARE"},
+	{"name": "FROZEN",   "tint": Color("bcd8ec"), "img": RALPH_DIR + "ralph_frozen.png",  "rarity": "RARE"},
+	{"name": "SPRING",   "tint": Color("a9d98c"), "img": RALPH_DIR + "ralph_spring.png",  "rarity": "RARE"},
+	{"name": "VOID",     "tint": Color("6a4a98"), "img": RALPH_DIR + "ralph_void.png",    "rarity": "EPIC"},
+	{"name": "GOLDEN",   "tint": Color("e6c860"), "img": RALPH_DIR + "ralph_golden.png",  "rarity": "EPIC"},
+]
+
+const EMOTES := ["WAVE", "EXCITED", "CONFUSED", "LOVE", "ROAR", "SLEEPY", "DIZZY", "PROUD"]
+const CUSTOM := ["HEAD", "SPIKES", "OUTFIT", "NECK", "TAIL", "COLOR"]
+
+# Hand-curated copy. Stats for non-Ralph entries are DERIVED from MatchConfig
+# (see _stats_for) — only flavor text lives here so the in-game numbers stay
+# the single source of truth. Each dino's hero path is checked for existence;
+# missing → fall back to the in-match pixel sprite.
+const PROFILES := {
+	"ralph": {
+		"display_name": "RALPH",
+		"subtitle": "TINY DINO",
+		"rarity": "COMMON",
+		"bio": "A tiny dino with a big heart and an even bigger attitude. Ralph may be small, but his courage is larger than life.",
+		"personality": "BRAVE • CURIOUS • LOYAL",
+		"move_name": "TINY METEOR STOMP",
+		"move_desc": "Ralph leaps high into the air, spinning into a ball and crashes down, causing a shockwave that deals damage in all directions.",
+		"move_type": "PHYSICAL",
+		"move_cooldown": "12s",
+		"hero": RALPH_HERO,
+		"has_creator": true,
+	},
+	"trex": {
+		"display_name": "T-REX",
+		"subtitle": "THE KING",
+		"rarity": "EPIC",
+		"bio": "A tiny king with the loudest roar on the island. His arms can't reach a thing, but his jaws never miss what matters.",
+		"personality": "BOLD • DRAMATIC • SOFT-HEARTED",
+		"move_name": "CHOMP",
+		"move_desc": "T-Rex lunges with jaws wide. Each bite heals him for half the damage dealt — the bigger the king feasts, the longer he reigns.",
+		"move_type": "PHYSICAL",
+		"move_cooldown": "5s",
+		"hero": "res://assets/concept/trex/trex_hero.png",
+		"has_creator": false,
+	},
+	"raptor": {
+		"display_name": "RAPTOR",
+		"subtitle": "THE SPEEDSTER",
+		"rarity": "RARE",
+		"bio": "Quick as a sneeze and twice as messy. Raptor strikes before you've finished the thought of dodging.",
+		"personality": "SWIFT • CLEVER • MISCHIEVOUS",
+		"move_name": "DASH CLAW",
+		"move_desc": "Raptor rockets forward with sickle claws raised, slicing anyone caught on the path.",
+		"move_type": "PHYSICAL",
+		"move_cooldown": "3.5s",
+		"hero": "res://assets/concept/raptor/raptor_hero.png",
+		"has_creator": false,
+	},
+	"trike": {
+		"display_name": "TRIKE",
+		"subtitle": "THE BULWARK",
+		"rarity": "RARE",
+		"bio": "Three horns and zero patience for picking a way around. The frill is for show. The headbutt is not.",
+		"personality": "STUBBORN • LOYAL • GROUNDED",
+		"move_name": "HEADBUTT CHARGE",
+		"move_desc": "Trike lowers his horns and barrels forward, knocking enemies clear off the island.",
+		"move_type": "PHYSICAL",
+		"move_cooldown": "5s",
+		"hero": "res://assets/concept/trike/trike_hero.png",
+		"has_creator": false,
+	},
+	"pterry": {
+		"display_name": "PTERRY",
+		"subtitle": "THE SKY ACE",
+		"rarity": "RARE",
+		"bio": "Self-proclaimed sky ace. Every landing is on purpose, every wing-bandage is a story.",
+		"personality": "COCKY • BREEZY • AERIAL",
+		"move_name": "SCREECH",
+		"move_desc": "A piercing wail that slows every enemy caught in range. Pterry's favorite icebreaker.",
+		"move_type": "SONIC",
+		"move_cooldown": "6s",
+		"hero": "res://assets/concept/pterry/pterry_hero.png",
+		"has_creator": false,
+	},
+	"bronto": {
+		"display_name": "BRONTO",
+		"subtitle": "THE GENTLE GIANT",
+		"rarity": "RARE",
+		"bio": "The slowest to anger and the sweetest to share. A flower in his mouth, a cloud in his step.",
+		"personality": "DREAMY • KIND • PATIENT",
+		"move_name": "NECK WHIP",
+		"move_desc": "Bronto sweeps his long neck in a wide arc, scooping every enemy along the way.",
+		"move_type": "PHYSICAL",
+		"move_cooldown": "5s",
+		"hero": "res://assets/concept/bronto/bronto_hero.png",
+		"has_creator": false,
+	},
+	"anky": {
+		"display_name": "ANKY",
+		"subtitle": "THE VETERAN",
+		"rarity": "RARE",
+		"bio": "A survivor with a plant in his armor and a grudge for breakfast. Get behind him before he turns around.",
+		"personality": "GRUMPY • LOYAL • DEPENDABLE",
+		"move_name": "TAIL SMASH",
+		"move_desc": "Anky brings his club tail crashing down, sending a shockwave through the ground.",
+		"move_type": "PHYSICAL",
+		"move_cooldown": "4.5s",
+		"hero": "res://assets/concept/anky/anky_hero.png",
+		"has_creator": false,
+	},
+}
+
+# Ralph's flavor stats — held separately because Ralph isn't in MatchConfig.
+const RALPH_STATS := [
+	["HP", "120", Color("e0564f")],
+	["ATK", "28", Color("e89a3c")],
+	["DEF", "20", Color("5aa0e0")],
+	["SPD", "18", Color("d2a878")],
+	["CRT", "10%", Color("e6c878")],
+]
+
+# ---- runtime state ----
+var grid_root: Control
+var profile_root: Control
+var grid_cards: Array = []        # [{id, node, row, col, sel_panel}]
+var grid_row: int = 0
+var grid_col: int = 0
+var grid_nav_prev: Vector2i = Vector2i.ZERO
+var in_profile: bool = false
+var current_dino: String = "ralph"
+var skin_idx: int = 0
+
+# Profile-only refs that need refreshing on dino swap / skin cycle.
+var portrait: TextureRect
+var rarity_label: Label
+var skin_slots: Array = []
+
+
+func _ready() -> void:
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	_bg(self, 0, 0, 1280, 720, BG)
+	_build_grid_view()
+	_build_profile_view()
+	_show_grid()
+	if "--shot" in OS.get_cmdline_user_args():
+		await _shoot()
+
+
+# ============================================================== shared helpers ==
+func _sb(bg: Color, border := BORDER, bw := 3, radius := 10) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = bg
+	s.border_color = border
+	s.set_border_width_all(bw)
+	s.set_corner_radius_all(radius)
+	return s
+
+
+func _bg(parent: Node, x: float, y: float, w: float, h: float, c: Color) -> ColorRect:
+	var r := ColorRect.new()
+	r.color = c
+	r.position = Vector2(x, y)
+	r.size = Vector2(w, h)
+	parent.add_child(r)
+	return r
+
+
+func _panel(parent: Node, x: float, y: float, w: float, h: float, title := "") -> Panel:
+	var p := Panel.new()
+	p.position = Vector2(x, y)
+	p.size = Vector2(w, h)
+	p.add_theme_stylebox_override("panel", _sb(PANEL))
+	parent.add_child(p)
+	if title != "":
+		var tab := Panel.new()
+		tab.add_theme_stylebox_override("panel", _sb(PANEL_IN, GOLD_DK, 2, 7))
+		tab.position = Vector2(14, -16)
+		var w_est: float = 22 + title.length() * 13
+		tab.size = Vector2(w_est, 30)
+		p.add_child(tab)
+		var lbl := _text(tab, title, 0, 0, 20, GOLD)
+		lbl.size = tab.size
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	return p
+
+
+func _text(parent: Node, s: String, x: float, y: float, size: int, c := TEXT) -> Label:
+	var l := Label.new()
+	l.text = s
+	l.position = Vector2(x, y)
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", c)
+	parent.add_child(l)
+	return l
+
+
+## Render the dino's portrait into `parent` at `rect`. Uses the AI hero PNG if
+## it exists, else falls back to the first idle frame of the in-match sprite
+## (atlas region from dino.gd ANIM_LAYOUTS) drawn with nearest-neighbor so the
+## pixels stay crisp at the upscale.
+func _add_portrait(parent: Control, dino_id: String, rect: Rect2, fallback_scale := 4.0) -> TextureRect:
+	var profile: Dictionary = PROFILES.get(dino_id, {})
+	var hero: String = profile.get("hero", "")
+	if hero != "" and ResourceLoader.exists(hero):
+		var t := TextureRect.new()
+		t.texture = load(hero)
+		t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		t.position = rect.position
+		t.size = rect.size
+		parent.add_child(t)
+		return t
+	# Fallback: in-match pixel sprite, upscaled.
+	var dino: Dictionary = MatchConfig.DINOS.get(dino_id, {})
+	var role: String = dino.get("sprite_role", dino_id)
+	var layouts: Dictionary = DinoScript.ANIM_LAYOUTS
+	if not layouts.has(role):
+		return null
+	var layout: Dictionary = layouts[role]
+	var sheet_path: String = layout.get("sheet", "")
+	if not ResourceLoader.exists(sheet_path):
+		return null
+	var idle: Dictionary = layout.get("idle", {})
+	var rects: Array = idle.get("rects", [])
+	if rects.is_empty():
+		return null
+	var at := AtlasTexture.new()
+	at.atlas = load(sheet_path)
+	at.region = rects[0]
+	var t := TextureRect.new()
+	t.texture = at
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	# Sized so the sprite reads as a hero portrait, not a sticker — fits the
+	# panel but flips so face-left sheets still look toward the camera.
+	t.position = rect.position
+	t.size = rect.size
+	t.flip_h = layout.get("faces_left", false)
+	parent.add_child(t)
+	return t
+
+
+## Stats for the SIGNATURE panel. Ralph is hardcoded (not in MatchConfig); the
+## roster dinos derive HP/ATK/DEF/SPD/SPC from MatchConfig so balance numbers
+## stay the single source of truth.
+func _stats_for(dino_id: String) -> Array:
+	if dino_id == "ralph":
+		return RALPH_STATS
+	var d: Dictionary = MatchConfig.DINOS.get(dino_id, {})
+	if d.is_empty():
+		return []
+	var hp: int = int(d.get("max_hp", 100))
+	var atk: int = int(round((float(d.get("attack_damage", 0)) + float(d.get("heavy_damage", 0))) / 2.0))
+	var def_v: int = int(round(float(d.get("max_block", 60)) / 6.0))
+	var spd: int = int(round(float(d.get("max_speed", 240)) / 12.0))
+	var spc: int = int(d.get("special_damage", 0))
+	return [
+		["HP", str(hp), Color("e0564f")],
+		["ATK", str(atk), Color("e89a3c")],
+		["DEF", str(def_v), Color("5aa0e0")],
+		["SPD", str(spd), Color("d2a878")],
+		["SPC", str(spc), Color("e6c878")],
+	]
+
+
+# ================================================================== grid view ==
+func _build_grid_view() -> void:
+	grid_root = Control.new()
+	grid_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(grid_root)
+
+	var title := _text(grid_root, "CHARACTERS", 0, 28, 56, GOLD)
+	title.size = Vector2(1280, 64)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var subtitle := _text(grid_root, "PICK A DINO TO VIEW THEIR PROFILE", 0, 96, 20, TEXT_DIM)
+	subtitle.size = Vector2(1280, 24)
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	var card_w := 224.0
+	var card_h := 240.0
+	var col_gap := 24.0
+	var row_gap := 28.0
+	var rows_total: float = GRID_ROWS.size() * card_h + (GRID_ROWS.size() - 1) * row_gap
+	var rows_y: float = 152.0 + maxf(0.0, (520.0 - rows_total) / 2.0)
+	for row in GRID_ROWS.size():
+		var ids: Array = GRID_ROWS[row]
+		var row_w: float = ids.size() * card_w + (ids.size() - 1) * col_gap
+		var row_x: float = (1280.0 - row_w) / 2.0
+		var y: float = rows_y + row * (card_h + row_gap)
+		for col in ids.size():
+			var x: float = row_x + col * (card_w + col_gap)
+			var card := _build_card(ids[col], x, y, card_w, card_h)
+			grid_cards.append({"id": ids[col], "node": card, "row": row, "col": col})
+
+	var hint := _text(grid_root, "D-PAD  MOVE     A  CONFIRM     B  BACK", 0, 686, 18, TEXT_DIM)
+	hint.size = Vector2(1280, 24)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	_refresh_grid_selection()
+
+
+func _build_card(dino_id: String, x: float, y: float, w: float, h: float) -> Panel:
+	var profile: Dictionary = PROFILES.get(dino_id, {})
+	var p := Panel.new()
+	p.position = Vector2(x, y)
+	p.size = Vector2(w, h)
+	p.add_theme_stylebox_override("panel", _sb(PANEL, BORDER, 3, 12))
+	grid_root.add_child(p)
+	# Portrait area (top 70%).
+	var pad := 12.0
+	var portrait_h := h * 0.72
+	var stage := _bg(p, pad, pad, w - pad * 2, portrait_h - pad, Color("2a3a52"))
+	stage.color = Color("2a3a52")
+	_add_portrait(p, dino_id, Rect2(pad, pad, w - pad * 2, portrait_h - pad))
+	# Name strip (bottom).
+	var name_y := portrait_h + 4
+	var name_l := _text(p, profile.get("display_name", dino_id.to_upper()), 0, name_y, 24, GOLD)
+	name_l.size = Vector2(w, 32)
+	name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var role := _text(p, profile.get("subtitle", ""), 0, name_y + 30, 14, TEXT_DIM)
+	role.size = Vector2(w, 18)
+	role.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	return p
+
+
+func _refresh_grid_selection() -> void:
+	for entry in grid_cards:
+		var on: bool = entry["row"] == grid_row and entry["col"] == grid_col
+		var card: Panel = entry["node"]
+		card.add_theme_stylebox_override("panel",
+			_sb(PANEL, GOLD if on else BORDER, 5 if on else 3, 12))
+		card.scale = Vector2.ONE * (1.05 if on else 1.0)
+		card.pivot_offset = card.size / 2.0
+
+
+func _clamp_grid_col() -> void:
+	var row_len: int = GRID_ROWS[grid_row].size()
+	grid_col = clampi(grid_col, 0, row_len - 1)
+
+
+func _handle_grid_nav() -> void:
+	var dx: int = 0
+	var dy: int = 0
+	if Input.is_action_just_pressed("p1_right"):
+		dx = 1
+	elif Input.is_action_just_pressed("p1_left"):
+		dx = -1
+	elif Input.is_action_just_pressed("p1_down"):
+		dy = 1
+	elif Input.is_action_just_pressed("p1_up"):
+		dy = -1
+	if dx != 0:
+		var row_len: int = GRID_ROWS[grid_row].size()
+		grid_col = (grid_col + dx + row_len) % row_len
+		_refresh_grid_selection()
+	elif dy != 0:
+		grid_row = (grid_row + dy + GRID_ROWS.size()) % GRID_ROWS.size()
+		_clamp_grid_col()
+		_refresh_grid_selection()
+	if Input.is_action_just_pressed("p1_confirm"):
+		current_dino = GRID_ROWS[grid_row][grid_col]
+		_show_profile(current_dino)
+	elif Input.is_action_just_pressed("p1_heavy"):
+		get_tree().change_scene_to_file(TITLE_SCENE)
+
+
+# =============================================================== profile view ==
+func _build_profile_view() -> void:
+	profile_root = Control.new()
+	profile_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(profile_root)
+	# Each builder writes its widgets into profile_root via _panel(profile_root,
+	# …). The big panels rebuild themselves on dino swap via _refresh_profile.
+	_build_portrait_panel()
+	_build_stats_panel()
+	_build_bio_panel()
+	_build_move_panel()
+	_build_customization_panel()
+	_build_skins_panel()
+	_build_emotes_panel()
+
+
+# Each builder below assumes a single instance and stashes the nodes it needs
+# to refresh on dino swap on `self`. To swap dinos we wipe the dynamic content
+# (name banner, portrait, stats text, bio text, move text, skins row) and
+# re-populate from PROFILES + _stats_for.
+
+var portrait_panel: Panel
+var name_label: Label
+var subtitle_label: Label
+var stats_container: Panel
+var bio_label: Label
+var personality_label: Label
+var move_panel: Panel
+var move_name_label: Label
+var move_desc_label: Label
+var move_type_label: Label
+var move_cooldown_label: Label
+var move_icon_holder: Panel
+var skins_panel: Panel
+var customization_panel: Panel
+var emotes_panel: Panel
+
+
+func _build_portrait_panel() -> void:
+	portrait_panel = _panel(profile_root, 16, 16, 540, 540)
+	var stage := _bg(portrait_panel, 12, 12, 516, 516, PANEL_IN)
+	stage.color = Color("2a3a52")
+	# Portrait placeholder; replaced on _refresh_profile.
+	portrait = TextureRect.new()
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait.position = Vector2(12, 12)
+	portrait.size = Vector2(516, 516)
+	portrait_panel.add_child(portrait)
+	# Banner.
+	var ban := Panel.new()
+	ban.add_theme_stylebox_override("panel", _sb(Color("1a1f2c"), GOLD, 3, 12))
+	ban.position = Vector2(70, 8)
+	ban.size = Vector2(400, 92)
+	portrait_panel.add_child(ban)
+	name_label = _text(ban, "RALPH", 0, 6, 52, GOLD)
+	name_label.size = Vector2(400, 56)
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle_label = _text(ban, "• TINY DINO •", 0, 60, 20, TEXT_DIM)
+	subtitle_label.size = Vector2(400, 24)
+	subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# Rarity badge.
+	var badge := Panel.new()
+	badge.add_theme_stylebox_override("panel", _sb(PANEL_IN, GOLD_DK, 2, 8))
+	badge.position = Vector2(20, 110)
+	badge.size = Vector2(96, 70)
+	portrait_panel.add_child(badge)
+	var star := _text(badge, "★", 0, 2, 30, GOLD)
+	star.size = Vector2(96, 34)
+	star.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var rl := _text(badge, "RARITY", 0, 36, 13, TEXT_DIM)
+	rl.size = Vector2(96, 16)
+	rl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rarity_label = _text(badge, "COMMON", 0, 50, 14, TEXT)
+	rarity_label.size = Vector2(96, 18)
+	rarity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# Cycle arrows (only meaningful when the dino has skins).
+	_text(portrait_panel, "◀", 8, 250, 40, GOLD).size = Vector2(40, 40)
+	_text(portrait_panel, "▶", 492, 250, 40, GOLD).size = Vector2(40, 40)
+	# EXP / level bar.
+	var bar := Panel.new()
+	bar.add_theme_stylebox_override("panel", _sb(PANEL_IN, GOLD_DK, 2, 8))
+	bar.position = Vector2(20, 488)
+	bar.size = Vector2(500, 40)
+	portrait_panel.add_child(bar)
+	_text(bar, "LV. 1", 12, 6, 22, GOLD)
+	var track := _bg(bar, 96, 11, 320, 18, Color("0e1118"))
+	track.color = Color("0e1118")
+	_bg(track, 0, 0, 4, 18, GOLD)
+	var exp_l := _text(bar, "0 / 100", 96, 8, 16, TEXT_DIM)
+	exp_l.size = Vector2(320, 18)
+	exp_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_text(bar, "EXP", 432, 8, 18, TEXT_DIM)
+
+
+func _build_stats_panel() -> void:
+	stats_container = _panel(profile_root, 572, 16, 300, 212, "STATS")
+
+
+func _build_bio_panel() -> void:
+	var p := _panel(profile_root, 888, 16, 376, 212)
+	bio_label = _text(p, "", 20, 16, 18, TEXT)
+	bio_label.size = Vector2(336, 110)
+	bio_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_text(p, "PERSONALITY:", 20, 134, 18, GREEN)
+	personality_label = _text(p, "", 20, 158, 18, TEXT)
+
+
+func _build_move_panel() -> void:
+	move_panel = _panel(profile_root, 572, 252, 692, 150, "SIGNATURE MOVE")
+	move_icon_holder = Panel.new()
+	move_icon_holder.add_theme_stylebox_override("panel", _sb(Color("16314a"), GOLD_DK, 2, 8))
+	move_icon_holder.position = Vector2(20, 28)
+	move_icon_holder.size = Vector2(120, 104)
+	move_panel.add_child(move_icon_holder)
+	move_name_label = _text(move_panel, "", 160, 26, 26, GOLD)
+	move_desc_label = _text(move_panel, "", 160, 58, 16, TEXT)
+	move_desc_label.size = Vector2(510, 60)
+	move_desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	move_type_label = _text(move_panel, "TYPE: PHYSICAL", 160, 118, 16, TEXT_DIM)
+	move_cooldown_label = _text(move_panel, "COOLDOWN: —", 420, 118, 16, TEXT_DIM)
+
+
+func _build_customization_panel() -> void:
+	customization_panel = _panel(profile_root, 572, 414, 692, 142, "CUSTOMIZATION")
+
+
+func _build_skins_panel() -> void:
+	skins_panel = _panel(profile_root, 16, 568, 720, 138, "SKINS")
+
+
+func _build_emotes_panel() -> void:
+	emotes_panel = _panel(profile_root, 748, 568, 516, 138, "EMOTES")
+
+
+# Clear every dynamic child a builder spawned that we don't want to reuse for
+# the new dino. Static labels stay (we just overwrite their text); dynamic
+# rows of slot/swatch panels (stats / skins / customization / emotes) get
+# wiped + rebuilt from data.
+func _clear_children(parent: Node) -> void:
+	for c in parent.get_children():
+		c.queue_free()
+
+
+func _refresh_profile(dino_id: String) -> void:
+	var profile: Dictionary = PROFILES.get(dino_id, {})
+	if profile.is_empty():
+		return
+	# Banner + portrait.
+	name_label.text = profile.get("display_name", dino_id.to_upper())
+	subtitle_label.text = "• %s •" % profile.get("subtitle", "")
+	_refresh_portrait_for_dino(dino_id)
+	# Stats: rebuild rows.
+	_clear_children(stats_container)
+	# The title tab is recreated by _panel — re-add it here.
+	_decorate_panel_title(stats_container, "STATS")
+	var rows: Array = _stats_for(dino_id)
+	var y: float = 44.0
+	for row in rows:
+		var dot := _bg(stats_container, 22, y + 6, 16, 16, row[2])
+		dot.color = row[2]
+		_text(stats_container, row[0], 50, y, 24, TEXT)
+		var v := _text(stats_container, row[1], 0, y, 24, GOLD)
+		v.size = Vector2(258, 28)
+		v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		y += 32
+	# Bio + personality.
+	bio_label.text = profile.get("bio", "")
+	personality_label.text = profile.get("personality", "")
+	# Move card.
+	move_name_label.text = profile.get("move_name", "")
+	move_desc_label.text = profile.get("move_desc", "")
+	move_type_label.text = "TYPE: %s" % profile.get("move_type", "PHYSICAL")
+	move_cooldown_label.text = "COOLDOWN: %s" % profile.get("move_cooldown", "—")
+	_clear_children(move_icon_holder)
+	_add_portrait(move_icon_holder, dino_id, Rect2(6, 6, 108, 92))
+	# Customization, skins, emotes — Ralph has them, the roster dinos show a
+	# friendly "coming soon" until their art lands.
+	skin_idx = 0
+	skin_slots.clear()
+	_clear_children(skins_panel)
+	_decorate_panel_title(skins_panel, "SKINS")
+	_clear_children(customization_panel)
+	_decorate_panel_title(customization_panel, "CUSTOMIZATION")
+	_clear_children(emotes_panel)
+	_decorate_panel_title(emotes_panel, "EMOTES")
+	if profile.get("has_creator", false):
+		_populate_skins_ralph()
+		_populate_customization_ralph()
+		_populate_emotes_ralph()
+	else:
+		_populate_panel_placeholder(skins_panel, "SKINS COMING SOON")
+		_populate_panel_placeholder(customization_panel, "CUSTOMIZATION COMING SOON")
+		_populate_panel_placeholder(emotes_panel, "EMOTES COMING SOON")
+	# Rarity badge — Ralph swaps via skin cycle; other dinos show the profile rarity.
+	rarity_label.text = profile.get("rarity", "COMMON")
+
+
+# The panel title tab is a child of the panel created by _panel(). Clearing the
+# panel children kills it, so re-attach it here whenever we wipe + repopulate.
+func _decorate_panel_title(panel: Panel, title: String) -> void:
+	if title == "":
+		return
+	var tab := Panel.new()
+	tab.add_theme_stylebox_override("panel", _sb(PANEL_IN, GOLD_DK, 2, 7))
+	tab.position = Vector2(14, -16)
+	var w_est: float = 22 + title.length() * 13
+	tab.size = Vector2(w_est, 30)
+	panel.add_child(tab)
+	var lbl := _text(tab, title, 0, 0, 20, GOLD)
+	lbl.size = tab.size
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+
+func _refresh_portrait_for_dino(dino_id: String) -> void:
+	# Replace the contents of the portrait TextureRect / fall back to the
+	# in-match sprite if the AI hero doesn't exist yet.
+	var profile: Dictionary = PROFILES.get(dino_id, {})
+	var hero: String = profile.get("hero", "")
+	if dino_id == "ralph":
+		# Ralph's portrait is driven by the skin carousel; default to the hero.
+		hero = RALPH_HERO
+	if hero != "" and ResourceLoader.exists(hero):
+		portrait.texture = load(hero)
+		portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		portrait.flip_h = false
+		portrait.position = Vector2(12, 12)
+		portrait.size = Vector2(516, 516)
+		return
+	# Fallback: in-match pixel sprite. The source rects are 19–50px tall, so
+	# stretching to the full 516px panel turns them into a blocky mess. Pick a
+	# target portrait height that keeps them sprite-sized and centered.
+	var dino: Dictionary = MatchConfig.DINOS.get(dino_id, {})
+	var role: String = dino.get("sprite_role", dino_id)
+	var layouts: Dictionary = DinoScript.ANIM_LAYOUTS
+	if not layouts.has(role):
+		portrait.texture = null
+		return
+	var layout: Dictionary = layouts[role]
+	var sheet_path: String = layout.get("sheet", "")
+	if not ResourceLoader.exists(sheet_path):
+		portrait.texture = null
+		return
+	var rects: Array = layout.get("idle", {}).get("rects", [])
+	if rects.is_empty():
+		portrait.texture = null
+		return
+	var at := AtlasTexture.new()
+	at.atlas = load(sheet_path)
+	at.region = rects[0]
+	portrait.texture = at
+	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	portrait.flip_h = layout.get("faces_left", false)
+	var src: Vector2 = rects[0].size
+	var target_h: float = 320.0
+	var box_h: float = target_h
+	var box_w: float = target_h * src.x / src.y
+	# Center inside the 516×516 stage that begins at (12, 12) inside the panel.
+	portrait.position = Vector2(12.0 + (516.0 - box_w) / 2.0, 12.0 + (516.0 - box_h) / 2.0)
+	portrait.size = Vector2(box_w, box_h)
+
+
+func _populate_skins_ralph() -> void:
+	var slot_w := 92.0
+	for i in RALPH_SKINS.size():
+		var skin: Dictionary = RALPH_SKINS[i]
+		var x: float = 16.0 + i * (slot_w + 8)
+		var box := Panel.new()
+		box.add_theme_stylebox_override("panel", _sb(PANEL_IN, BORDER, 2, 8))
+		box.position = Vector2(x, 30)
+		box.size = Vector2(slot_w, 76)
+		skins_panel.add_child(box)
+		var img: String = skin.get("img", "")
+		if img != "" and ResourceLoader.exists(img):
+			var t := TextureRect.new()
+			t.texture = load(img)
+			t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			t.position = Vector2(4, 4)
+			t.size = Vector2(slot_w - 8, 68)
+			box.add_child(t)
+		else:
+			_bg(box, slot_w / 2 - 22, 14, 44, 44, skin["tint"])
+		var l := _text(skins_panel, skin["name"], x, 108, 13, TEXT_DIM)
+		l.size = Vector2(slot_w, 18)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		skin_slots.append(box)
+	_refresh_skin_selection()
+
+
+func _populate_customization_ralph() -> void:
+	var slot_w := 104.0
+	for i in CUSTOM.size():
+		var x: float = 20.0 + i * (slot_w + 8)
+		var box := Panel.new()
+		box.add_theme_stylebox_override("panel", _sb(PANEL_IN, BORDER, 2, 8))
+		box.position = Vector2(x, 34)
+		box.size = Vector2(slot_w, 72)
+		customization_panel.add_child(box)
+		_bg(box, slot_w / 2 - 18, 14, 36, 36, Color("39435c"))
+		var l := _text(customization_panel, CUSTOM[i], x, 110, 16, TEXT_DIM)
+		l.size = Vector2(slot_w, 20)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+
+func _populate_emotes_ralph() -> void:
+	var sw := 116.0
+	for i in EMOTES.size():
+		var col: int = i % 4
+		var rowi: int = i / 4
+		var x: float = 16.0 + col * (sw + 6)
+		var y: float = 26.0 + rowi * 54
+		var box := Panel.new()
+		box.add_theme_stylebox_override("panel", _sb(PANEL_IN, BORDER, 2, 6))
+		box.position = Vector2(x, y)
+		box.size = Vector2(sw, 48)
+		emotes_panel.add_child(box)
+		var l := _text(box, EMOTES[i], 0, 0, 15, TEXT_DIM)
+		l.size = Vector2(sw, 48)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+
+func _populate_panel_placeholder(panel: Panel, msg: String) -> void:
+	var l := _text(panel, msg, 0, 0, 20, TEXT_DIM)
+	l.size = panel.size
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+
+func _refresh_skin_selection() -> void:
+	for i in skin_slots.size():
+		var on: bool = i == skin_idx
+		skin_slots[i].add_theme_stylebox_override(
+			"panel", _sb(PANEL_IN, GOLD if on else BORDER, 4 if on else 2, 8))
+	if current_dino == "ralph":
+		var skin: Dictionary = RALPH_SKINS[skin_idx]
+		rarity_label.text = skin.get("rarity", "COMMON")
+		var img: String = skin.get("img", "")
+		if img != "" and ResourceLoader.exists(img):
+			portrait.texture = load(img)
+			portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			portrait.flip_h = false
+		elif ResourceLoader.exists(RALPH_HERO):
+			portrait.texture = load(RALPH_HERO)
+			portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			portrait.flip_h = false
+
+
+# ================================================================ view toggles ==
+func _show_grid() -> void:
+	in_profile = false
+	grid_root.visible = true
+	profile_root.visible = false
+
+
+func _show_profile(dino_id: String) -> void:
+	in_profile = true
+	current_dino = dino_id
+	skin_idx = 0
+	_refresh_profile(dino_id)
+	grid_root.visible = false
+	profile_root.visible = true
+
+
+# =================================================================== process ==
+func _process(_delta: float) -> void:
+	if in_profile:
+		_handle_profile_input()
+	else:
+		_handle_grid_nav()
+
+
+func _handle_profile_input() -> void:
+	if Input.is_action_just_pressed("p1_heavy"):
+		_show_grid()
+		return
+	# Skin cycle only matters when the current dino actually has multiple skins.
+	if current_dino == "ralph" and not skin_slots.is_empty():
+		if Input.is_action_just_pressed("p1_right"):
+			skin_idx = (skin_idx + 1) % RALPH_SKINS.size()
+			_refresh_skin_selection()
+		elif Input.is_action_just_pressed("p1_left"):
+			skin_idx = (skin_idx - 1 + RALPH_SKINS.size()) % RALPH_SKINS.size()
+			_refresh_skin_selection()
+
+
+# Offscreen screenshot for previews: godot <scene> -- --shot [view] [dino_id]
+#   view = "grid" (default) or "profile"
+#   dino_id = roster id when view = "profile" (default: ralph)
+func _shoot() -> void:
+	var args := OS.get_cmdline_user_args()
+	var want_profile: bool = "profile" in args
+	var want_dino: String = "ralph"
+	for a in args:
+		if a in PROFILES:
+			want_dino = a
+	if want_profile:
+		_show_profile(want_dino)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var img := get_viewport().get_texture().get_image()
+	var suffix := want_dino if want_profile else "grid"
+	img.save_png("/tmp/ralph/creator_shot_%s.png" % suffix)
+	get_tree().quit()
