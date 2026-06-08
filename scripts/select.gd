@@ -11,7 +11,7 @@ const WEAPON_PICKS := ["sword", "dagger", "axe", "mace", "hammer", "nunchucks"]
 const DinoScript := preload("res://scripts/dino.gd")
 const TITLE_SCENE := "res://scenes/title.tscn"
 # Bottom-of-screen control hint. The game is gamepad-only, so this is constant.
-const HINT_PAD := "A CONFIRM    B BACK (TO TITLE)    LB ADD OPPONENT    P1 PICKS EACH CPU'S DINO + WEAPON"
+const HINT_PAD := "A CONFIRM    B BACK (TO TITLE)    LB ADD OPPONENT    RB CPU DIFFICULTY    P1 PICKS EACH CPU'S DINO + WEAPON"
 const ISLAND_PREVIEW := {
 	"laughing_lava":     "res://assets/tilesets/laughing_lava_bg.png",
 	"beauty_beach":      "res://assets/tilesets/beauty_beach_bg.png",
@@ -34,6 +34,9 @@ const ISLAND_BG_WIDTH := 680.0  # centerpiece island preview width
 @onready var island_label: Label = $IslandLabel
 @onready var hint_label: Label = $Hint
 @onready var island_bg: Sprite2D = $IslandBg
+# Built in code (so the .tscn isn't restructured): shows the CPU difficulty just
+# under the island line, only while at least one slot is a CPU.
+var difficulty_label: Label
 
 var indexes: Dictionary = {"p1": 0, "p2": 1, "p3": 2, "p4": 3}
 var weapon_idx: Dictionary = {"p1": 0, "p2": 0, "p3": 0, "p4": 0}
@@ -66,6 +69,8 @@ func _ready() -> void:
 	if island_idx < 0:
 		island_idx = 0
 	_update_island()
+	_build_difficulty_label()
+	_update_difficulty_label()
 
 # Activate the first n player slots (2-4); the rest are hidden. Rebuilds the row.
 func _apply_active_count(n: int) -> void:
@@ -81,6 +86,7 @@ func _apply_active_count(n: int) -> void:
 	for pid in active_players:
 		_update_display(pid)
 	_refresh_start()
+	_update_difficulty_label()
 
 # Host adds a computer opponent (cycles 2 -> 3 -> 4 -> 2 players). Newly added
 # opponent slots default to CPU, so a solo player can fight 1-v-2 or 1-v-3.
@@ -93,6 +99,7 @@ func _cycle_opponent_count() -> void:
 			cpu_states[pid] = not _controller_present(int(pid.substr(1)) - 1)
 			ready_states[pid] = false
 			stages[pid] = "dino"
+	_update_difficulty_label()
 	_refresh_displays()
 	_refresh_start()
 
@@ -111,6 +118,9 @@ func _process(delta: float) -> void:
 	# Host adds/cycles computer opponents (1-v-2, 1-v-3, ...).
 	if Input.is_action_just_pressed("p1_special"):
 		_cycle_opponent_count()
+	# Host cycles the CPU difficulty (only matters when a CPU is in the match).
+	if Input.is_action_just_pressed("p1_swap") and _any_cpu():
+		_cycle_difficulty()
 	# P1 (the host) configures their own fighter first, then every CPU's dino
 	# AND weapon, all on the LEFT stick. Human opponents pick on their own pads.
 	var target: String = _host_focus()
@@ -312,6 +322,44 @@ func _update_island() -> void:
 	island_label.text = "ISLAND:  %s    (P1 UP / DOWN)" % MatchConfig.ISLAND_NAMES[MatchConfig.island]
 	_set_island_bg(MatchConfig.island)
 
+# --- CPU difficulty ---
+
+# True when any active slot is a computer opponent (difficulty is meaningless in
+# an all-human lobby, so the selector hides itself then).
+func _any_cpu() -> bool:
+	for pid in active_players:
+		if cpu_states.get(pid, false):
+			return true
+	return false
+
+func _cycle_difficulty() -> void:
+	var order: Array = MatchConfig.CPU_DIFFICULTY_ORDER
+	var i: int = order.find(MatchConfig.cpu_difficulty)
+	MatchConfig.cpu_difficulty = order[(i + 1) % order.size()]
+	_update_difficulty_label()
+
+func _build_difficulty_label() -> void:
+	difficulty_label = Label.new()
+	difficulty_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	difficulty_label.offset_top = 88.0
+	difficulty_label.offset_bottom = 112.0
+	difficulty_label.offset_left = 0.0
+	difficulty_label.offset_right = 1280.0
+	difficulty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	difficulty_label.add_theme_font_size_override("font_size", 18)
+	difficulty_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2, 1))
+	add_child(difficulty_label)
+
+func _update_difficulty_label() -> void:
+	if difficulty_label == null:
+		return
+	if not _any_cpu():
+		difficulty_label.visible = false
+		return
+	difficulty_label.visible = true
+	var dname: String = MatchConfig.CPU_DIFFICULTY_NAMES.get(MatchConfig.cpu_difficulty, "NORMAL")
+	difficulty_label.text = "CPU DIFFICULTY:  %s    (P1 RB)" % dname
+
 # --- Concept-art helpers ---
 
 # Spread the active player cards evenly across the screen in a single row.
@@ -392,6 +440,7 @@ func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
 	_refresh_displays()
 	_refresh_start()
 	_update_hint()
+	_update_difficulty_label()
 
 # Gamepad-only, so the hint never changes.
 func _update_hint() -> void:
