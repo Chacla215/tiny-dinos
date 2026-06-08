@@ -326,33 +326,14 @@ func _layout_panels() -> void:
 func _set_graphic(graphic: AnimatedSprite2D, dino_id: String) -> void:
 	var dino: Dictionary = MatchConfig.DINOS.get(dino_id, {})
 	var role: String = dino.get("sprite_role", "")
-	var layouts: Dictionary = DinoScript.ANIM_LAYOUTS
-	if not layouts.has(role):
+	var sf := DinoScript.build_sprite_frames(role, PackedStringArray(["idle"]))
+	if sf == null:
 		graphic.sprite_frames = null
 		return
-	var layout: Dictionary = layouts[role]
-	var sheet_path: String = layout.get("sheet", "")
-	if not ResourceLoader.exists(sheet_path):
-		graphic.sprite_frames = null
-		return
-	var sheet: Texture2D = load(sheet_path)
-	var idle: Dictionary = layout.get("idle", {})
-	var rects: Array = idle.get("rects", [])
-	if rects.is_empty():
-		graphic.sprite_frames = null
-		return
-	var sf := SpriteFrames.new()
-	sf.remove_animation("default")
-	sf.add_animation("idle")
-	sf.set_animation_loop("idle", true)
-	sf.set_animation_speed("idle", idle.get("speed", 4.0))
-	for r in rects:
-		var at := AtlasTexture.new()
-		at.atlas = sheet
-		at.region = r
-		sf.add_frame("idle", at)
+	var layout: Dictionary = DinoScript.ANIM_LAYOUTS[role]
 	graphic.sprite_frames = sf
-	var s: float = GRAPHIC_TARGET_H / rects[0].size.y
+	var src_h: float = layout["idle"].rects[0].size.y
+	var s: float = GRAPHIC_TARGET_H / src_h
 	graphic.scale = Vector2(s, s)
 	# Face toward screen center: left-side dinos look right, right-side look left.
 	var faces_left_art: bool = layout.get("faces_left", false)
