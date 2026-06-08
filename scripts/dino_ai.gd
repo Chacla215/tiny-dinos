@@ -20,6 +20,27 @@ var throw_chance: float = 0.22   # P(hurl the weapon) on a clean mid-range openi
 const THROW_RANGE := 540.0       # max distance it will throw a weapon from
 const WEAPON_SEEK_RANGE := 440.0 # how far it'll detour to reclaim a dropped weapon
 
+# Knob presets per difficulty (the select screen picks one for all CPUs). NORMAL
+# matches the original hand-tuned defaults above. EASY hangs back, reacts slowly,
+# and rarely defends; HARD closes hard, answers swings fast, and defends often.
+const DIFFICULTY_PRESETS := {
+	"easy":   {"aggression": 0.50, "reaction_time": 0.30, "block_chance": 0.22, "dodge_chance": 0.10, "heavy_chance": 0.20, "special_chance": 0.18, "throw_chance": 0.12},
+	"normal": {"aggression": 0.70, "reaction_time": 0.16, "block_chance": 0.40, "dodge_chance": 0.22, "heavy_chance": 0.30, "special_chance": 0.30, "throw_chance": 0.22},
+	"hard":   {"aggression": 0.92, "reaction_time": 0.09, "block_chance": 0.55, "dodge_chance": 0.36, "heavy_chance": 0.34, "special_chance": 0.42, "throw_chance": 0.30},
+}
+
+# Stamp one difficulty preset onto this brain's knobs. Called by the owning dino
+# at spawn from MatchConfig.cpu_difficulty. Unknown level falls back to NORMAL.
+func apply_difficulty(level: String) -> void:
+	var p: Dictionary = DIFFICULTY_PRESETS.get(level, DIFFICULTY_PRESETS["normal"])
+	aggression = p["aggression"]
+	reaction_time = p["reaction_time"]
+	block_chance = p["block_chance"]
+	dodge_chance = p["dodge_chance"]
+	heavy_chance = p["heavy_chance"]
+	special_chance = p["special_chance"]
+	throw_chance = p["throw_chance"]
+
 # --- Outputs read by the owning dino each frame ---
 var move_dir: Vector2 = Vector2.ZERO
 var block_held: bool = false
