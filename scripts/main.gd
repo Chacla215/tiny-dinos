@@ -45,6 +45,22 @@ const PLAYER_SEPARATION := 56.0
 ## Dark backing plate behind each HUD corner so name/bars read on bright stages.
 const HUD_PANEL_COLOR := Color(0.06, 0.07, 0.11, 0.55)
 
+## Special-ready pip: a small square at the inboard end of each corner's block
+## bar that fills as the signature special recharges and glows gold when it's
+## ready. Built in code so all 6 arenas inherit it from the shared script. The
+## anchors track the HUD bar layout (left corners grow right from x=24, right
+## corners grow left from x=1256). Dinos with special_type "none" get no pip.
+const PIP_SIZE := 18.0
+const PIP_POS := {
+	"p1": Vector2(292.0, 87.0),
+	"p2": Vector2(970.0, 87.0),
+	"p3": Vector2(292.0, 665.0),
+	"p4": Vector2(970.0, 665.0),
+}
+const PIP_BG := Color(0.1, 0.1, 0.1, 0.75)
+const PIP_CHARGING := Color(0.55, 0.5, 0.25, 1.0)  # dim gold while recharging
+const PIP_READY := Color(1.0, 0.85, 0.3, 1.0)      # bright gold when ready
+
 @onready var ice_patches: Node2D = $IcePatches
 @onready var camera: Camera2D = $Camera2D
 @onready var hud_win: Label = $HUD/WinMessage
@@ -70,6 +86,8 @@ var _pause_active: bool = false
 var lava_area: Area2D = null
 var lava_tick_timers: Dictionary = {}
 var drown_timers: Dictionary = {}  # pid -> seconds spent off all floes
+
+var special_pips: Dictionary = {}  # pid -> {"fill": Polygon2D}
 
 var sfx: Dictionary = {}
 
@@ -103,6 +121,7 @@ func _ready() -> void:
 	_setup_active_players()
 	_apply_match_colors()
 	_style_hud()
+	_build_special_pips()
 	update_score_display()
 	_load_sfx()
 	_build_debug_boundary()  # red ring-out outline when debug_draw_safe_zone is on
@@ -169,6 +188,37 @@ func _style_hud() -> void:
 		l.add_theme_constant_override("outline_size", 8)
 		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
 
+# A square special-ready pip by each active corner's block bar. The fill
+# Polygon2D is scaled vertically by cooldown progress in _update_hud_bars; a
+# dark backing square sits behind it. Dinos without a special get no pip.
+func _build_special_pips() -> void:
+	for p in active_players:
+		if not ("special_type" in p) or p.special_type == "none":
+			continue
+		var pid: String = p.player_id
+		var pos: Vector2 = PIP_POS.get(pid, Vector2.ZERO)
+		var quad := PackedVector2Array([
+			Vector2(0, 0), Vector2(PIP_SIZE, 0),
+			Vector2(PIP_SIZE, PIP_SIZE), Vector2(0, PIP_SIZE)])
+		var back := Polygon2D.new()
+		back.polygon = quad
+		back.color = PIP_BG
+		back.position = pos
+		back.z_index = 1
+		$HUD.add_child(back)
+		var fill := Polygon2D.new()
+		# Upward quad anchored at the pip's bottom edge, so scaling y fills it
+		# bottom-up as the special recharges.
+		fill.polygon = PackedVector2Array([
+			Vector2(0, 0), Vector2(PIP_SIZE, 0),
+			Vector2(PIP_SIZE, -PIP_SIZE), Vector2(0, -PIP_SIZE)])
+		fill.color = PIP_CHARGING
+		fill.position = pos + Vector2(0, PIP_SIZE)
+		fill.scale = Vector2(1, 0)
+		fill.z_index = 2
+		$HUD.add_child(fill)
+		special_pips[pid] = {"fill": fill}
+
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	if connected:
 		print("Joypad connected: device %d  name=%s" % [device, Input.get_joy_name(device)])
@@ -220,6 +270,21 @@ func _update_hud_bars() -> void:
 			var wn: String = p.weapon_name() if p.has_method("weapon_name") else ""
 			var wsuffix: String = ("   " + wn) if wn != "" else ""
 			label.text = "%s  %d / %d%s" % [_dino_name(p.player_id), round_wins.get(p.player_id, 0), kos_to_win, wsuffix]
+		_update_special_pip(p)
+
+# Fill the special pip by recharge progress; glow bright gold + full once it's
+# ready to fire (cooldown elapsed). A null/zero cooldown reads as always ready.
+func _update_special_pip(p: Node) -> void:
+	var pip: Dictionary = special_pips.get(p.player_id, {})
+	if pip.is_empty():
+		return
+	var fill: Polygon2D = pip["fill"]
+	var cd: float = p.special_cooldown if "special_cooldown" in p else 0.0
+	var t: float = p.special_cooldown_timer if "special_cooldown_timer" in p else 0.0
+	var progress: float = 1.0 if cd <= 0.0 else clamp(1.0 - t / cd, 0.0, 1.0)
+	var ready: bool = t <= 0.0
+	fill.scale.y = progress
+	fill.color = PIP_READY if ready else PIP_CHARGING
 
 func _physics_process(delta: float) -> void:
 	if match_over or not round_active:
