@@ -342,6 +342,11 @@ var cpu_players: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": fals
 ## pid -> chosen weapon id; the in-match loadout becomes ["fists", choice].
 ## Absent (e.g. CPU slots) -> the dino's default loadout from DINOS.weapons.
 var weapon_choices: Dictionary = {}
+## Difficulty applied to every CPU this match (chosen on the select screen).
+## Maps to a knob preset in dino_ai.gd via apply_difficulty().
+const CPU_DIFFICULTY_ORDER := ["easy", "normal", "hard"]
+const CPU_DIFFICULTY_NAMES := {"easy": "EASY", "normal": "NORMAL", "hard": "HARD"}
+var cpu_difficulty: String = "normal"
 
 func _ready() -> void:
 	_setup_input_actions()

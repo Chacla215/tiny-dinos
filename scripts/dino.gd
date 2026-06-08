@@ -250,6 +250,8 @@ func _ready() -> void:
 		is_cpu = true
 	if is_cpu:
 		ai = preload("res://scripts/dino_ai.gd").new()
+		if MatchConfig and "cpu_difficulty" in MatchConfig:
+			ai.apply_difficulty(MatchConfig.cpu_difficulty)
 		_equip_default_weapon()  # CPUs commit to their weapon (no human swap input)
 	spawn_point = global_position
 	hp = max_hp
