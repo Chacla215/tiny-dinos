@@ -249,20 +249,10 @@ func _add_portrait(parent: Control, dino_id: String, rect: Rect2, fallback_scale
 	# Fallback: in-match pixel sprite, upscaled.
 	var dino: Dictionary = MatchConfig.DINOS.get(dino_id, {})
 	var role: String = dino.get("sprite_role", dino_id)
-	var layouts: Dictionary = DinoScript.ANIM_LAYOUTS
-	if not layouts.has(role):
+	var at := DinoScript.first_frame(role)
+	if at == null:
 		return null
-	var layout: Dictionary = layouts[role]
-	var sheet_path: String = layout.get("sheet", "")
-	if not ResourceLoader.exists(sheet_path):
-		return null
-	var idle: Dictionary = layout.get("idle", {})
-	var rects: Array = idle.get("rects", [])
-	if rects.is_empty():
-		return null
-	var at := AtlasTexture.new()
-	at.atlas = load(sheet_path)
-	at.region = rects[0]
+	var faces_left: bool = DinoScript.ANIM_LAYOUTS[role].get("faces_left", false)
 	var t := TextureRect.new()
 	t.texture = at
 	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -272,7 +262,7 @@ func _add_portrait(parent: Control, dino_id: String, rect: Rect2, fallback_scale
 	# panel but flips so face-left sheets still look toward the camera.
 	t.position = rect.position
 	t.size = rect.size
-	t.flip_h = layout.get("faces_left", false)
+	t.flip_h = faces_left
 	parent.add_child(t)
 	return t
 
@@ -636,26 +626,14 @@ func _refresh_portrait_for_dino(dino_id: String) -> void:
 	# target portrait height that keeps them sprite-sized and centered.
 	var dino: Dictionary = MatchConfig.DINOS.get(dino_id, {})
 	var role: String = dino.get("sprite_role", dino_id)
-	var layouts: Dictionary = DinoScript.ANIM_LAYOUTS
-	if not layouts.has(role):
+	var at := DinoScript.first_frame(role)
+	if at == null:
 		portrait.texture = null
 		return
-	var layout: Dictionary = layouts[role]
-	var sheet_path: String = layout.get("sheet", "")
-	if not ResourceLoader.exists(sheet_path):
-		portrait.texture = null
-		return
-	var rects: Array = layout.get("idle", {}).get("rects", [])
-	if rects.is_empty():
-		portrait.texture = null
-		return
-	var at := AtlasTexture.new()
-	at.atlas = load(sheet_path)
-	at.region = rects[0]
 	portrait.texture = at
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	portrait.flip_h = layout.get("faces_left", false)
-	var src: Vector2 = rects[0].size
+	portrait.flip_h = DinoScript.ANIM_LAYOUTS[role].get("faces_left", false)
+	var src: Vector2 = at.region.size
 	var target_h: float = 320.0
 	var box_h: float = target_h
 	var box_w: float = target_h * src.x / src.y

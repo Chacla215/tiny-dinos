@@ -298,32 +298,67 @@ func _apply_config_preset() -> void:
 	initial_weapons = weapons.duplicate()  # restored each life after throws
 	_refresh_weapon()
 
-func _setup_sprite() -> void:
-	if not sprite_role in ANIM_LAYOUTS:
-		sprite.visible = false
-		return
-	var layouts = ANIM_LAYOUTS[sprite_role]
-	sprite_faces_left = layouts.get("faces_left", false)
-	var sheet_path: String = layouts.get("sheet", SHEET_PLAYER)
+# --- Shared sprite-frame builders ---------------------------------------------
+# The picker, title, and character screen all render dinos from the SAME
+# ANIM_LAYOUTS the match uses (so pick == play). These statics are the single
+# source of that build logic; callers add their own scale/flip/offset.
+
+# A SpriteFrames for `role` from ANIM_LAYOUTS. `only` (animation names) limits
+# which clips are built — empty = all (idle/walk/attack). null if the role or
+# its sheet is unavailable.
+static func build_sprite_frames(role: String, only: PackedStringArray = PackedStringArray()) -> SpriteFrames:
+	if not ANIM_LAYOUTS.has(role):
+		return null
+	var layout: Dictionary = ANIM_LAYOUTS[role]
+	var sheet_path: String = layout.get("sheet", SHEET_PLAYER)
 	if not ResourceLoader.exists(sheet_path):
-		sprite.visible = false
-		return
+		return null
 	var sheet: Texture2D = load(sheet_path)
 	if sheet == null:
-		sprite.visible = false
-		return
+		return null
 	var sf := SpriteFrames.new()
-	for anim_name in layouts:
+	sf.remove_animation("default")
+	for anim_name in layout:
 		if anim_name == "sheet" or anim_name == "faces_left":
 			continue
+		if not only.is_empty() and not (anim_name in only):
+			continue
 		sf.add_animation(anim_name)
-		sf.set_animation_loop(anim_name, layouts[anim_name].loop)
-		sf.set_animation_speed(anim_name, layouts[anim_name].speed)
-		for rect in layouts[anim_name].rects:
+		sf.set_animation_loop(anim_name, layout[anim_name].loop)
+		sf.set_animation_speed(anim_name, layout[anim_name].speed)
+		for rect in layout[anim_name].rects:
 			var atlas := AtlasTexture.new()
 			atlas.atlas = sheet
 			atlas.region = rect
 			sf.add_frame(anim_name, atlas)
+	return sf
+
+# The first frame of `role`'s `anim` clip as a standalone AtlasTexture (used for
+# static portraits). null if the role/sheet/clip is unavailable.
+static func first_frame(role: String, anim: String = "idle") -> AtlasTexture:
+	if not ANIM_LAYOUTS.has(role):
+		return null
+	var layout: Dictionary = ANIM_LAYOUTS[role]
+	var sheet_path: String = layout.get("sheet", SHEET_PLAYER)
+	if not ResourceLoader.exists(sheet_path):
+		return null
+	var rects: Array = layout.get(anim, {}).get("rects", [])
+	if rects.is_empty():
+		return null
+	var at := AtlasTexture.new()
+	at.atlas = load(sheet_path)
+	at.region = rects[0]
+	return at
+
+func _setup_sprite() -> void:
+	if not sprite_role in ANIM_LAYOUTS:
+		sprite.visible = false
+		return
+	sprite_faces_left = ANIM_LAYOUTS[sprite_role].get("faces_left", false)
+	var sf := build_sprite_frames(sprite_role)
+	if sf == null:
+		sprite.visible = false
+		return
 	sprite.sprite_frames = sf
 	sprite.scale = Vector2(sprite_scale, sprite_scale)
 	sprite.position.y = sprite_offset_y
