@@ -1,5 +1,30 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-08
+
+Source-wide review pass → four worktrees, all merged to master (headless-validated
+across every scene).
+
+- **CPU now plays the island, not a box** *(fix/ai-island-shape)*. Ledge-avoidance
+  + throw-safety + projectile/weapon culling test the painted `safe_polygon`
+  instead of the inscribed `safe_rect`. Fixes bots hugging a thin band on
+  **Purple Fields** (its rect was a narrow strip of the real oval).
+- ✅ **vs-CPU Phase 2 — CPU difficulty (Easy / Normal / Hard)** *(feat/cpu-difficulty)*.
+  Presets in `dino_ai` (`apply_difficulty`), carried match-wide on
+  `MatchConfig.cpu_difficulty`, applied per CPU at spawn. Host cycles it with **RB**
+  on the select screen; NORMAL = the prior hand-tuned defaults. (Smarter-AI half of
+  Phase 2 partly served by the island-shape fix; deeper tactics still open.)
+- **Special-cooldown indicator** *(feat/special-cooldown-hud)* — the DESIGN `[?]`
+  is closed. A pip by each block bar fills as the signature special recharges and
+  glows gold when ready (code-built, so all 6 arenas inherit it).
+- **Refactor** *(cleanup/sprite-frames)* — `dino.gd` gains `build_sprite_frames` /
+  `first_frame` statics; the picker, title, and character screen now build dino
+  art through them instead of 4 copy-pasted loops.
+
+> Next candidates flagged but not built: remove dead hand-drawn-Ralph assets
+> (`art_preview.gd`, `trex_hd`, `trex_handdrawn.png`); deeper CPU tactics; then the
+> bigger beyond-melee systems (ranged/Bow, power-ups, status kits, grab/throw).
+
 ## Session — 2026-05-22
 
 ### Where we are now
