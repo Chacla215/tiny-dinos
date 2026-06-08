@@ -19,6 +19,7 @@ var throw_chance: float = 0.22   # P(hurl the weapon) on a clean mid-range openi
 
 const THROW_RANGE := 540.0       # max distance it will throw a weapon from
 const WEAPON_SEEK_RANGE := 440.0 # how far it'll detour to reclaim a dropped weapon
+const EDGE_LOOK := 96.0          # how far ahead it probes for the island edge
 
 # --- Outputs read by the owning dino each frame ---
 var move_dir: Vector2 = Vector2.ZERO
@@ -163,12 +164,17 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	# Never steer itself off a ledge / out of bounds.
 	move_dir = _avoid(owner, move_dir)
 
-# Bends a desired direction away from the arena edge when near it. Uses the
-# ledge safe_rect where one exists, otherwise the play bounds.
+# Bends a desired direction away from the arena edge when near it. Islands ring
+# out on the painted safe_polygon (an oval/irregular shoreline), so prefer that
+# exact shape; only fall back to the rectangular safe_rect / play_bounds on
+# arenas that never set a polygon.
 func _avoid(owner: Node, desired: Vector2) -> Vector2:
 	var arena := owner.get_parent()
 	if arena == null:
 		return desired
+	if "ledge_kill_enabled" in arena and arena.ledge_kill_enabled \
+			and "safe_polygon" in arena and arena.safe_polygon.size() >= 3:
+		return _avoid_polygon(owner, arena.safe_polygon, desired)
 	var rect: Rect2
 	var have := false
 	if "ledge_kill_enabled" in arena and arena.ledge_kill_enabled:
@@ -192,6 +198,32 @@ func _avoid(owner: Node, desired: Vector2) -> Vector2:
 		steer.y -= 1.0
 	return steer.normalized() if steer.length() > 0.05 else Vector2.ZERO
 
+# Polygon-shaped ledge avoidance: probe a step ahead along the desired heading;
+# if that point would be off the island, blend the heading back toward the
+# island center. A near miss (1.7x lookahead) eases inward while keeping
+# momentum so the bot circles the shoreline instead of veering off it.
+func _avoid_polygon(owner: Node, poly: PackedVector2Array, desired: Vector2) -> Vector2:
+	var pos: Vector2 = owner.global_position
+	var inward: Vector2 = _polygon_center(poly) - pos
+	var inward_dir: Vector2 = inward.normalized() if inward.length() > 1.0 else Vector2.RIGHT
+	if desired.length() <= 0.05:
+		# Idle/drifting: only correct if somehow already over the edge.
+		return inward_dir if not Geometry2D.is_point_in_polygon(pos, poly) else desired
+	var dir: Vector2 = desired.normalized()
+	if not Geometry2D.is_point_in_polygon(pos + dir * EDGE_LOOK, poly):
+		var steer: Vector2 = dir + inward_dir * 1.6
+		return steer.normalized() if steer.length() > 0.05 else inward_dir
+	if not Geometry2D.is_point_in_polygon(pos + dir * (EDGE_LOOK * 1.7), poly):
+		var steer: Vector2 = dir + inward_dir * 0.6
+		return steer.normalized() if steer.length() > 0.05 else dir
+	return desired
+
+func _polygon_center(poly: PackedVector2Array) -> Vector2:
+	var sum := Vector2.ZERO
+	for p in poly:
+		sum += p
+	return sum / poly.size()
+
 # Nearest weapon resting on the ground (a thrown one that came to rest), or null.
 func _nearest_pickup(owner: Node) -> Node:
 	var best: Node = null
@@ -206,11 +238,14 @@ func _nearest_pickup(owner: Node) -> Node:
 	return best
 
 # True when a weapon thrown toward the target would still come down on the
-# platform (a miss stays recoverable) rather than sailing off the edge.
+# platform (a miss stays recoverable) rather than sailing off the edge. Tests
+# against the island's real shoreline (safe_polygon) where one exists.
 func _throw_safe(owner: Node, dir: Vector2, dist: float) -> bool:
-	var rect := _get_arena_rect(owner)
 	var landing: Vector2 = owner.global_position + dir * (dist + 140.0)
-	return rect.has_point(landing)
+	var arena := owner.get_parent()
+	if arena and "safe_polygon" in arena and arena.safe_polygon.size() >= 3:
+		return Geometry2D.is_point_in_polygon(landing, arena.safe_polygon)
+	return _get_arena_rect(owner).has_point(landing)
 
 func _get_arena_rect(owner: Node) -> Rect2:
 	var arena := owner.get_parent()

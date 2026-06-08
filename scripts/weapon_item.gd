@@ -51,8 +51,7 @@ func _physics_process(delta: float) -> void:
 	rotation += SPIN_SPEED * delta
 	flight_timer -= delta
 	# Sailed well clear of the platform: gone, no pickup left behind.
-	var sr = _safe_rect()
-	if sr != null and not sr.grow(EDGE_MARGIN).has_point(global_position):
+	if _beyond_edge(global_position):
 		queue_free()
 		return
 	if flight_timer <= 0.0:
@@ -73,8 +72,7 @@ func _on_body_entered(body: Node) -> void:
 # End of flight: become a pickup if we're still over the platform, otherwise
 # we've gone over the edge — drop into the void.
 func _land() -> void:
-	var sr = _safe_rect()
-	if sr != null and not sr.has_point(global_position):
+	if not _over_platform(global_position):
 		queue_free()
 		return
 	mode = Mode.GROUNDED
@@ -94,8 +92,35 @@ func is_grounded() -> bool:
 func consume() -> void:
 	queue_free()
 
-func _safe_rect():
+# True while p sits on the island (safe ground = becomes a pickup). Islands ring
+# out on the painted safe_polygon, so test that shoreline where it exists; the
+# inscribed safe_rect is only a fallback for arenas without a polygon.
+func _over_platform(p: Vector2) -> bool:
 	var scene_root := get_tree().current_scene
-	if scene_root and "safe_rect" in scene_root:
-		return scene_root.safe_rect
-	return null
+	if scene_root == null:
+		return true  # unbounded arena: anywhere is fine
+	if "safe_polygon" in scene_root and scene_root.safe_polygon.size() >= 3:
+		return Geometry2D.is_point_in_polygon(p, scene_root.safe_polygon)
+	if "safe_rect" in scene_root:
+		return (scene_root.safe_rect as Rect2).has_point(p)
+	return true
+
+# True once p has sailed a margin (EDGE_MARGIN) past the arena edge — a thrown
+# weapon that clears the shoreline by this much is lost for good.
+func _beyond_edge(p: Vector2) -> bool:
+	var scene_root := get_tree().current_scene
+	if scene_root == null:
+		return false
+	if "safe_polygon" in scene_root and scene_root.safe_polygon.size() >= 3:
+		var poly: PackedVector2Array = scene_root.safe_polygon
+		if Geometry2D.is_point_in_polygon(p, poly):
+			return false
+		var center := Vector2.ZERO
+		for v in poly:
+			center += v
+		center /= poly.size()
+		var pulled: Vector2 = p + (center - p).normalized() * EDGE_MARGIN
+		return not Geometry2D.is_point_in_polygon(pulled, poly)
+	if "safe_rect" in scene_root:
+		return not (scene_root.safe_rect as Rect2).grow(EDGE_MARGIN).has_point(p)
+	return false
