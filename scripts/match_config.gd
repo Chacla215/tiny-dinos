@@ -506,6 +506,11 @@ func gauntlet_draft_options() -> Array:
 func gauntlet_scene() -> String:
 	return ISLAND_SCENES.get(island, "res://scenes/main.tscn")
 
+# Early waves are best-of-2 (a buffer while you're under-powered); from wave 4 on
+# they tighten to a single decisive KO so the late run stays tense.
+func gauntlet_kos_to_win() -> int:
+	return 2 if gauntlet_wave < 3 else 1
+
 # Endless enemy scaling so late waves stay threatening past the HARD difficulty cap.
 func gauntlet_enemy_hp_mult() -> float:
 	return 1.0 + 0.08 * float(gauntlet_wave)

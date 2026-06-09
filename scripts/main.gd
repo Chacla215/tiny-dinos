@@ -146,7 +146,7 @@ func _ready() -> void:
 	if MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade:
 		kos_to_win = 2  # snappier rungs for the solo ladder
 	if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
-		kos_to_win = 1  # one decisive KO per gauntlet wave
+		kos_to_win = MatchConfig.gauntlet_kos_to_win()  # best-of-2 early, single-KO later
 	_setup_active_players()
 	_apply_match_colors()
 	_style_hud()
