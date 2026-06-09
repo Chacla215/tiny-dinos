@@ -1118,6 +1118,28 @@ func update_score_display() -> void:
 		if label:
 			label.text = "%s  %s" % [display_name, _score_text(p)]
 
+# Dim the arena and drop a panel behind the centered end-screen text so the result
+# + grade card read clearly over the busy island. Lives under the HUD labels (which
+# stay bright) and is only used on terminal screens, not the round interstitial.
+func _show_end_backdrop() -> void:
+	var layer := get_node_or_null("HUD")
+	if layer == null or layer.has_node("EndDim"):
+		return
+	var dim := ColorRect.new()
+	dim.name = "EndDim"
+	dim.color = Color(0.04, 0.05, 0.08, 0.62)
+	dim.position = Vector2.ZERO
+	dim.size = Vector2(1280, 720)
+	layer.add_child(dim)
+	layer.move_child(dim, 0)
+	var panel := ColorRect.new()
+	panel.name = "EndPanel"
+	panel.color = Color(0.10, 0.12, 0.18, 0.92)
+	panel.position = Vector2(316, 240)
+	panel.size = Vector2(648, 332)
+	layer.add_child(panel)
+	layer.move_child(panel, 1)
+
 func end_match(winner: CharacterBody2D, label: String) -> void:
 	if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
 		_end_match_gauntlet(winner)
@@ -1127,6 +1149,7 @@ func end_match(winner: CharacterBody2D, label: String) -> void:
 		return
 	match_over = true
 	round_active = false
+	_show_end_backdrop()
 	hud_win.text = "%s WINS" % label
 	var win_color: Color = MatchConfig.PLAYER_COLORS.get(winner.player_id, Color.WHITE)
 	hud_win.add_theme_color_override("font_color", win_color)
@@ -1149,6 +1172,7 @@ func end_match(winner: CharacterBody2D, label: String) -> void:
 func _end_match_arcade(winner: Node) -> void:
 	match_over = true
 	round_active = false
+	_show_end_backdrop()
 	for p in active_players:
 		p.set_process_input(false)
 		p.set_physics_process(false)
@@ -1195,6 +1219,7 @@ func _end_match_gauntlet(winner: Node) -> void:
 	var player_won: bool = winner != null and winner.player_id == "p1"
 	var wave: int = MatchConfig.gauntlet_wave + 1
 	if not player_won:
+		_show_end_backdrop()
 		hud_win.text = "RUN OVER"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
 		var newly: Array = MetaSave.record_run(wave)

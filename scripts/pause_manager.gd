@@ -172,7 +172,7 @@ func _build_menu() -> void:
 	_layer.add_child(_menu_root)
 
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.5)
+	dim.color = Color(0.04, 0.05, 0.08, 0.7)  # matches the end-screen backdrop
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_menu_root.add_child(dim)
