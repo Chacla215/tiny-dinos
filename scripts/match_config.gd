@@ -386,27 +386,29 @@ var arcade_player_dino: String = "trex"
 var arcade_player_weapon: String = "hammer"
 const ARCADE_DIFFS := ["easy", "easy", "normal", "normal", "hard"]
 
-func start_arcade(player_dino: String, player_weapon: String) -> void:
+func start_arcade(player_dino: String, player_weapon: String, start_island: String = "") -> void:
 	arcade = true
 	arcade_rung = 0
 	arcade_player_dino = player_dino
 	arcade_player_weapon = player_weapon
-	arcade_ladder = _build_ladder(player_dino)
+	arcade_ladder = _build_ladder(player_dino, start_island)
 	_apply_arcade_rung()
 
 # The ladder is every OTHER dino, difficulty ramping easy->hard, each on a
 # different island for variety. The last rung is always the toughest foe on HARD.
-func _build_ladder(player_dino: String) -> Array:
+# start_island rotates the island sequence so rung 1 opens on the chosen island.
+func _build_ladder(player_dino: String, start_island: String = "") -> Array:
 	var foes: Array = []
 	for d in ROSTER_ORDER:
 		if d != player_dino:
 			foes.append(d)
+	var offset: int = max(0, ISLAND_ORDER.find(start_island))
 	var ladder: Array = []
 	for i in range(foes.size()):
 		ladder.append({
 			"dino": foes[i],
 			"difficulty": ARCADE_DIFFS[min(i, ARCADE_DIFFS.size() - 1)],
-			"island": ISLAND_ORDER[i % ISLAND_ORDER.size()],
+			"island": ISLAND_ORDER[(offset + i) % ISLAND_ORDER.size()],
 		})
 	if not ladder.is_empty():
 		ladder[ladder.size() - 1]["difficulty"] = "hard"  # final boss
@@ -449,6 +451,7 @@ var gauntlet_upgrades: Array = []    # upgrade ids picked this run (may repeat)
 var gauntlet_player_dino: String = "trex"
 var gauntlet_player_weapon: String = "hammer"
 var gauntlet_player_hp: int = -1     # HP carried into the next wave; -1 = spawn at full
+var gauntlet_start_island: String = ""  # solo-setup pick for wave 1; "" = random
 # Persistent meta perks snapshotted from MetaSave at run start (see meta_save.gd).
 var gauntlet_meta_hp_bonus: int = 0  # HARDENED: flat starting max-HP bonus
 var gauntlet_extra_draft: bool = false  # EXTRA DRAFT: offer 4 upgrade cards, not 3
@@ -482,13 +485,14 @@ const UPGRADES := {
 # attrition stings without dooming a low-HP survivor. SECOND WIND adds on top.
 const GAUNTLET_WAVE_HEAL := 0.20
 
-func start_gauntlet(player_dino: String, player_weapon: String) -> void:
+func start_gauntlet(player_dino: String, player_weapon: String, start_island: String = "") -> void:
 	gauntlet = true
 	gauntlet_wave = 0
 	gauntlet_upgrades = []
 	gauntlet_player_dino = player_dino
 	gauntlet_player_weapon = player_weapon
 	gauntlet_player_hp = -1
+	gauntlet_start_island = start_island
 	# Snapshot the cross-run meta perks unlocked so far.
 	gauntlet_meta_hp_bonus = MetaSave.hp_bonus()
 	gauntlet_extra_draft = MetaSave.has_unlock("extra_draft")
@@ -512,7 +516,11 @@ func _apply_gauntlet_wave() -> void:
 		cpu_difficulty = "normal"
 	else:
 		cpu_difficulty = "hard"
-	island = ISLAND_ORDER[randi() % ISLAND_ORDER.size()]
+	# Wave 1 uses the island chosen in solo setup (if any); the rest stay random.
+	if gauntlet_wave == 0 and gauntlet_start_island != "":
+		island = gauntlet_start_island
+	else:
+		island = ISLAND_ORDER[randi() % ISLAND_ORDER.size()]
 	game_mode = "rounds"
 
 func gauntlet_next_wave() -> void:

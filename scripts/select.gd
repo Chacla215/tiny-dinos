@@ -100,12 +100,27 @@ func _enter_solo_setup() -> void:
 	stages["p2"] = "ready"
 	if difficulty_label:
 		difficulty_label.visible = false
-	if mode_label:
-		mode_label.visible = false
 	island_label.text = "ROGUELIKE GAUNTLET  -  SURVIVE + UPGRADE" if gauntlet else "ARCADE LADDER  -  CLIMB THE GAUNTLET"
-	hint_label.text = "A CONFIRM    B BACK    P1 PICK YOUR FIGHTER"
+	hint_label.text = "A CONFIRM    B BACK    P1 PICK FIGHTER  -  UP/DOWN ISLAND"
+	_update_solo_island_label()  # repurposes the (otherwise-hidden) mode label
+	_set_island_bg(MatchConfig.ISLAND_ORDER[island_idx])
 	_refresh_displays()
 	_refresh_start()
+
+# Solo setup borrows the mode label to show the chosen starting island; the
+# gauntlet randomizes islands after wave 1, the arcade ladder opens here.
+func _update_solo_island_label() -> void:
+	if not mode_label:
+		return
+	mode_label.visible = true
+	var island_name: String = MatchConfig.ISLAND_NAMES[MatchConfig.ISLAND_ORDER[island_idx]]
+	mode_label.text = "START ISLAND:  %s   (P1 UP / DOWN)" % island_name
+
+func _cycle_solo_island(step: int) -> void:
+	var n: int = MatchConfig.ISLAND_ORDER.size()
+	island_idx = (island_idx + step + n) % n
+	_set_island_bg(MatchConfig.ISLAND_ORDER[island_idx])
+	_update_solo_island_label()
 
 # Activate the first n player slots (2-4); the rest are hidden. Rebuilds the row.
 func _apply_active_count(n: int) -> void:
@@ -139,6 +154,13 @@ func _cycle_opponent_count() -> void:
 	_refresh_start()
 
 func _process(delta: float) -> void:
+	# Solo: P1 picks the starting island any time before the launch countdown
+	# arms (UP/DOWN is unused by the fighter picker, so there's no conflict).
+	if _solo() and not launch_armed:
+		if Input.is_action_just_pressed("p1_up"):
+			_cycle_solo_island(-1)
+		elif Input.is_action_just_pressed("p1_down"):
+			_cycle_solo_island(1)
 	if _all_ready():
 		_process_launch(delta)
 		return
@@ -516,7 +538,7 @@ func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
 # Gamepad-only, so the hint never changes (except the trimmed arcade hint).
 func _update_hint() -> void:
 	if _solo():
-		hint_label.text = "A CONFIRM    B BACK    P1 PICK YOUR FIGHTER"
+		hint_label.text = "A CONFIRM    B BACK    P1 PICK FIGHTER  -  UP/DOWN ISLAND"
 		return
 	hint_label.text = HINT_PAD
 
@@ -527,13 +549,14 @@ func _start_match() -> void:
 	if _solo():
 		var pd: String = MatchConfig.ROSTER_ORDER[indexes["p1"]]
 		var pw: String = WEAPON_PICKS[weapon_idx["p1"]]
+		var pi: String = MatchConfig.ISLAND_ORDER[island_idx]
 		if gauntlet:
 			MatchConfig.gauntlet_setup = false
-			MatchConfig.start_gauntlet(pd, pw)
+			MatchConfig.start_gauntlet(pd, pw, pi)
 			get_tree().change_scene_to_file(MatchConfig.gauntlet_scene())
 		else:
 			MatchConfig.arcade_setup = false
-			MatchConfig.start_arcade(pd, pw)
+			MatchConfig.start_arcade(pd, pw, pi)
 			get_tree().change_scene_to_file(MatchConfig.arcade_scene())
 		return
 	MatchConfig.weapon_choices = {}
