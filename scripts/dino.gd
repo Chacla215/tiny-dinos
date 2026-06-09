@@ -244,6 +244,7 @@ func _ready() -> void:
 		if MatchConfig and "cpu_difficulty" in MatchConfig:
 			ai.apply_difficulty(MatchConfig.cpu_difficulty)
 		_equip_default_weapon()  # CPUs commit to their weapon (no human swap input)
+	_apply_run_upgrades()  # gauntlet: player carries drafted upgrades; foes scale per wave
 	spawn_point = global_position
 	hp = max_hp
 	block_durability = max_block
@@ -255,6 +256,40 @@ func _ready() -> void:
 		polygon.color = dino_color
 
 	_setup_sprite()
+
+# Gauntlet run modifiers, applied after the base preset and before HP/block init.
+# The human player gets every upgrade they've drafted (stacking); CPU foes get the
+# per-wave enemy scaling so the run keeps escalating past the HARD difficulty cap.
+func _apply_run_upgrades() -> void:
+	if not MatchConfig or not ("gauntlet" in MatchConfig) or not MatchConfig.gauntlet:
+		return
+	if is_cpu:
+		_scale_stat("max_hp", MatchConfig.gauntlet_enemy_hp_mult())
+		var dm: float = MatchConfig.gauntlet_enemy_dmg_mult()
+		_scale_stat("attack_damage", dm)
+		_scale_stat("heavy_damage", dm)
+		_scale_stat("special_damage", dm)
+		return
+	for uid in MatchConfig.gauntlet_upgrades:
+		var up: Dictionary = MatchConfig.UPGRADES.get(uid, {})
+		for stat in up.get("mods", {}):
+			if not (stat in self):
+				continue
+			var op: Array = up["mods"][stat]
+			var cur = get(stat)
+			var nv = (cur * op[1]) if op[0] == "mul" else (cur + op[1])
+			if typeof(cur) == TYPE_INT:
+				nv = int(round(nv))
+			set(stat, nv)
+
+func _scale_stat(stat: String, mult: float) -> void:
+	if not (stat in self):
+		return
+	var cur = get(stat)
+	if typeof(cur) == TYPE_INT:
+		set(stat, int(round(cur * mult)))
+	else:
+		set(stat, cur * mult)
 
 func _apply_config_preset() -> void:
 	if not MatchConfig:

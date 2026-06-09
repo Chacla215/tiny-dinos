@@ -108,6 +108,28 @@ boss, islands rotating) and ran a rung to resolution with `arcade_end` set + the
 kos override applied. Live renders confirmed the title (5-item menu fits) and the
 arcade select (GAUNTLET panel, hidden selectors) both draw clean.
 
+### Roguelike gauntlet (solo spine v2)
+
+The deeper solo mode: an endless, escalating run with **upgrade drafts between
+waves** (permadeath). New **GAUNTLET** title entry (six items now; menu spacing
+shrinks to fit). Reuses the arcade solo-setup (generalised select `arcade`→`_solo()`
+with a `gauntlet` flag): pick your fighter, the p2 slot is the CPU opponent.
+
+- **Upgrades** (`MatchConfig.UPGRADES`, 12) are pure data — `{stat: ["mul"|"add", v]}`.
+  `dino._apply_run_upgrades()` applies them on spawn to the player only; they
+  **stack** across the run. Foes scale instead (`gauntlet_enemy_hp/dmg_mult` grow
+  ~8%/4% per wave) so the run stays threatening past the HARD difficulty cap.
+- **Wave flow** (`main.gd`): each wave is a single decisive KO (`kos_to_win`=1) vs a
+  random foe on a random island, difficulty easy→normal→HARD. Win →
+  `_end_match_gauntlet` opens the **draft** (3 random upgrade cards, left/right +
+  A, built in the HUD layer); pick → `gauntlet_next_wave` → reload. Lose → RUN
+  OVER (reached wave N, upgrades taken) → START to title.
+
+Verified: headless pipeline test confirmed upgrades stack on the player (trex
+150→185 HP, 25→31 dmg with two cards) and enemy HP scales per wave (×1.0 wave0,
+×1.8 wave10); live renders confirmed the 6-item title and the draft overlay
+(header/cards/prompt) draw clean. Roadmap: [[project_tiny_dinos_roadmap_2026_06_09]].
+
 ## Session — 2026-06-08
 
 Source-wide review pass → four worktrees, all merged to master (headless-validated

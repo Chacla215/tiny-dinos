@@ -87,6 +87,14 @@ var hill_ring: Line2D = null
 const HILL_RADIUS := 130.0
 var eliminated: Dictionary = {}      # STOCK: pid -> true once out of lives
 var arcade_end: String = ""          # ARCADE end-state: "advance" / "champion" / "gameover"
+var gauntlet_drafting: bool = false  # GAUNTLET: the between-wave upgrade pick is open
+var draft_options: Array = []
+var draft_index: int = 0
+var draft_nodes: Array = []   # every node in the draft overlay (for cleanup)
+var draft_cards: Array = []   # just the selectable cards (for highlight)
+const DRAFT_CARD_W := 320.0
+const DRAFT_CARD_H := 210.0
+const DRAFT_GAP := 34.0
 var eggs: Array = []                 # EGGS: live egg nodes on the field
 var egg_spawn_timer: float = 0.0
 const EGG_SPAWN_INTERVAL := 2.2
@@ -137,6 +145,8 @@ func _ready() -> void:
 	game_mode = MatchConfig.game_mode if MatchConfig and "game_mode" in MatchConfig else "rounds"
 	if MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade:
 		kos_to_win = 2  # snappier rungs for the solo ladder
+	if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
+		kos_to_win = 1  # one decisive KO per gauntlet wave
 	_setup_active_players()
 	_apply_match_colors()
 	_style_hud()
@@ -445,11 +455,17 @@ func _process(delta: float) -> void:
 	else:
 		camera.offset = Vector2.ZERO
 	_update_hud_bars()
-	if match_over and Input.is_action_just_pressed("restart"):
-		if MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade:
-			_arcade_continue()
-		else:
-			get_tree().change_scene_to_file("res://scenes/select.tscn")
+	if match_over:
+		if gauntlet_drafting:
+			_draft_input()
+		elif Input.is_action_just_pressed("restart"):
+			if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
+				MatchConfig.gauntlet = false  # run over -> back to the title
+				get_tree().change_scene_to_file("res://scenes/title.tscn")
+			elif MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade:
+				_arcade_continue()
+			else:
+				get_tree().change_scene_to_file("res://scenes/select.tscn")
 
 func _update_hud_bars() -> void:
 	for p in active_players:
@@ -822,6 +838,9 @@ func update_score_display() -> void:
 			label.text = "%s  %s" % [display_name, _score_text(p)]
 
 func end_match(winner: CharacterBody2D, label: String) -> void:
+	if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
+		_end_match_gauntlet(winner)
+		return
 	if MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade:
 		_end_match_arcade(winner)
 		return
@@ -883,6 +902,122 @@ func _arcade_continue() -> void:
 	else:  # champion or gameover -> end the run, back to the title
 		MatchConfig.arcade = false
 		get_tree().change_scene_to_file("res://scenes/title.tscn")
+
+# --- Gauntlet (roguelike) wave flow + upgrade draft ---
+
+func _end_match_gauntlet(winner: Node) -> void:
+	match_over = true
+	round_active = false
+	for p in active_players:
+		p.set_process_input(false)
+		p.set_physics_process(false)
+	var player_won: bool = winner != null and winner.player_id == "p1"
+	var wave: int = MatchConfig.gauntlet_wave + 1
+	if not player_won:
+		hud_win.text = "RUN OVER"
+		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
+		hud_hint.text = "REACHED WAVE %d   -   %d UPGRADES\n\npress START for the title" % [wave, MatchConfig.gauntlet_upgrades.size()]
+		play_sfx("ko", 0.0)
+		return
+	# The draft draws its own header/prompt above and below the cards; clear the
+	# centered scene labels so they don't bleed through the card row.
+	hud_win.text = ""
+	hud_hint.text = ""
+	play_sfx("win", 0.0)
+	_open_draft()
+
+func _open_draft() -> void:
+	draft_options = MatchConfig.gauntlet_draft_options()
+	draft_index = 0
+	gauntlet_drafting = true
+	_build_draft_cards()
+
+func _build_draft_cards() -> void:
+	_clear_draft_cards()
+	var total: float = DRAFT_CARD_W * float(draft_options.size()) + DRAFT_GAP * float(draft_options.size() - 1)
+	var x0: float = (1280.0 - total) / 2.0
+	var y: float = 268.0
+	# Header above the cards + prompt below — drawn in the HUD layer, tracked so
+	# they're freed with the cards.
+	var header := Label.new()
+	header.position = Vector2(0, 214)
+	header.size = Vector2(1280, 46)
+	header.text = "WAVE %d CLEARED  -  CHOOSE AN UPGRADE" % (MatchConfig.gauntlet_wave + 1)
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	header.add_theme_font_size_override("font_size", 34)
+	header.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5))
+	header.z_index = 50
+	$HUD.add_child(header)
+	draft_nodes.append(header)
+	var prompt := Label.new()
+	prompt.position = Vector2(0, 510)
+	prompt.size = Vector2(1280, 40)
+	prompt.text = "LEFT / RIGHT  CHOOSE      A  TAKE IT"
+	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt.add_theme_font_size_override("font_size", 22)
+	prompt.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+	prompt.z_index = 50
+	$HUD.add_child(prompt)
+	draft_nodes.append(prompt)
+	for i in range(draft_options.size()):
+		var up: Dictionary = MatchConfig.UPGRADES.get(draft_options[i], {})
+		var card := ColorRect.new()
+		card.position = Vector2(x0 + i * (DRAFT_CARD_W + DRAFT_GAP), y)
+		card.size = Vector2(DRAFT_CARD_W, DRAFT_CARD_H)
+		card.pivot_offset = card.size * 0.5  # scale the highlighted card from its center
+		card.z_index = 50
+		var name_l := Label.new()
+		name_l.position = Vector2(0, 40)
+		name_l.size = Vector2(DRAFT_CARD_W, 48)
+		name_l.text = up.get("name", "")
+		name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_l.add_theme_font_size_override("font_size", 30)
+		name_l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+		card.add_child(name_l)
+		var desc_l := Label.new()
+		desc_l.position = Vector2(16, 116)
+		desc_l.size = Vector2(DRAFT_CARD_W - 32, 80)
+		desc_l.text = up.get("desc", "")
+		desc_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		desc_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		desc_l.add_theme_font_size_override("font_size", 22)
+		desc_l.add_theme_color_override("font_color", Color(0.9, 0.92, 0.96))
+		card.add_child(desc_l)
+		$HUD.add_child(card)
+		draft_nodes.append(card)
+		draft_cards.append(card)
+	_refresh_draft()
+
+func _refresh_draft() -> void:
+	for i in range(draft_cards.size()):
+		var card: ColorRect = draft_cards[i]
+		if i == draft_index:
+			card.color = Color(0.20, 0.30, 0.46, 0.97)
+			card.scale = Vector2(1.06, 1.06)
+		else:
+			card.color = Color(0.10, 0.12, 0.18, 0.92)
+			card.scale = Vector2.ONE
+
+func _draft_input() -> void:
+	if Input.is_action_just_pressed("p1_left"):
+		draft_index = (draft_index - 1 + draft_options.size()) % draft_options.size()
+		_refresh_draft()
+	elif Input.is_action_just_pressed("p1_right"):
+		draft_index = (draft_index + 1) % draft_options.size()
+		_refresh_draft()
+	elif Input.is_action_just_pressed("p1_confirm"):
+		MatchConfig.gauntlet_add_upgrade(draft_options[draft_index])
+		gauntlet_drafting = false
+		_clear_draft_cards()
+		MatchConfig.gauntlet_next_wave()
+		get_tree().change_scene_to_file(MatchConfig.gauntlet_scene())
+
+func _clear_draft_cards() -> void:
+	for n in draft_nodes:
+		if is_instance_valid(n):
+			n.queue_free()
+	draft_nodes.clear()
+	draft_cards.clear()
 
 # --- Audio ---
 

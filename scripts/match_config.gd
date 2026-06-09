@@ -437,6 +437,82 @@ func arcade_scene() -> String:
 func arcade_is_final() -> bool:
 	return arcade_rung >= arcade_ladder.size() - 1
 
+# --- Roguelike gauntlet (solo spine v2) ---
+# An endless, escalating run: win a wave, draft one of three upgrades that stack
+# for the rest of the run, fight a tougher foe, repeat until you lose (permadeath).
+# Upgrades are pure data (stat -> ["mul"|"add", value]); dino.gd applies them on
+# spawn to the player only. Enemies scale via gauntlet_enemy_*_mult per wave.
+var gauntlet_setup: bool = false     # title -> select handoff
+var gauntlet: bool = false
+var gauntlet_wave: int = 0           # 0-indexed; displayed as wave+1
+var gauntlet_upgrades: Array = []    # upgrade ids picked this run (may repeat)
+var gauntlet_player_dino: String = "trex"
+var gauntlet_player_weapon: String = "hammer"
+
+const UPGRADES := {
+	"sharp_claws":  {"name": "SHARP CLAWS",  "desc": "+25% ATTACK DAMAGE",      "mods": {"attack_damage": ["mul", 1.25], "heavy_damage": ["mul", 1.25], "special_damage": ["mul", 1.25]}},
+	"thick_hide":   {"name": "THICK HIDE",   "desc": "+35 MAX HP",              "mods": {"max_hp": ["add", 35]}},
+	"adrenaline":   {"name": "ADRENALINE",   "desc": "+15% MOVE SPEED",         "mods": {"max_speed": ["mul", 1.15]}},
+	"heavy_hitter": {"name": "HEAVY HITTER", "desc": "+30% KNOCKBACK",          "mods": {"attack_knockback": ["mul", 1.3], "heavy_knockback": ["mul", 1.3], "special_knockback": ["mul", 1.3]}},
+	"quick_inst":   {"name": "QUICK INSTINCT","desc": "-30% SPECIAL COOLDOWN",  "mods": {"special_cooldown": ["mul", 0.7]}},
+	"iron_guard":   {"name": "IRON GUARD",   "desc": "+40 MAX BLOCK",           "mods": {"max_block": ["add", 40]}},
+	"nimble":       {"name": "NIMBLE",       "desc": "-25% DODGE COOLDOWN/COST","mods": {"dodge_cooldown": ["mul", 0.75], "dodge_block_cost": ["mul", 0.75]}},
+	"light_feet":   {"name": "LIGHT FEET",   "desc": "+30% DODGE DISTANCE",     "mods": {"dodge_distance": ["mul", 1.3]}},
+	"fast_hands":   {"name": "FAST HANDS",   "desc": "-20% ATTACK WINDUP",      "mods": {"attack_windup": ["mul", 0.8], "heavy_windup": ["mul", 0.8]}},
+	"berserker":    {"name": "BERSERKER",    "desc": "+35% DMG, -15% MAX HP",   "mods": {"attack_damage": ["mul", 1.35], "heavy_damage": ["mul", 1.35], "special_damage": ["mul", 1.35], "max_hp": ["mul", 0.85]}},
+	"tough_skin":   {"name": "TOUGH SKIN",   "desc": "+60% BLOCK REGEN",        "mods": {"block_regen": ["mul", 1.6]}},
+	"bulwark":      {"name": "BULWARK",      "desc": "+25 HP, +20 BLOCK",       "mods": {"max_hp": ["add", 25], "max_block": ["add", 20]}},
+}
+
+func start_gauntlet(player_dino: String, player_weapon: String) -> void:
+	gauntlet = true
+	gauntlet_wave = 0
+	gauntlet_upgrades = []
+	gauntlet_player_dino = player_dino
+	gauntlet_player_weapon = player_weapon
+	_apply_gauntlet_wave()
+
+# Each wave: a random foe (mirror matches allowed) on a random island, difficulty
+# ramping easy -> normal -> hard then holding at hard while enemies keep scaling.
+func _apply_gauntlet_wave() -> void:
+	player_count = 2
+	cpu_players = {"p1": false, "p2": true, "p3": false, "p4": false}
+	dino_choices["p1"] = gauntlet_player_dino
+	dino_choices["p2"] = ROSTER_ORDER[randi() % ROSTER_ORDER.size()]
+	weapon_choices = {"p1": gauntlet_player_weapon}
+	if gauntlet_wave < 2:
+		cpu_difficulty = "easy"
+	elif gauntlet_wave < 5:
+		cpu_difficulty = "normal"
+	else:
+		cpu_difficulty = "hard"
+	island = ISLAND_ORDER[randi() % ISLAND_ORDER.size()]
+	game_mode = "rounds"
+
+func gauntlet_next_wave() -> void:
+	gauntlet_wave += 1
+	_apply_gauntlet_wave()
+
+func gauntlet_add_upgrade(id: String) -> void:
+	if UPGRADES.has(id):
+		gauntlet_upgrades.append(id)
+
+# Three distinct random upgrade ids to offer in the between-wave draft.
+func gauntlet_draft_options() -> Array:
+	var pool: Array = UPGRADES.keys()
+	pool.shuffle()
+	return pool.slice(0, 3)
+
+func gauntlet_scene() -> String:
+	return ISLAND_SCENES.get(island, "res://scenes/main.tscn")
+
+# Endless enemy scaling so late waves stay threatening past the HARD difficulty cap.
+func gauntlet_enemy_hp_mult() -> float:
+	return 1.0 + 0.08 * float(gauntlet_wave)
+
+func gauntlet_enemy_dmg_mult() -> float:
+	return 1.0 + 0.04 * float(gauntlet_wave)
+
 func _ready() -> void:
 	_setup_input_actions()
 

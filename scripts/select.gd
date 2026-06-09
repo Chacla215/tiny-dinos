@@ -40,8 +40,13 @@ var difficulty_label: Label
 # Built in code too: the match's game mode, on its own line under the island.
 var mode_label: Label
 var mode_idx: int = 0
-# Arcade setup: P1 picks only their own fighter; the p2 slot is the CPU gauntlet.
+# Solo setup (arcade ladder OR roguelike gauntlet): P1 picks only their own
+# fighter; the p2 slot is the CPU opponent, not host-configurable.
 var arcade: bool = false
+var gauntlet: bool = false
+
+func _solo() -> bool:
+	return arcade or gauntlet
 
 var indexes: Dictionary = {"p1": 0, "p2": 1, "p3": 2, "p4": 3}
 var weapon_idx: Dictionary = {"p1": 0, "p2": 0, "p3": 0, "p4": 0}
@@ -82,21 +87,22 @@ func _ready() -> void:
 	_build_mode_label()
 	_update_mode_label()
 	arcade = MatchConfig.arcade_setup
-	if arcade:
-		_enter_arcade_setup()
+	gauntlet = MatchConfig.gauntlet_setup
+	if _solo():
+		_enter_solo_setup()
 
-# Solo ladder setup: lock to P1 + the gauntlet (a fixed CPU foe slot the host
-# doesn't configure). Hide the versus-only selectors.
-func _enter_arcade_setup() -> void:
+# Solo setup: lock to P1 + a fixed CPU opponent slot the host doesn't configure.
+# Hide the versus-only selectors. The banner/hint differ per solo mode.
+func _enter_solo_setup() -> void:
 	_apply_active_count(2)
 	cpu_states["p2"] = true
-	ready_states["p2"] = true   # the gauntlet is always ready; the host can't edit it
+	ready_states["p2"] = true   # the opponent is always ready; the host can't edit it
 	stages["p2"] = "ready"
 	if difficulty_label:
 		difficulty_label.visible = false
 	if mode_label:
 		mode_label.visible = false
-	island_label.text = "ARCADE LADDER  -  CLIMB THE GAUNTLET"
+	island_label.text = "ROGUELIKE GAUNTLET  -  SURVIVE + UPGRADE" if gauntlet else "ARCADE LADDER  -  CLIMB THE GAUNTLET"
 	hint_label.text = "A CONFIRM    B BACK    P1 PICK YOUR FIGHTER"
 	_refresh_displays()
 	_refresh_start()
@@ -139,8 +145,8 @@ func _process(delta: float) -> void:
 	launch_armed = false
 	countdown_label.text = ""
 	# Versus-only match settings (island / extra opponents / difficulty / mode). The
-	# arcade ladder fixes all of these, so in arcade the host only picks a fighter.
-	if not arcade:
+	# solo modes fix all of these, so the host only picks a fighter.
+	if not _solo():
 		if Input.is_action_just_pressed("p1_up"):
 			island_idx = (island_idx - 1 + MatchConfig.ISLAND_ORDER.size()) % MatchConfig.ISLAND_ORDER.size()
 			_update_island()
@@ -210,8 +216,8 @@ func _reopen_last_host_pick() -> void:
 # The slots P1 configures, in order: P1's own fighter, then each CPU opponent.
 # Human opponents are absent here -- they drive their own slots with their pads.
 func _host_queue() -> Array:
-	if arcade:
-		return ["p1"]  # the gauntlet slot isn't host-configurable
+	if _solo():
+		return ["p1"]  # the CPU opponent slot isn't host-configurable
 	var arr: Array = ["p1"]
 	for pid in active_players:
 		if pid != "p1" and cpu_states[pid]:
@@ -320,13 +326,14 @@ func _update_display(pid: String) -> void:
 	var header_label: Label = panel.get_node("Header")
 	var graphic: AnimatedSprite2D = panel.get_node("Graphic")
 
-	if arcade and pid == "p2":
-		header_label.text = "ARCADE"
-		header_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2, 1))
-		name_label.text = "GAUNTLET"
-		name_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2, 1))
-		status_label.text = "5 RIVALS  -  CLIMB!"
-		status_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2, 1))
+	if _solo() and pid == "p2":
+		var accent := Color(1.0, 0.6, 0.2, 1)
+		header_label.text = "GAUNTLET" if gauntlet else "ARCADE"
+		header_label.add_theme_color_override("font_color", accent)
+		name_label.text = "ENDLESS" if gauntlet else "GAUNTLET"
+		name_label.add_theme_color_override("font_color", accent)
+		status_label.text = "SURVIVE + UPGRADE!" if gauntlet else "5 RIVALS  -  CLIMB!"
+		status_label.add_theme_color_override("font_color", accent)
 		panel.modulate = Color(1, 1, 1, 1)
 		_set_graphic(graphic, dino_id)  # a mystery silhouette
 		return
@@ -401,7 +408,7 @@ func _build_difficulty_label() -> void:
 func _update_difficulty_label() -> void:
 	if difficulty_label == null:
 		return
-	if arcade:
+	if _solo():
 		difficulty_label.visible = false
 		return
 	if not _any_cpu():
@@ -434,7 +441,7 @@ func _build_mode_label() -> void:
 func _update_mode_label() -> void:
 	if mode_label == null:
 		return
-	if arcade:
+	if _solo():
 		mode_label.visible = false
 		return
 	var mname: String = MatchConfig.MODE_NAMES.get(MatchConfig.game_mode, "BEST OF ROUNDS")
@@ -489,8 +496,8 @@ func _controller_present(device: int) -> bool:
 # otherwise CPU; P1 (host) is always human. A slot whose role flips is reset so
 # its new driver (P1 or that human) picks from scratch.
 func _refresh_cpu_assignment() -> void:
-	if arcade:
-		return  # the gauntlet stays CPU no matter what's plugged in
+	if _solo():
+		return  # the opponent stays CPU no matter what's plugged in
 	for pid in MatchConfig.PLAYER_IDS:
 		var should_cpu: bool = pid != "p1" and not _controller_present(int(pid.substr(1)) - 1)
 		if cpu_states[pid] != should_cpu:
@@ -508,7 +515,7 @@ func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
 
 # Gamepad-only, so the hint never changes (except the trimmed arcade hint).
 func _update_hint() -> void:
-	if arcade:
+	if _solo():
 		hint_label.text = "A CONFIRM    B BACK    P1 PICK YOUR FIGHTER"
 		return
 	hint_label.text = HINT_PAD
@@ -517,12 +524,17 @@ func _return_to_title() -> void:
 	get_tree().change_scene_to_file(TITLE_SCENE)
 
 func _start_match() -> void:
-	if arcade:
+	if _solo():
 		var pd: String = MatchConfig.ROSTER_ORDER[indexes["p1"]]
 		var pw: String = WEAPON_PICKS[weapon_idx["p1"]]
-		MatchConfig.arcade_setup = false
-		MatchConfig.start_arcade(pd, pw)
-		get_tree().change_scene_to_file(MatchConfig.arcade_scene())
+		if gauntlet:
+			MatchConfig.gauntlet_setup = false
+			MatchConfig.start_gauntlet(pd, pw)
+			get_tree().change_scene_to_file(MatchConfig.gauntlet_scene())
+		else:
+			MatchConfig.arcade_setup = false
+			MatchConfig.start_arcade(pd, pw)
+			get_tree().change_scene_to_file(MatchConfig.arcade_scene())
 		return
 	MatchConfig.weapon_choices = {}
 	for pid in MatchConfig.PLAYER_IDS:
