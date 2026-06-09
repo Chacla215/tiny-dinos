@@ -607,10 +607,55 @@ func _refresh_profile(dino_id: String) -> void:
 		_populate_emotes_ralph()
 	else:
 		_populate_panel_placeholder(skins_panel, "SKINS COMING SOON")
-		_populate_panel_placeholder(customization_panel, "CUSTOMIZATION COMING SOON")
+		# Roster dinos repurpose the customization slot to show their weapon loadout.
+		_clear_children(customization_panel)
+		_decorate_panel_title(customization_panel, "WEAPONS")
+		_populate_weapons(customization_panel, dino_id)
 		_populate_panel_placeholder(emotes_panel, "EMOTES COMING SOON")
 	# Rarity badge — Ralph swaps via skin cycle; other dinos show the profile rarity.
 	rarity_label.text = profile.get("rarity", "COMMON")
+
+
+# A one-line "playstyle" tag derived from whichever core stat (HP/ATK/DEF/SPD)
+# stands out most for this dino — tracks balance automatically.
+func _playstyle_tag(dino_id: String) -> String:
+	var rows: Array = _stats_for(dino_id)
+	var maxes: Array = _stat_maxes()
+	var labels := ["FRONTLINE BRUISER", "HEAVY HITTER", "STONE WALL", "HIT-AND-RUN"]
+	var best_i := 0
+	var best_frac := -1.0
+	for i in range(min(4, rows.size())):
+		var denom: float = float(maxes[i]) if maxes[i] > 0 else 1.0
+		var frac: float = float(int(rows[i][1])) / denom
+		if frac > best_frac:
+			best_frac = frac
+			best_i = i
+	return labels[best_i]
+
+# A short, player-facing descriptor of how a weapon plays vs. the dino's fists.
+func _weapon_desc(wid: String) -> String:
+	var w: Dictionary = MatchConfig.WEAPONS.get(wid, {})
+	var dmg: float = w.get("dmg", 1.0)
+	var rng = w.get("range", 0)
+	var wind: float = w.get("windup", 1.0)
+	var dmg_s: String = "DMG BASE" if abs(dmg - 1.0) < 0.01 else "DMG %+d%%" % int(round((dmg - 1.0) * 100.0))
+	var rng_s: String = "REACH —" if int(rng) == 0 else "REACH %+d" % int(rng)
+	var spd_s: String = "FAST" if wind < 0.85 else ("SLOW" if wind > 1.15 else "STEADY")
+	return "%s    %s    %s" % [dmg_s, rng_s, spd_s]
+
+# Fill the (repurposed) customization panel with the dino's two-weapon loadout and
+# its playstyle tag, all derived from MatchConfig so it tracks the live balance.
+func _populate_weapons(panel: Panel, dino_id: String) -> void:
+	var dino: Dictionary = MatchConfig.DINOS.get(dino_id, {})
+	var loadout: Array = dino.get("weapons", ["fists"])
+	_text(panel, "PLAYSTYLE:  %s" % _playstyle_tag(dino_id), 20, 10, 18, GREEN)
+	var cols := [24.0, 360.0]
+	for i in range(min(loadout.size(), 2)):
+		var wid: String = loadout[i]
+		var x: float = cols[i]
+		var disp: String = MatchConfig.WEAPONS.get(wid, {}).get("display_name", wid.to_upper())
+		_text(panel, disp, x, 48, 24, GOLD)
+		_text(panel, _weapon_desc(wid), x, 82, 16, TEXT_DIM)
 
 
 # The panel title tab is a child of the panel created by _panel(). Clearing the
