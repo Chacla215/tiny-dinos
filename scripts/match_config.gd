@@ -341,7 +341,7 @@ const ISLAND_SCENES := {
 # KOTH_TARGET seconds wins (KOs just respawn). EGGS = grab loose eggs off the
 # field; first to EGG_TARGET wins (KOs just respawn). All four reuse the one
 # arena + the procedural hill/egg props, so every island plays every mode.
-const MODE_ORDER := ["rounds", "stock", "koth", "eggs", "sumo", "bombtag", "beast"]
+const MODE_ORDER := ["rounds", "stock", "koth", "eggs", "sumo", "bombtag", "beast", "flood"]
 const MODE_NAMES := {
 	"rounds": "BEST OF ROUNDS",
 	"stock": "LAST DINO STANDING",
@@ -350,6 +350,7 @@ const MODE_NAMES := {
 	"sumo": "SUMO",
 	"bombtag": "BOMB TAG",
 	"beast": "THE BEAST",
+	"flood": "RISING TIDE",
 }
 const MODE_BLURBS := {
 	"rounds": "A KO WINS THE ROUND",
@@ -359,6 +360,7 @@ const MODE_BLURBS := {
 	"sumo": "SHOVE THEM OFF THE EDGE",
 	"bombtag": "PASS THE BOMB OR BOOM",
 	"beast": "BE THE BEAST THE LONGEST",
+	"flood": "STAY ON DRY LAND",
 }
 var game_mode: String = "rounds"
 const STOCK_LIVES := 3        # lives each fighter starts with in LAST DINO STANDING
@@ -368,6 +370,8 @@ const SUMO_TARGET := 5        # ring-outs to win SUMO (HP off; only knockback sc
 const BOMB_FUSE := 6.0        # BOMB TAG: seconds before the bomb detonates on its holder
 const BOMB_PASS_LOCK := 0.5   # grace after catching the bomb before it can pass again
 const BEAST_TARGET := 25.0    # THE BEAST: seconds spent crowned needed to win
+const FLOOD_DURATION := 28.0  # RISING TIDE: seconds for the safe zone to fully close in
+const FLOOD_MIN := 0.15       # smallest the safe zone shrinks to (a final-showdown platform)
 
 var dino_choices: Dictionary = {"p1": "trex", "p2": "raptor", "p3": "trike", "p4": "pterry"}
 var island: String = "laughing_lava"

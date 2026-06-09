@@ -110,6 +110,9 @@ var bomb_core: Polygon2D = null
 # THE BEAST: one crowned fighter banks time while buffed; KO it to steal the crown.
 var beast_pid: String = ""
 var beast_crown: Node2D = null
+# RISING TIDE: the safe zone closes in over time; a ring-out drowns you (no respawn).
+var zone_shrink: float = 1.0         # 1.0 = full island; shrinks toward FLOOD_MIN
+var flood_ring: Node2D = null
 
 var shake_amount: float = 0.0
 var shake_remaining: float = 0.0
@@ -288,6 +291,10 @@ func _setup_game_mode() -> void:
 			# KOs (HP or edge) are live — that's how the crown changes hands.
 			_build_crown()
 			_crown_beast(active_players[randi() % active_players.size()].player_id)
+		"flood":
+			# The safe zone closes in; HP-KOs just respawn, the water does the KO-ing.
+			zone_shrink = 1.0
+			_build_flood_ring()
 
 func _circle_points(rx: float, ry: float, segs: int) -> PackedVector2Array:
 	var pts := PackedVector2Array()
@@ -568,6 +575,54 @@ func _update_beast(delta: float) -> void:
 	if mode_score[beast_pid] >= MatchConfig.BEAST_TARGET:
 		end_match(beast, _dino_name(beast_pid))
 
+# --- RISING TIDE ---
+# A closing ring drawn around the safe zone's centroid; scaled by zone_shrink so
+# it tracks the live ring-out boundary the water has risen to.
+func _build_flood_ring() -> void:
+	var c := _safe_center()
+	var loop := PackedVector2Array()
+	if safe_polygon.size() >= 3:
+		for v in safe_polygon:
+			loop.append(v - c)
+		loop.append(safe_polygon[0] - c)
+	else:
+		var r := safe_rect
+		for corner in [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position]:
+			loop.append(corner - c)
+	flood_ring = Node2D.new()
+	flood_ring.position = c
+	flood_ring.z_index = 40
+	var line := Line2D.new()
+	line.points = loop
+	line.width = 10.0
+	line.default_color = Color(0.35, 0.7, 1.0, 0.85)  # waterline
+	flood_ring.add_child(line)
+	add_child(flood_ring)
+	_insert_under_players(flood_ring)
+
+func _update_flood(delta: float) -> void:
+	# Close in linearly to the minimum platform, then hold for the final showdown.
+	if zone_shrink > MatchConfig.FLOOD_MIN:
+		var rate: float = (1.0 - MatchConfig.FLOOD_MIN) / MatchConfig.FLOOD_DURATION
+		zone_shrink = max(MatchConfig.FLOOD_MIN, zone_shrink - rate * delta)
+	if flood_ring:
+		flood_ring.scale = Vector2(zone_shrink, zone_shrink)
+		var clock: float = float(Time.get_ticks_msec()) / 1000.0
+		var pulse: float = 0.7 + 0.3 * sin(clock * 4.0)
+		(flood_ring.get_child(0) as Line2D).default_color = Color(0.35, 0.7, 1.0, pulse)
+
+func _flood_eliminate(victim: Node) -> void:
+	if match_over:
+		return
+	_eliminate(victim)
+	play_sfx("ko", 0.0)
+	shake(6.0, 0.12)
+	update_score_display()
+	var alive: Array = _alive_players()
+	if alive.size() <= 1:
+		var winner: Node = alive[0] if alive.size() == 1 else victim
+		end_match(winner, _dino_name(winner.player_id))
+
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	if connected:
 		print("Joypad connected: device %d  name=%s" % [device, Input.get_joy_name(device)])
@@ -649,6 +704,8 @@ func _score_text(p: Node) -> String:
 		"beast":
 			var crown: String = "  [BEAST]" if pid == beast_pid else ""
 			return "%ds / %ds%s" % [int(mode_score.get(pid, 0.0)), int(MatchConfig.BEAST_TARGET), crown]
+		"flood":
+			return "OUT" if eliminated.get(pid, false) else "DRY"
 		_:
 			return "%d / %d" % [round_wins.get(pid, 0), kos_to_win]
 
@@ -693,6 +750,8 @@ func _physics_process(delta: float) -> void:
 		_update_bombtag(delta)
 	elif game_mode == "beast":
 		_update_beast(delta)
+	elif game_mode == "flood":
+		_update_flood(delta)
 
 func _process_lava(delta: float) -> void:
 	var overlapping := lava_area.get_overlapping_bodies()
@@ -790,9 +849,15 @@ func _on_water_entered(body: Node) -> void:
 # True while a player is standing on safe ground. A 3+ point safe_polygon (an
 # island-shaped boundary) wins over the rectangular safe_rect when present.
 func _in_safe_zone(pos: Vector2) -> bool:
+	var test := pos
+	# RISING TIDE: testing the point pushed out from center by 1/shrink is the same
+	# as testing it against a zone scaled in by `shrink` — so the boundary closes in.
+	if zone_shrink < 1.0:
+		var c := _safe_center()
+		test = c + (pos - c) / zone_shrink
 	if safe_polygon.size() >= 3:
-		return Geometry2D.is_point_in_polygon(pos, safe_polygon)
-	return safe_rect.has_point(pos)
+		return Geometry2D.is_point_in_polygon(test, safe_polygon)
+	return safe_rect.has_point(test)
 
 # Public alias so a sky-launched dino can test when it has clawed back in.
 func is_in_safe_zone(pos: Vector2) -> bool:
@@ -889,6 +954,10 @@ func _ringout(victim: Node) -> void:
 func on_ringout_complete(victim: Node) -> void:
 	var killer: Node = victim.ringout_killer
 	victim.ringout_killer = null
+	# RISING TIDE: going in the water is fatal — no respawn, you're out for good.
+	if game_mode == "flood":
+		_flood_eliminate(victim)
+		return
 	if victim.has_method("respawn"):
 		victim.respawn()
 	if killer != null and killer != victim and killer in active_players:
@@ -923,7 +992,7 @@ func award_ko(killer: Node, victim: Node) -> void:
 	match game_mode:
 		"stock":
 			_award_ko_stock(killer, victim)
-		"koth", "eggs":
+		"koth", "eggs", "flood":
 			dp[killer.player_id] = dp.get(killer.player_id, 0) + 40  # KO bounty; no round
 		"sumo":
 			_award_ko_sumo(killer)
