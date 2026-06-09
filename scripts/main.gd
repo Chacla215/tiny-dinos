@@ -58,7 +58,7 @@ const PIP_POS := {
 	"p4": Vector2(970.0, 665.0),
 }
 const PIP_BG := Color(0.1, 0.1, 0.1, 0.75)
-const PIP_CHARGING := Color(0.55, 0.5, 0.25, 1.0)  # dim gold while recharging
+const PIP_CHARGING := Color(0.85, 0.72, 0.35, 1.0)  # muted gold while recharging
 const PIP_READY := Color(1.0, 0.85, 0.3, 1.0)      # bright gold when ready
 
 @onready var ice_patches: Node2D = $IcePatches
