@@ -263,7 +263,10 @@ func _ready() -> void:
 func _apply_run_upgrades() -> void:
 	if not MatchConfig or not ("gauntlet" in MatchConfig) or not MatchConfig.gauntlet:
 		return
-	if is_cpu:
+	# The run belongs to the player slot (p1). Everyone else is a foe and scales per
+	# wave. Keying on the slot (not is_cpu) keeps real play identical while letting
+	# an AI-piloted p1 still carry its drafted upgrades (used by the demo runner).
+	if player_id != "p1":
 		_scale_stat("max_hp", MatchConfig.gauntlet_enemy_hp_mult())
 		var dm: float = MatchConfig.gauntlet_enemy_dmg_mult()
 		_scale_stat("attack_damage", dm)
