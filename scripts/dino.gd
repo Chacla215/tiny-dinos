@@ -276,6 +276,10 @@ func _ready() -> void:
 		player_marker.color = player_color
 	else:
 		polygon.color = dino_color
+	# Team mode: the floating marker shows the team color (body keeps its own hue so
+	# teammates are still tellable apart).
+	if MatchConfig and MatchConfig.teams_enabled:
+		player_marker.color = MatchConfig.TEAM_COLORS.get(MatchConfig.side_of(player_id), player_marker.color)
 
 	_setup_sprite()
 
@@ -506,6 +510,8 @@ func _find_nearest_opponent() -> Node:
 			continue
 		if not ("player_id" in other) or other.player_id == player_id:
 			continue
+		if MatchConfig.same_side(player_id, other.player_id):
+			continue  # don't pick a teammate as the AI's target
 		if not other.visible:
 			continue
 		var d := global_position.distance_squared_to(other.global_position)
@@ -956,6 +962,11 @@ func update_block_regen(delta: float) -> void:
 
 func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	if is_falling:
+		return
+	# Friendly fire is off: a teammate's hit (melee, AoE, projectile, thrown weapon)
+	# does nothing — every damage path funnels through here, so this one check covers
+	# them all.
+	if source != null and "player_id" in source and MatchConfig.same_side(player_id, source.player_id):
 		return
 	if invuln_timer > 0.0:
 		return

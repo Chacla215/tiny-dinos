@@ -381,6 +381,22 @@ var cpu_players: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": fals
 ## pid -> chosen weapon id; the in-match loadout becomes ["fists", choice].
 ## Absent (e.g. CPU slots) -> the dino's default loadout from DINOS.weapons.
 var weapon_choices: Dictionary = {}
+
+# --- Teams ---
+# When enabled, scoring/win conditions aggregate by side and friendly fire is off.
+# `teams` maps pid -> "a"/"b"; the select screen sets it from a split preset (2v2,
+# 1v2, 1v3). Disabled = every fighter is its own side (free-for-all, the default).
+var teams_enabled: bool = false
+var teams: Dictionary = {"p1": "a", "p2": "b", "p3": "a", "p4": "b"}
+const TEAM_NAMES := {"a": "RED", "b": "BLUE"}
+const TEAM_COLORS := {"a": Color(0.95, 0.4, 0.4), "b": Color(0.4, 0.65, 1.0)}
+
+# The "side" a fighter scores for: its team when teams are on, else itself.
+func side_of(pid: String) -> String:
+	return teams.get(pid, pid) if teams_enabled else pid
+
+func same_side(a: String, b: String) -> bool:
+	return teams_enabled and teams.get(a, a) == teams.get(b, b)
 ## Difficulty applied to every CPU this match (chosen on the select screen).
 ## Maps to a knob preset in dino_ai.gd via apply_difficulty().
 const CPU_DIFFICULTY_ORDER := ["easy", "normal", "hard"]
@@ -402,6 +418,7 @@ const ARCADE_DIFFS := ["easy", "easy", "normal", "normal", "hard"]
 
 func start_arcade(player_dino: String, player_weapon: String, start_island: String = "") -> void:
 	arcade = true
+	teams_enabled = false  # solo ladder is always 1-v-1
 	arcade_rung = 0
 	arcade_player_dino = player_dino
 	arcade_player_weapon = player_weapon
@@ -501,6 +518,7 @@ const GAUNTLET_WAVE_HEAL := 0.20
 
 func start_gauntlet(player_dino: String, player_weapon: String, start_island: String = "") -> void:
 	gauntlet = true
+	teams_enabled = false  # solo run is always 1-v-1
 	gauntlet_wave = 0
 	gauntlet_upgrades = []
 	gauntlet_player_dino = player_dino
