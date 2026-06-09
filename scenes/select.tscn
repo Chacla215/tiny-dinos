@@ -11,10 +11,10 @@ polygon = PackedVector2Array(0, 0, 1280, 0, 1280, 720, 0, 720)
 
 [node name="IslandBg" type="Sprite2D" parent="."]
 position = Vector2(640, 300)
-modulate = Color(0.55, 0.55, 0.62, 1)
+modulate = Color(0.32, 0.32, 0.38, 1)
 
 [node name="IslandVignette" type="Polygon2D" parent="."]
-color = Color(0.1, 0.1, 0.15, 0.3)
+color = Color(0.1, 0.1, 0.15, 0.5)
 polygon = PackedVector2Array(0, 0, 1280, 0, 1280, 720, 0, 720)
 
 [node name="Title" type="Label" parent="."]

@@ -224,10 +224,10 @@ visible = false
 [node name="P1Score" type="Label" parent="HUD"]
 offset_left = 24.0
 offset_top = 16.0
-offset_right = 360.0
+offset_right = 440.0
 offset_bottom = 64.0
 theme_override_colors/font_color = Color(0.4, 0.85, 0.55, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 28
 text = "T-REX  0 / 3"
 
 [node name="P1HPBack" type="Polygon2D" parent="HUD"]
@@ -251,12 +251,12 @@ color = Color(0.45, 0.7, 1.0, 1)
 polygon = PackedVector2Array(0, 0, 260, 0, 260, 8, 0, 8)
 
 [node name="P2Score" type="Label" parent="HUD"]
-offset_left = 920.0
+offset_left = 840.0
 offset_top = 16.0
 offset_right = 1256.0
 offset_bottom = 64.0
 theme_override_colors/font_color = Color(0.95, 0.45, 0.45, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 28
 text = "RAPTOR  0 / 3"
 horizontal_alignment = 2
 
@@ -283,7 +283,7 @@ polygon = PackedVector2Array(-260, 0, 0, 0, 0, 8, -260, 8)
 [node name="P3Score" type="Label" parent="HUD"]
 offset_left = 24.0
 offset_top = 612.0
-offset_right = 360.0
+offset_right = 440.0
 offset_bottom = 644.0
 theme_override_colors/font_color = Color(0.95, 0.45, 0.85, 1)
 theme_override_font_sizes/font_size = 24
@@ -310,7 +310,7 @@ color = Color(0.45, 0.7, 1.0, 1)
 polygon = PackedVector2Array(0, 0, 260, 0, 260, 6, 0, 6)
 
 [node name="P4Score" type="Label" parent="HUD"]
-offset_left = 920.0
+offset_left = 840.0
 offset_top = 612.0
 offset_right = 1256.0
 offset_bottom = 644.0

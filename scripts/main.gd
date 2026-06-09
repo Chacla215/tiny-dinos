@@ -714,9 +714,9 @@ func _update_hud_bars() -> void:
 			block_fill.scale.x = clamp(p.block_durability / p.max_block, 0.0, 1.0)
 		var label := get_node_or_null("HUD/%sScore" % key)
 		if label:
-			var wn: String = p.weapon_name() if p.has_method("weapon_name") else ""
-			var wsuffix: String = ("   " + wn) if wn != "" else ""
-			label.text = "%s  %s%s" % [_dino_name(p.player_id), _score_text(p), wsuffix]
+			# Name + score only — the held weapon reads off the dino's silhouette, and
+			# dropping it keeps the corner label from overflowing in team/objective modes.
+			label.text = "%s  %s" % [_dino_name(p.player_id), _score_text(p)]
 		_update_special_pip(p)
 
 # The per-mode scoreboard fragment shown after the dino name: round wins, lives
