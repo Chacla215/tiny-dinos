@@ -27,6 +27,38 @@ headless — screenshots captured and inspected).
   oval, p2 97% (brief knockback excursions resolving as normal ring-outs, not
   steering failures).
 
+### Balance + AI pass (market-research-driven)
+
+Kicked off a roadmap from a market/PvP-design study (couch brawlers live on:
+easy-to-learn, fast restart, failure-is-funny, *and* a solo-vs-CPU hook for
+streamability since the game is local + gamepad-only, no online). Build order:
+**balance → smarter CPU → modes → solo spine.** Online deferred but designed-open.
+
+**Balance** (`match_config.gd`) — the combat has no true combos (a 0.15s i-frame
+gates them), so strength = DPS traded against HP. Raptor's DPS only *tied* the
+tanks while having the least HP, so it lost every even trade — the glass cannon
+wasn't a glass cannon. Buffed Raptor's damage to make it the clear DPS king
+(light 12→15, heavy 22→26, dash-claw 20→25); trimmed Bronto 165→158 HP (it was
+double-dipping highest-HP + war-hammer).
+
+**Smarter CPU** (`dino_ai.gd`) — the bot only reacted defensively; now it:
+- **Whiff-punishes** — detects the target locked in attack-recovery / guard-break
+  (new `dino.is_recovering()`) and commits the biggest move that reaches.
+  `punish_chance` knob: EASY 0.20 → HARD 0.90.
+- **Pressures** — stays glued through the target's hit-i-frames so the next swing
+  lands the instant they wake (`pressure` knob), and a gated gap-closer dodge.
+- **Plays its archetype** — a `skittish` factor from stats (fast+fragile = Raptor)
+  makes it hover at range and peel off after each hit (hit-and-run) instead of
+  brawling. CPU Raptor now *plays* like a Raptor.
+
+**Self-tested via a headless CPU-vs-CPU sim** (`scripts/tools/sim_ai.gd`, a dev
+tool — pits two bots, tallies KOs over a wall-clock window across matchups +
+arenas). Findings: archetype AI flipped Raptor-vs-tank in a box from losses to
+wins (Bronto 0–3→1–0, Anky 0–2→2–1); T-Rex now hard-counters Raptor because
+Chomp is a lunge-gap-closer *with lifesteal* that eats the kite — a genuine
+rock-paper-scissors layer, left intentional. T-Rex top / Anky strong / Bronto
+mid; Raptor's true ceiling needs human playtests (the bot doesn't aim ring-outs).
+
 ## Session — 2026-06-08
 
 Source-wide review pass → four worktrees, all merged to master (headless-validated

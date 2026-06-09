@@ -502,6 +502,11 @@ func can_dodge() -> bool:
 func is_swinging() -> bool:
 	return attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE
 
+# Locked in attack recovery: can't block, dodge, or re-attack. The CPU treats this
+# (and guard-break) as a free-punish window.
+func is_recovering() -> bool:
+	return attack_phase == AttackPhase.RECOVERY
+
 # Dodge i-frames double as a floe-to-floe leap on Frozen Floes (main.gd checks this).
 func is_dodging() -> bool:
 	return defense_state == DefenseState.DODGING

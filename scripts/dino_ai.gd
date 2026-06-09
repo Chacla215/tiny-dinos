@@ -16,6 +16,8 @@ var heavy_chance: float = 0.30   # fraction of its attacks that are heavy
 var special_chance: float = 0.30 # how often it reaches for its signature special
 var standoff_gap: float = 24.0   # buffer beyond attack reach it likes to hover at
 var throw_chance: float = 0.22   # P(hurl the weapon) on a clean mid-range opening
+var punish_chance: float = 0.55  # P(it capitalizes when you whiff / get guard-broken)
+var pressure: float = 0.5        # 0..1: how relentlessly it stays in your face after trading
 
 const THROW_RANGE := 540.0       # max distance it will throw a weapon from
 const WEAPON_SEEK_RANGE := 440.0 # how far it'll detour to reclaim a dropped weapon
@@ -25,9 +27,9 @@ const EDGE_LOOK := 96.0          # how far ahead it probes for the island edge
 # matches the original hand-tuned defaults above. EASY hangs back, reacts slowly,
 # and rarely defends; HARD closes hard, answers swings fast, and defends often.
 const DIFFICULTY_PRESETS := {
-	"easy":   {"aggression": 0.50, "reaction_time": 0.30, "block_chance": 0.22, "dodge_chance": 0.10, "heavy_chance": 0.20, "special_chance": 0.18, "throw_chance": 0.12},
-	"normal": {"aggression": 0.70, "reaction_time": 0.16, "block_chance": 0.40, "dodge_chance": 0.22, "heavy_chance": 0.30, "special_chance": 0.30, "throw_chance": 0.22},
-	"hard":   {"aggression": 0.92, "reaction_time": 0.09, "block_chance": 0.55, "dodge_chance": 0.36, "heavy_chance": 0.34, "special_chance": 0.42, "throw_chance": 0.30},
+	"easy":   {"aggression": 0.50, "reaction_time": 0.30, "block_chance": 0.22, "dodge_chance": 0.10, "heavy_chance": 0.20, "special_chance": 0.18, "throw_chance": 0.12, "punish_chance": 0.20, "pressure": 0.15},
+	"normal": {"aggression": 0.70, "reaction_time": 0.16, "block_chance": 0.40, "dodge_chance": 0.22, "heavy_chance": 0.30, "special_chance": 0.30, "throw_chance": 0.22, "punish_chance": 0.55, "pressure": 0.5},
+	"hard":   {"aggression": 0.92, "reaction_time": 0.09, "block_chance": 0.55, "dodge_chance": 0.36, "heavy_chance": 0.34, "special_chance": 0.42, "throw_chance": 0.30, "punish_chance": 0.90, "pressure": 0.85},
 }
 
 # Stamp one difficulty preset onto this brain's knobs. Called by the owning dino
@@ -41,6 +43,8 @@ func apply_difficulty(level: String) -> void:
 	heavy_chance = p["heavy_chance"]
 	special_chance = p["special_chance"]
 	throw_chance = p["throw_chance"]
+	punish_chance = p["punish_chance"]
+	pressure = p["pressure"]
 
 # --- Outputs read by the owning dino each frame ---
 var move_dir: Vector2 = Vector2.ZERO
@@ -61,6 +65,10 @@ var _react_cd: float = 0.0
 var _block_t: float = 0.0
 var _strafe: float = 1.0
 var _make_space: bool = false
+var _punish_t: float = 0.0   # >0 while committed to rushing an opening
+var _was_vuln: bool = false  # target was punishable last frame (rising-edge latch)
+var _dash_cd: float = 0.0    # gate on the gap-closer dodge so it doesn't burn block
+var _retreat_t: float = 0.0  # >0 = a skirmisher peeling off after a hit (hit-and-run)
 
 func consume_attack() -> bool:
 	var v := _attack_q
@@ -99,6 +107,9 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	_throw_cd = maxf(0.0, _throw_cd - delta)
 	_react_cd = maxf(0.0, _react_cd - delta)
 	_block_t = maxf(0.0, _block_t - delta)
+	_punish_t = maxf(0.0, _punish_t - delta)
+	_dash_cd = maxf(0.0, _dash_cd - delta)
+	_retreat_t = maxf(0.0, _retreat_t - delta)
 	_decide_t -= delta
 
 	if target == null:
@@ -112,6 +123,14 @@ func think(owner: Node, target: Node, delta: float) -> void:
 
 	var reach: float = owner.attack_hitbox_offset + owner.attack_hitbox_size.x * 0.5
 	var heavy_reach: float = owner.heavy_hitbox_offset + owner.heavy_hitbox_size.x * 0.5
+
+	# Archetype from stats: a fast, fragile dino (Raptor) is a "skirmisher" — it
+	# can't win trade wars, so it must hit-and-run. skittish (0..1) widens its
+	# stand-off and makes it peel off after every hit instead of brawling. Tanks
+	# stay at 0 and fight in your face. This is why a CPU Raptor now plays like a
+	# Raptor, not a slow dino with a fast walk — distinct kit, distinct AI.
+	var skittish: float = clampf((owner.max_speed - 300.0) / 160.0, 0.0, 1.0)
+	var gap: float = standoff_gap + skittish * 50.0
 
 	# Committed to a block from a previous frame: hold it through the swing.
 	if _block_t > 0.0:
@@ -133,20 +152,68 @@ func think(owner: Node, target: Node, delta: float) -> void:
 			move_dir = -dir * 0.3
 			return
 
+	# --- Offense: punish an opening ---
+	# A target locked in attack recovery or guard-broken can't block or dodge, so a
+	# hit is essentially free. On the rising edge of that window we roll once
+	# (punish_chance) whether to commit, then bee-line in for a beat and throw the
+	# biggest move that reaches. This is the main thing separating HARD (nearly
+	# always punishes) from EASY (mostly lets you off the hook) — real whiff-punish.
+	var target_open: bool = target.is_recovering() or target.is_guard_broken()
+	if target_open and not _was_vuln and _punish_t <= 0.0 and randf() < punish_chance:
+		_punish_t = 0.55
+	_was_vuln = target_open
+
+	if _punish_t > 0.0:
+		# Close a big gap instantly by dodging through it — a deliberate gap-closer,
+		# not a panic. Gated on a cooldown and a healthy block bar so it never strips
+		# the defense it still needs.
+		if dist > heavy_reach + 120.0 and _dash_cd <= 0.0 and owner.can_dodge() \
+				and owner.block_durability > owner.max_block * 0.6 and randf() < 0.5:
+			move_dir = _avoid(owner, dir)
+			_dodge_q = true
+			_dash_cd = randf_range(0.8, 1.4)
+			return
+		move_dir = _avoid(owner, dir)  # bee-line for the opening
+		if dist <= heavy_reach + 16.0 and owner.can_attack() and _attack_cd <= 0.0:
+			move_dir = dir
+			if owner.can_special() and randf() < 0.45:
+				_special_q = true  # biggest punish when the signature is up
+			elif dist <= heavy_reach + 8.0:
+				_heavy_q = true
+			else:
+				_attack_q = true
+			_attack_cd = randf_range(0.3, 0.6)
+			_punish_t = 0.0  # opening spent
+			if skittish > 0.3:
+				_retreat_t = 0.30 + skittish * 0.20  # land the punish, then bail
+		return
+
 	# Coarse movement decision, refreshed periodically (less twitchy than per-frame).
 	if _decide_t <= 0.0:
 		_decide_t = randf_range(0.35, 0.8)
 		_strafe = 1.0 if randf() < 0.5 else -1.0
-		_make_space = randf() > aggression
+		# Pressure makes it less willing to peel off — it hangs in your face and
+		# keeps trading rather than resetting to neutral after every exchange.
+		_make_space = randf() > clampf(aggression + pressure * 0.3, 0.0, 1.0)
 
-	# Spacing: approach, peel off if too close, otherwise circle.
+	# Hit-and-run: a skirmisher that just landed/threw a blow peels out to its
+	# stand-off rather than lingering in trade range. This is the whole point of a
+	# glass cannon — touch and go, never stand and bang.
 	var perp := Vector2(-dir.y, dir.x) * _strafe
-	if dist > reach + standoff_gap + 24.0:
+	if _retreat_t > 0.0 and dist < reach + gap + 30.0:
+		move_dir = (-dir + perp * 0.4).normalized()
+	# Spacing: approach, peel off if too close, otherwise circle.
+	elif dist > reach + gap + 24.0:
 		move_dir = (dir + perp * 0.35).normalized()
 	elif dist < reach * 0.55 and _make_space:
 		move_dir = (-dir + perp * 0.5).normalized()
 	else:
 		move_dir = (perp * 0.6 + dir * 0.2).normalized()
+
+	# Stay glued through the target's hit-invulnerability so the next swing connects
+	# the instant their i-frames drop, instead of drifting out and resetting neutral.
+	if target.invuln_timer > 0.0 and pressure > 0.4 and dist < reach + standoff_gap + 60.0:
+		move_dir = (perp * 0.5 + dir * 0.3).normalized()
 
 	# Weapon scavenging: snatch a dropped weapon underfoot, and when disarmed go
 	# fetch the nearest one rather than fist-fighting for the rest of the round.
@@ -181,6 +248,8 @@ func think(owner: Node, target: Node, delta: float) -> void:
 			else:
 				_attack_q = true
 			_attack_cd = randf_range(0.4, 0.85) / clampf(aggression, 0.25, 1.0)
+			if skittish > 0.3:
+				_retreat_t = 0.35 + skittish * 0.25  # touch and go
 
 	# Never steer itself off a ledge / out of bounds.
 	move_dir = _avoid(owner, move_dir)
