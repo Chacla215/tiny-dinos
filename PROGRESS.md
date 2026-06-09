@@ -144,6 +144,19 @@ Verified headless: two HARD bots that used to circle Iciest Age indefinitely now
 land ~6 KOs / 35s there (and resolve Beauty Beach cleanly) — the stalemate is
 gone. Roadmap: [[project_tiny_dinos_roadmap_2026_06_09]].
 
+### CPU ring-out self-preservation (fragile dinos)
+
+Follow-up to ring-out aiming: a glass cannon (Raptor) was just trading shoves it
+always loses to heavy dinos. Now `_ringout_intent` also flags when WE are near the
+edge with the foe lined up to push us off (`threatened`); a skittish dino in that
+spot bails toward centre + dodges inward instead of trading knockback. Restores
+the design pillar that fast/fragile dinos earn ring-out stages.
+
+Verified headless: raptor-vs-bronto on Iciest Age went 0-3 -> **3-4** (now
+competitive, where the floe gaps reward mobility). Beauty Beach still tank-favored
+0-4 — Bronto's hammer launches Raptor from mid-stage, a CPU-doesn't-dodge-heavies
+issue (a human dodges the telegraphed swing), noted for a future evasion pass.
+
 ## Session — 2026-06-08
 
 Source-wide review pass → four worktrees, all merged to master (headless-validated

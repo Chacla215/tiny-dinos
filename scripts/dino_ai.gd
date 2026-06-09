@@ -228,13 +228,23 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	# harmlessly inward. Strong pull once the target is near the edge — a short push
 	# finishes it; this is what breaks the open-arena circling stalemate.
 	if not ro.is_empty():
-		var inside: Vector2 = target.global_position - ro["outward"] * (reach * 0.85)
-		var to_inside: Vector2 = inside - owner.global_position
-		if to_inside.length() > 10.0:
-			var w: float = 0.6 if ro["near_edge"] else 0.28
-			move_dir = move_dir * (1.0 - w) + to_inside.normalized() * w
-			if move_dir.length() > 0.05:
-				move_dir = move_dir.normalized()
+		if ro["threatened"] and skittish > 0.3:
+			# Fragile + about to be shoved off: don't trade knockback we'll lose —
+			# use our speed to bail toward centre, and dodge inward to escape the
+			# pin. This is how a glass cannon survives (and earns) ring-out stages.
+			move_dir = (-ro["self_out"] + perp * 0.2).normalized()
+			if owner.can_dodge() and _dash_cd <= 0.0 and randf() < 0.4:
+				move_dir = _avoid(owner, -ro["self_out"])
+				_dodge_q = true
+				_dash_cd = randf_range(0.6, 1.0)
+		else:
+			var inside: Vector2 = target.global_position - ro["outward"] * (reach * 0.85)
+			var to_inside: Vector2 = inside - owner.global_position
+			if to_inside.length() > 10.0:
+				var w: float = 0.6 if ro["near_edge"] else 0.28
+				move_dir = move_dir * (1.0 - w) + to_inside.normalized() * w
+				if move_dir.length() > 0.05:
+					move_dir = move_dir.normalized()
 
 	# Weapon scavenging: snatch a dropped weapon underfoot, and when disarmed go
 	# fetch the nearest one rather than fist-fighting for the rest of the round.
@@ -303,10 +313,20 @@ func _ringout_intent(owner: Node, target: Node, dir: Vector2) -> Dictionary:
 	var center: Vector2 = _ai_center(arena)
 	var ov: Vector2 = target.global_position - center
 	var outward: Vector2 = ov.normalized() if ov.length() > 1.0 else Vector2.RIGHT
+	# Mirror it for ourselves: are WE near the edge with the foe lined up to shove us
+	# off? (their hit pushes us along our own outward dir). Fragile dinos flee this.
+	var sv: Vector2 = owner.global_position - center
+	var self_out: Vector2 = sv.normalized() if sv.length() > 1.0 else Vector2.ZERO
+	var opp_to_me: Vector2 = owner.global_position - target.global_position
+	var threatened: bool = self_out != Vector2.ZERO \
+		and _near_edge(arena, owner.global_position, self_out, center) \
+		and opp_to_me.normalized().dot(self_out) > 0.2
 	return {
 		"outward": outward,
 		"near_edge": _near_edge(arena, target.global_position, outward, center),
 		"aligned": dir.dot(outward) > 0.25,  # a hit now would push the target off-stage
+		"self_out": self_out,
+		"threatened": threatened,
 	}
 
 func _ai_center(arena: Node) -> Vector2:
