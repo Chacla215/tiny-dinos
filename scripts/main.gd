@@ -919,6 +919,8 @@ func _end_match_gauntlet(winner: Node) -> void:
 		hud_hint.text = "REACHED WAVE %d   -   %d UPGRADES\n\npress START for the title" % [wave, MatchConfig.gauntlet_upgrades.size()]
 		play_sfx("ko", 0.0)
 		return
+	# Carry the survivor's HP into the next wave (the winner is always p1 here).
+	MatchConfig.gauntlet_player_hp = max(1, winner.hp)
 	# The draft draws its own header/prompt above and below the cards; clear the
 	# centered scene labels so they don't bleed through the card row.
 	hud_win.text = ""
@@ -952,7 +954,7 @@ func _build_draft_cards() -> void:
 	var prompt := Label.new()
 	prompt.position = Vector2(0, 510)
 	prompt.size = Vector2(1280, 40)
-	prompt.text = "LEFT / RIGHT  CHOOSE      A  TAKE IT"
+	prompt.text = "HP  %d / %d      LEFT / RIGHT  CHOOSE      A  TAKE IT" % [MatchConfig.gauntlet_player_hp, MatchConfig.gauntlet_player_max_hp()]
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt.add_theme_font_size_override("font_size", 22)
 	prompt.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))

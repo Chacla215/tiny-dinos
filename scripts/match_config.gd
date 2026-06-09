@@ -448,6 +448,7 @@ var gauntlet_wave: int = 0           # 0-indexed; displayed as wave+1
 var gauntlet_upgrades: Array = []    # upgrade ids picked this run (may repeat)
 var gauntlet_player_dino: String = "trex"
 var gauntlet_player_weapon: String = "hammer"
+var gauntlet_player_hp: int = -1     # HP carried into the next wave; -1 = spawn at full
 
 const UPGRADES := {
 	"sharp_claws":  {"name": "SHARP CLAWS",  "desc": "+25% ATTACK DAMAGE",      "mods": {"attack_damage": ["mul", 1.25], "heavy_damage": ["mul", 1.25], "special_damage": ["mul", 1.25]}},
@@ -467,7 +468,16 @@ const UPGRADES := {
 	"vampire":      {"name": "VAMPIRE",      "desc": "HEAL 18% OF MELEE DAMAGE DEALT",      "effect": {"lifesteal": 0.18}},
 	"spiked_hide":  {"name": "SPIKED HIDE",  "desc": "REFLECT 30% OF DAMAGE TAKEN",         "effect": {"thorns": 0.30}},
 	"executioner":  {"name": "EXECUTIONER",  "desc": "+60% DAMAGE TO FOES BELOW 35% HP",    "effect": {"execute": 0.60}},
+	# Heal upgrades — meaningful only because HP now carries between waves.
+	# "heal_now" restores a fraction of max HP the instant it's drafted; "wave_heal"
+	# adds to the breather healed at the start of every future wave (stacks).
+	"field_medic":  {"name": "FIELD MEDIC",  "desc": "HEAL 50% OF MAX HP NOW",              "heal_now": 0.5},
+	"second_wind":  {"name": "SECOND WIND",  "desc": "+20% MAX HP HEALED EACH WAVE",        "wave_heal": 0.2},
 }
+
+# HP carried from the won wave; healed by this fraction of max HP each new wave so
+# attrition stings without dooming a low-HP survivor. SECOND WIND adds on top.
+const GAUNTLET_WAVE_HEAL := 0.20
 
 func start_gauntlet(player_dino: String, player_weapon: String) -> void:
 	gauntlet = true
@@ -475,6 +485,7 @@ func start_gauntlet(player_dino: String, player_weapon: String) -> void:
 	gauntlet_upgrades = []
 	gauntlet_player_dino = player_dino
 	gauntlet_player_weapon = player_weapon
+	gauntlet_player_hp = -1
 	_apply_gauntlet_wave()
 
 # Each wave: a random foe (mirror matches allowed) on a random island, difficulty
@@ -499,8 +510,32 @@ func gauntlet_next_wave() -> void:
 	_apply_gauntlet_wave()
 
 func gauntlet_add_upgrade(id: String) -> void:
-	if UPGRADES.has(id):
-		gauntlet_upgrades.append(id)
+	if not UPGRADES.has(id):
+		return
+	gauntlet_upgrades.append(id)
+	# FIELD MEDIC and friends heal the carried HP the moment they're taken.
+	var heal_now: float = UPGRADES[id].get("heal_now", 0.0)
+	if heal_now > 0.0 and gauntlet_player_hp >= 0:
+		var mx: int = gauntlet_player_max_hp()
+		gauntlet_player_hp = min(mx, gauntlet_player_hp + int(round(mx * heal_now)))
+
+# Player's max HP after every drafted max_hp mod — used for heal math + the draft
+# HP readout, mirroring how dino.gd applies the same mods on spawn.
+func gauntlet_player_max_hp() -> int:
+	var hp: float = float(DINOS.get(gauntlet_player_dino, {}).get("max_hp", 100))
+	for uid in gauntlet_upgrades:
+		var mods: Dictionary = UPGRADES.get(uid, {}).get("mods", {})
+		if mods.has("max_hp"):
+			var op: Array = mods["max_hp"]
+			hp = (hp * op[1]) if op[0] == "mul" else (hp + op[1])
+	return int(round(hp))
+
+# Fraction of max HP healed at the start of a wave: baseline breather + SECOND WIND.
+func gauntlet_wave_heal_frac() -> float:
+	var frac: float = GAUNTLET_WAVE_HEAL
+	for uid in gauntlet_upgrades:
+		frac += UPGRADES.get(uid, {}).get("wave_heal", 0.0)
+	return frac
 
 # Three distinct random upgrade ids to offer in the between-wave draft.
 func gauntlet_draft_options() -> Array:

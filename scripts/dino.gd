@@ -102,6 +102,7 @@ const ANIM_LAYOUTS := {
 var run_lifesteal: float = 0.0   ## VAMPIRE: heal this fraction of melee damage dealt
 var run_thorns: float = 0.0      ## SPIKED HIDE: reflect this fraction of damage taken
 var run_execute: float = 0.0     ## EXECUTIONER: bonus damage multiplier vs low-HP foes
+var _run_start_hp: int = -1      ## gauntlet HP carried into this wave; -1 = spawn at full
 
 @export_group("Weapons")
 ## 2-weapon loadout (ids into MatchConfig.WEAPONS). RB swaps the active one.
@@ -252,6 +253,8 @@ func _ready() -> void:
 	_apply_run_upgrades()  # gauntlet: player carries drafted upgrades; foes scale per wave
 	spawn_point = global_position
 	hp = max_hp
+	if _run_start_hp >= 0:
+		hp = _run_start_hp  # gauntlet: carried (and partly healed) HP for this wave
 	block_durability = max_block
 	if MatchConfig and MatchConfig.PLAYER_COLORS.has(player_id):
 		var player_color: Color = MatchConfig.PLAYER_COLORS[player_id]
@@ -293,6 +296,13 @@ func _apply_run_upgrades() -> void:
 		run_lifesteal += eff.get("lifesteal", 0.0)
 		run_thorns += eff.get("thorns", 0.0)
 		run_execute += eff.get("execute", 0.0)
+	# HP carryover: wounds persist between waves (not between rounds — respawn()
+	# still refills). A new wave heals back a breather; -1 means a fresh run = full.
+	var carry: int = MatchConfig.gauntlet_player_hp
+	if carry < 0:
+		_run_start_hp = max_hp
+	else:
+		_run_start_hp = clampi(carry + int(round(float(max_hp) * MatchConfig.gauntlet_wave_heal_frac())), 1, max_hp)
 
 func _scale_stat(stat: String, mult: float) -> void:
 	if not (stat in self):
