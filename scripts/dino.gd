@@ -504,7 +504,7 @@ func _process_cpu_actions() -> void:
 # hidden by main.gd). Used by the CPU brain as its target.
 func _find_nearest_opponent() -> Node:
 	var best: Node = null
-	var best_d := INF
+	var best_score := INF
 	for other in get_parent().get_children():
 		if other == self or not (other is CharacterBody2D):
 			continue
@@ -514,9 +514,13 @@ func _find_nearest_opponent() -> Node:
 			continue  # don't pick a teammate as the AI's target
 		if not other.visible:
 			continue
-		var d := global_position.distance_squared_to(other.global_position)
-		if d < best_d:
-			best_d = d
+		var score := global_position.distance_squared_to(other.global_position)
+		# Team focus-fire: weight a low-HP enemy as if it were closer, so allied
+		# CPUs converge on the weakest foe and finish it together. FFA stays nearest.
+		if MatchConfig.teams_enabled and "hp" in other and "max_hp" in other and other.max_hp > 0:
+			score *= 0.45 + 0.55 * (float(other.hp) / float(other.max_hp))
+		if score < best_score:
+			best_score = score
 			best = other
 	return best
 
