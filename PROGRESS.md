@@ -1,5 +1,28 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-09 (team play)
+
+2v2 / uneven team support across the six team-friendly modes, in three themed
+commits. Design calls (locked with Charlie): **friendly fire off**, **any split
+allowed** (incl. 1v2 / 1v3 for solo-with-ally), **Beast & Bomb Tag stay FFA**.
+
+**Landed**
+- **Foundation** — `MatchConfig.teams_enabled` + a pid→side map with
+  `side_of()`/`same_side()` (disabled = each fighter its own side, so FFA is
+  untouched). Friendly fire off via one guard at the top of `take_damage` (covers
+  every damage path); AI skips teammates; team-colored floating marker.
+- **Win conditions** — scoring/elimination aggregate by side via
+  `_side`/`_alive_sides`/`_any_alive_on_side`: rounds (killer's team takes it),
+  stock (last team standing), KotH (banks only when one side holds), eggs + sumo
+  (team totals), Rising Tide (last team dry). Score readouts get [RED]/[BLUE] tags.
+- **Select UI** — P1 cycles the split with X (OFF / 2v2 / 1v3 / 1v2 by count +
+  mode); applies live so cards preview team-colored headers. Beast/Bomb Tag and
+  solo hide it; count/mode changes reset to OFF.
+
+Each commit validated by a throwaway test scene (real arena/select instance +
+rule assertions) and an all-scene boot sweep. **Wants a live 4-pad playtest** to
+tune the team feel (esp. 2v2 KotH/Sumo and 1v3 underdog balance).
+
 ## Session — 2026-06-09 (new game modes)
 
 Four new versus modes, each a themed commit, all reusing the one-arena +
