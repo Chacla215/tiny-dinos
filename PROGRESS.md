@@ -2,7 +2,7 @@
 
 ## Session — 2026-06-09 (new game modes)
 
-Three new versus modes, each a themed commit, all reusing the one-arena +
+Four new versus modes, each a themed commit, all reusing the one-arena +
 procedural-prop pattern (so every island plays every mode) and the central
 `award_ko()` KO hook. Each validated by a throwaway test scene that instances a
 real arena + asserts the rules, plus an all-scene headless boot sweep.
@@ -18,8 +18,12 @@ real arena + asserts the rules, plus an all-scene headless boot sweep.
 - **THE BEAST** — one crowned juggernaut (+HP pool, +40% dmg, +45% kb, bigger,
   gold glow) banks time; first to 25s crowned wins. KO the beast to steal the
   crown; `become_beast`/`clear_beast` swap the buff cleanly across respawns.
+- **RISING TIDE** — the ring-out boundary closes in toward a small final platform
+  over ~28s (a single shrink factor in `_in_safe_zone`). Going in the water is
+  fatal (ring-out = eliminated, no respawn); HP-KOs just respawn, so you win by
+  shoving foes into the tide. Last dino dry wins.
 
-All auto-appear on the select screen (P1 Y cycles `MODE_ORDER`).
+All four auto-appear on the select screen (P1 Y cycles `MODE_ORDER`).
 
 **Wants a live Metal playtest to tune feel:** sumo knockback-to-target count;
 bomb fuse length + pass-lock; beast buff strength vs. ring-out-ability and the
