@@ -23,6 +23,15 @@ Each commit validated by a throwaway test scene (real arena/select instance +
 rule assertions) and an all-scene boot sweep. **Wants a live 4-pad playtest** to
 tune the team feel (esp. 2v2 KotH/Sumo and 1v3 underdog balance).
 
+**Follow-ups (same day):**
+- **UI polish** — in-engine screenshot pass over every screen caught two text
+  overlaps, now fixed: HUD corner labels overflowed once the [RED]/[BLUE] tag was
+  added (dropped the weapon-name suffix, smaller font, wider boxes); select
+  MODE/TEAMS labels clashed with the island preview's baked watermark (dimmed the
+  preview + deeper vignette). Title/how-to/character/draft verified clean.
+- **CPU focus-fire** — in team mode the AI target search weights low-HP enemies as
+  closer, so an allied team converges on the weakest foe. FFA unchanged.
+
 ## Session — 2026-06-09 (new game modes)
 
 Four new versus modes, each a themed commit, all reusing the one-arena +
