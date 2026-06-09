@@ -31,6 +31,9 @@ tune the team feel (esp. 2v2 KotH/Sumo and 1v3 underdog balance).
   preview + deeper vignette). Title/how-to/character/draft verified clean.
 - **CPU focus-fire** — in team mode the AI target search weights low-HP enemies as
   closer, so an allied team converges on the weakest foe. FFA unchanged.
+- **Character stat bars** — the profile STATS panel now draws a bar per stat
+  (HP/ATK/DEF/SPD/SPC) normalized to the cast max, so fast/fragile reads visually
+  (Raptor = long SPD/short DEF, T-Rex = max HP/short SPD). Verified by screenshot.
 
 ## Session — 2026-06-09 (new game modes)
 
