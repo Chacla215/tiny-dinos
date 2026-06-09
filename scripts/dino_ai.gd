@@ -132,6 +132,11 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	var skittish: float = clampf((owner.max_speed - 300.0) / 160.0, 0.0, 1.0)
 	var gap: float = standoff_gap + skittish * 50.0
 
+	# Ring-out hunting (arenas with a lethal edge). `ro` carries the push direction
+	# (arena centre -> target), whether the target is near the edge, and whether our
+	# current facing would shove it off-stage. Empty on confined arenas.
+	var ro: Dictionary = _ringout_intent(owner, target, dir)
+
 	# Committed to a block from a previous frame: hold it through the swing.
 	if _block_t > 0.0:
 		block_held = true
@@ -195,6 +200,9 @@ func think(owner: Node, target: Node, delta: float) -> void:
 		# Pressure makes it less willing to peel off — it hangs in your face and
 		# keeps trading rather than resetting to neutral after every exchange.
 		_make_space = randf() > clampf(aggression + pressure * 0.3, 0.0, 1.0)
+		# Never back off when a ring-out is set up — close in and shove them off.
+		if not ro.is_empty() and ro["near_edge"]:
+			_make_space = false
 
 	# Hit-and-run: a skirmisher that just landed/threw a blow peels out to its
 	# stand-off rather than lingering in trade range. This is the whole point of a
@@ -214,6 +222,19 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	# the instant their i-frames drop, instead of drifting out and resetting neutral.
 	if target.invuln_timer > 0.0 and pressure > 0.4 and dist < reach + standoff_gap + 60.0:
 		move_dir = (perp * 0.5 + dir * 0.3).normalized()
+
+	# Ring-out positioning: slide to the centre side of the target so our facing
+	# (toward it) points off-stage and a hit shoves it toward the edge instead of
+	# harmlessly inward. Strong pull once the target is near the edge — a short push
+	# finishes it; this is what breaks the open-arena circling stalemate.
+	if not ro.is_empty():
+		var inside: Vector2 = target.global_position - ro["outward"] * (reach * 0.85)
+		var to_inside: Vector2 = inside - owner.global_position
+		if to_inside.length() > 10.0:
+			var w: float = 0.6 if ro["near_edge"] else 0.28
+			move_dir = move_dir * (1.0 - w) + to_inside.normalized() * w
+			if move_dir.length() > 0.05:
+				move_dir = move_dir.normalized()
 
 	# Weapon scavenging: snatch a dropped weapon underfoot, and when disarmed go
 	# fetch the nearest one rather than fist-fighting for the rest of the round.
@@ -240,13 +261,23 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	if dist <= reach + 16.0 and _attack_cd <= 0.0 and owner.can_attack():
 		if target.invuln_timer <= 0.0 or randf() < 0.25:
 			move_dir = dir  # face the target on the commit frame
-			var roll := randf()
-			if roll < special_chance:
-				_special_q = true  # dino gates this on cooldown via can_special()
-			elif roll < special_chance + heavy_chance and dist <= heavy_reach + 8.0:
-				_heavy_q = true
+			if not ro.is_empty() and ro["near_edge"] and ro["aligned"]:
+				# Lined up at the edge: throw the hardest-hitting move available for
+				# the kill, not a light poke that barely nudges them.
+				if owner.can_special() and randf() < 0.5:
+					_special_q = true
+				elif dist <= heavy_reach + 8.0:
+					_heavy_q = true
+				else:
+					_attack_q = true
 			else:
-				_attack_q = true
+				var roll := randf()
+				if roll < special_chance:
+					_special_q = true  # dino gates this on cooldown via can_special()
+				elif roll < special_chance + heavy_chance and dist <= heavy_reach + 8.0:
+					_heavy_q = true
+				else:
+					_attack_q = true
 			_attack_cd = randf_range(0.4, 0.85) / clampf(aggression, 0.25, 1.0)
 			if skittish > 0.3:
 				_retreat_t = 0.35 + skittish * 0.25  # touch and go
@@ -257,6 +288,46 @@ func think(owner: Node, target: Node, delta: float) -> void:
 
 	# Never steer itself off a ledge / out of bounds.
 	move_dir = _avoid(owner, move_dir)
+
+# Ring-out plan for arenas with a lethal edge (ledge ring-out or floe drown). The
+# knockback shoves the victim along the attacker's facing, so to push it off-stage
+# we line up on the centre side and hit outward. Returns {} on confined arenas.
+func _ringout_intent(owner: Node, target: Node, dir: Vector2) -> Dictionary:
+	var arena := owner.get_parent()
+	if arena == null:
+		return {}
+	var is_ring: bool = ("ledge_kill_enabled" in arena and arena.ledge_kill_enabled) \
+		or ("drown_off_floes" in arena and arena.drown_off_floes)
+	if not is_ring:
+		return {}
+	var center: Vector2 = _ai_center(arena)
+	var ov: Vector2 = target.global_position - center
+	var outward: Vector2 = ov.normalized() if ov.length() > 1.0 else Vector2.RIGHT
+	return {
+		"outward": outward,
+		"near_edge": _near_edge(arena, target.global_position, outward, center),
+		"aligned": dir.dot(outward) > 0.25,  # a hit now would push the target off-stage
+	}
+
+func _ai_center(arena: Node) -> Vector2:
+	if "safe_polygon" in arena and arena.safe_polygon.size() >= 3:
+		var s := Vector2.ZERO
+		for p in arena.safe_polygon:
+			s += p
+		return s / arena.safe_polygon.size()
+	if "safe_rect" in arena:
+		return arena.safe_rect.get_center()
+	return Vector2(640, 360)
+
+# True when a short outward push from `pos` would clear the safe area — i.e. the
+# target is close enough to the edge that one solid hit rings it out.
+func _near_edge(arena: Node, pos: Vector2, outward: Vector2, center: Vector2) -> bool:
+	var probe: Vector2 = pos + outward * 130.0
+	if "safe_polygon" in arena and arena.safe_polygon.size() >= 3:
+		return not Geometry2D.is_point_in_polygon(probe, arena.safe_polygon)
+	if "ledge_kill_enabled" in arena and arena.ledge_kill_enabled and "safe_rect" in arena:
+		return not arena.safe_rect.has_point(probe)
+	return pos.distance_to(center) > 180.0  # floe/drown arenas: distance proxy
 
 # Blend the current heading toward the active mode's objective. Pull is strong
 # when the enemy is far (free to grab) and weak when they're close (fighting wins).

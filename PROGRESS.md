@@ -130,6 +130,20 @@ Verified: headless pipeline test confirmed upgrades stack on the player (trex
 ×1.8 wave10); live renders confirmed the 6-item title and the draft overlay
 (header/cards/prompt) draw clean. Roadmap: [[project_tiny_dinos_roadmap_2026_06_09]].
 
+### CPU ring-out aiming (open arenas)
+
+Fixes the open-arena stalemate (two bots circling Iciest Age forever, never
+committing a ring-out). The knockback shoves the victim along the attacker's
+facing, so on a lethal-edge arena (`ledge_kill_enabled` or `drown_off_floes`) the
+AI now: computes an outward push dir (arena centre → target), slides to the
+**centre side** of the target so its facing points off-stage, stops retreating
+when a ring-out is set up, and throws its **hardest-knockback move** (special/
+heavy) when lined up at the edge. `dino_ai._ringout_intent/_ai_center/_near_edge`.
+
+Verified headless: two HARD bots that used to circle Iciest Age indefinitely now
+land ~6 KOs / 35s there (and resolve Beauty Beach cleanly) — the stalemate is
+gone. Roadmap: [[project_tiny_dinos_roadmap_2026_06_09]].
+
 ## Session — 2026-06-08
 
 Source-wide review pass → four worktrees, all merged to master (headless-validated
