@@ -7,7 +7,6 @@ enum DefenseState { NORMAL, BLOCKING, DODGING, GUARD_BROKEN }
 const SHEET_PLAYER := "res://assets/sprites/playersprites_revision.png"
 const SHEET_REF := "res://assets/sprites/rynosaurlandcharacters.png"
 const SHEET_ENEMY := "res://assets/sprites/enemysprites_revision.png"
-const SHEET_HD := "res://assets/sprites/trex_handdrawn.png"
 
 const ANIM_LAYOUTS := {
 	"raptor": {
@@ -21,14 +20,6 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(221, 4, 19, 21), Rect2(247, 3, 19, 22)]},
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(219, 30, 20, 21), Rect2(245, 29, 20, 22)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(245, 29, 20, 22)]},
-	},
-	# Hand-drawn Ralph. To use in a match: set DINOS["trex"].sprite_role="trex_hd",
-	# sprite_scale ~0.8, sprite_offset_y ~-22 in match_config.gd.
-	"trex_hd": {
-		"sheet": SHEET_HD,
-		"idle":   {"loop": true,  "speed": 5.0,  "rects": [Rect2(0, 0, 151, 110), Rect2(151, 0, 151, 110)]},
-		"walk":   {"loop": true,  "speed": 9.0,  "rects": [Rect2(302, 0, 151, 110), Rect2(453, 0, 151, 110), Rect2(604, 0, 151, 110), Rect2(755, 0, 151, 110)]},
-		"attack": {"loop": false, "speed": 11.0, "rects": [Rect2(906, 0, 151, 110), Rect2(1057, 0, 151, 110), Rect2(1208, 0, 151, 110)]},
 	},
 	"trike": {
 		"sheet": SHEET_ENEMY,
