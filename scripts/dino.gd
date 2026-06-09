@@ -108,6 +108,16 @@ var _run_start_hp: int = -1      ## gauntlet HP carried into this wave; -1 = spa
 # the only way out is over the edge (or, in bomb tag, the bomb). Set by main.gd.
 var ringout_only: bool = false
 
+# THE BEAST (juggernaut mode): the crowned fighter is bigger, hits harder, and
+# carries a bonus HP pool. Toggled mid-match by main.gd via become_beast/clear_beast.
+var beast_active: bool = false
+var _base_max_hp: int = 0
+const BEAST_HP_BONUS := 80
+const BEAST_DMG_MULT := 1.4
+const BEAST_KB_MULT := 1.45
+const BEAST_SCALE := 1.3
+const BEAST_TINT := Color(1.5, 1.2, 0.5)
+
 @export_group("Weapons")
 ## 2-weapon loadout (ids into MatchConfig.WEAPONS). RB swaps the active one.
 @export var weapons: Array = ["fists"]
@@ -851,7 +861,11 @@ func try_hit(body: Node) -> void:
 	if run_execute > 0.0 and "hp" in body and "max_hp" in body and body.max_hp > 0:
 		if float(body.hp) <= 0.35 * float(body.max_hp):
 			dmg = int(round(dmg * (1.0 + run_execute)))
-	body.take_damage(dmg, facing * current_attack_knockback, self)
+	var kb: Vector2 = facing * current_attack_knockback
+	if beast_active:
+		dmg = int(round(dmg * BEAST_DMG_MULT))
+		kb *= BEAST_KB_MULT
+	body.take_damage(dmg, kb, self)
 	var root := get_tree().current_scene
 	if root and root.has_method("add_dp"):
 		root.add_dp(player_id, 10)
@@ -1303,8 +1317,40 @@ func update_visual() -> void:
 		if flash:
 			color.a *= 0.5
 	var sprite_tint: Color = MatchConfig.PLAYER_TINTS.get(player_id, Color.WHITE) if MatchConfig else Color.WHITE
+	if beast_active:
+		color *= BEAST_TINT  # gold glow marks the juggernaut
 	polygon.modulate = color
 	sprite.modulate = color * sprite_tint
+
+# --- THE BEAST (juggernaut) crown toggling ---
+# Paired multiply/divide on the visual scale reverts exactly; HP swaps to a bonus
+# pool (full heal on crowning), back to the base cap when the crown is lost.
+func become_beast() -> void:
+	if beast_active:
+		return
+	beast_active = true
+	if _base_max_hp == 0:
+		_base_max_hp = max_hp
+	max_hp = _base_max_hp + BEAST_HP_BONUS
+	hp = max_hp
+	update_hp_bar()
+	if sprite:
+		sprite.scale *= BEAST_SCALE
+	if polygon:
+		polygon.scale *= BEAST_SCALE
+
+func clear_beast() -> void:
+	if not beast_active:
+		return
+	beast_active = false
+	if _base_max_hp > 0:
+		max_hp = _base_max_hp
+	hp = min(hp, max_hp)
+	update_hp_bar()
+	if sprite:
+		sprite.scale /= BEAST_SCALE
+	if polygon:
+		polygon.scale /= BEAST_SCALE
 
 func update_hp_bar() -> void:
 	pass

@@ -341,7 +341,7 @@ const ISLAND_SCENES := {
 # KOTH_TARGET seconds wins (KOs just respawn). EGGS = grab loose eggs off the
 # field; first to EGG_TARGET wins (KOs just respawn). All four reuse the one
 # arena + the procedural hill/egg props, so every island plays every mode.
-const MODE_ORDER := ["rounds", "stock", "koth", "eggs", "sumo", "bombtag"]
+const MODE_ORDER := ["rounds", "stock", "koth", "eggs", "sumo", "bombtag", "beast"]
 const MODE_NAMES := {
 	"rounds": "BEST OF ROUNDS",
 	"stock": "LAST DINO STANDING",
@@ -349,6 +349,7 @@ const MODE_NAMES := {
 	"eggs": "EGG GRAB",
 	"sumo": "SUMO",
 	"bombtag": "BOMB TAG",
+	"beast": "THE BEAST",
 }
 const MODE_BLURBS := {
 	"rounds": "A KO WINS THE ROUND",
@@ -357,6 +358,7 @@ const MODE_BLURBS := {
 	"eggs": "GRAB THE MOST EGGS",
 	"sumo": "SHOVE THEM OFF THE EDGE",
 	"bombtag": "PASS THE BOMB OR BOOM",
+	"beast": "BE THE BEAST THE LONGEST",
 }
 var game_mode: String = "rounds"
 const STOCK_LIVES := 3        # lives each fighter starts with in LAST DINO STANDING
@@ -365,6 +367,7 @@ const EGG_TARGET := 6         # eggs to collect to win EGG GRAB
 const SUMO_TARGET := 5        # ring-outs to win SUMO (HP off; only knockback scores)
 const BOMB_FUSE := 6.0        # BOMB TAG: seconds before the bomb detonates on its holder
 const BOMB_PASS_LOCK := 0.5   # grace after catching the bomb before it can pass again
+const BEAST_TARGET := 25.0    # THE BEAST: seconds spent crowned needed to win
 
 var dino_choices: Dictionary = {"p1": "trex", "p2": "raptor", "p3": "trike", "p4": "pterry"}
 var island: String = "laughing_lava"

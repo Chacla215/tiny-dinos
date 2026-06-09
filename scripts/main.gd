@@ -107,6 +107,9 @@ var bomb_timer: float = 0.0
 var bomb_pass_lock: float = 0.0      # grace after a catch before the bomb can move again
 var bomb_node: Node2D = null
 var bomb_core: Polygon2D = null
+# THE BEAST: one crowned fighter banks time while buffed; KO it to steal the crown.
+var beast_pid: String = ""
+var beast_crown: Node2D = null
 
 var shake_amount: float = 0.0
 var shake_remaining: float = 0.0
@@ -281,6 +284,10 @@ func _setup_game_mode() -> void:
 				p.ringout_only = true
 			_build_bomb()
 			_assign_bomb(active_players[randi() % active_players.size()].player_id)
+		"beast":
+			# KOs (HP or edge) are live — that's how the crown changes hands.
+			_build_crown()
+			_crown_beast(active_players[randi() % active_players.size()].player_id)
 
 func _circle_points(rx: float, ry: float, segs: int) -> PackedVector2Array:
 	var pts := PackedVector2Array()
@@ -526,6 +533,41 @@ func _bomb_detonate() -> void:
 		return
 	_assign_bomb(alive[randi() % alive.size()].player_id)
 
+# --- THE BEAST ---
+func _build_crown() -> void:
+	beast_crown = Node2D.new()
+	beast_crown.z_index = 60
+	var band := Polygon2D.new()
+	band.polygon = PackedVector2Array([
+		Vector2(-16, 6), Vector2(16, 6), Vector2(16, -2), Vector2(10, -12),
+		Vector2(4, -4), Vector2(0, -16), Vector2(-4, -4), Vector2(-10, -12), Vector2(-16, -2)])
+	band.color = Color(1.0, 0.82, 0.2)
+	beast_crown.add_child(band)
+	add_child(beast_crown)
+
+# Crown a new beast: clear whoever held it, buff the new holder, reset nothing else.
+func _crown_beast(pid: String) -> void:
+	if beast_pid != "" and beast_pid != pid:
+		var old: Node = _player_node(beast_pid)
+		if old and old.has_method("clear_beast"):
+			old.clear_beast()
+	beast_pid = pid
+	var nb: Node = _player_node(pid)
+	if nb and nb.has_method("become_beast"):
+		nb.become_beast()
+	play_sfx("win", 0.1)
+	update_score_display()
+
+func _update_beast(delta: float) -> void:
+	var beast: Node = _player_node(beast_pid)
+	if beast == null:
+		return
+	mode_score[beast_pid] = mode_score.get(beast_pid, 0.0) + delta
+	if beast_crown:
+		beast_crown.global_position = beast.global_position + Vector2(0, -78)
+	if mode_score[beast_pid] >= MatchConfig.BEAST_TARGET:
+		end_match(beast, _dino_name(beast_pid))
+
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	if connected:
 		print("Joypad connected: device %d  name=%s" % [device, Input.get_joy_name(device)])
@@ -604,6 +646,9 @@ func _score_text(p: Node) -> String:
 		"bombtag":
 			var tag: String = "  [BOMB]" if pid == bomb_holder else ""
 			return "LIVES %d%s" % [stocks.get(pid, 0), tag]
+		"beast":
+			var crown: String = "  [BEAST]" if pid == beast_pid else ""
+			return "%ds / %ds%s" % [int(mode_score.get(pid, 0.0)), int(MatchConfig.BEAST_TARGET), crown]
 		_:
 			return "%d / %d" % [round_wins.get(pid, 0), kos_to_win]
 
@@ -646,6 +691,8 @@ func _physics_process(delta: float) -> void:
 		_update_eggs(delta)
 	elif game_mode == "bombtag":
 		_update_bombtag(delta)
+	elif game_mode == "beast":
+		_update_beast(delta)
 
 func _process_lava(delta: float) -> void:
 	var overlapping := lava_area.get_overlapping_bodies()
@@ -880,6 +927,10 @@ func award_ko(killer: Node, victim: Node) -> void:
 			dp[killer.player_id] = dp.get(killer.player_id, 0) + 40  # KO bounty; no round
 		"sumo":
 			_award_ko_sumo(killer)
+		"beast":
+			dp[killer.player_id] = dp.get(killer.player_id, 0) + 60
+			if victim.player_id == beast_pid and killer.player_id != beast_pid:
+				_crown_beast(killer.player_id)  # KO'd the beast -> steal the crown
 		_:
 			_award_ko_rounds(killer)
 
