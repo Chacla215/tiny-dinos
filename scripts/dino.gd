@@ -296,6 +296,7 @@ func _apply_run_upgrades() -> void:
 		run_lifesteal += eff.get("lifesteal", 0.0)
 		run_thorns += eff.get("thorns", 0.0)
 		run_execute += eff.get("execute", 0.0)
+	max_hp += MatchConfig.gauntlet_meta_hp_bonus  # HARDENED meta perk (0 if not unlocked)
 	# HP carryover: wounds persist between waves (not between rounds — respawn()
 	# still refills). A new wave heals back a breather; -1 means a fresh run = full.
 	var carry: int = MatchConfig.gauntlet_player_hp

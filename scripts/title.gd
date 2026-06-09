@@ -63,10 +63,14 @@ func _ready() -> void:
 	var gauntlet_label: Label = $Menu/PlayItem.duplicate()
 	gauntlet_label.name = "GauntletItem"
 	$Menu.add_child(gauntlet_label)
+	# Once you've made progress, the GAUNTLET line shows your best wave so far.
+	var gauntlet_base: String = "GAUNTLET"
+	if MetaSave.best_wave > 0:
+		gauntlet_base = "GAUNTLET  (BEST: WAVE %d)" % MetaSave.best_wave
 	menu_items = [
 		{"label": $Menu/PlayItem, "base": "VERSUS", "action": "play"},
 		{"label": arcade_label, "base": "ARCADE", "action": "arcade"},
-		{"label": gauntlet_label, "base": "GAUNTLET", "action": "gauntlet"},
+		{"label": gauntlet_label, "base": gauntlet_base, "action": "gauntlet"},
 		{"label": $Menu/CharacterItem, "base": "CHARACTER", "action": "creator"},
 		{"label": $Menu/HowToItem, "base": "HOW TO PLAY", "action": "howto"},
 		{"label": $Menu/QuitItem, "base": "QUIT", "action": "quit"},

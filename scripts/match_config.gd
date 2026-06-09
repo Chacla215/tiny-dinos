@@ -449,6 +449,9 @@ var gauntlet_upgrades: Array = []    # upgrade ids picked this run (may repeat)
 var gauntlet_player_dino: String = "trex"
 var gauntlet_player_weapon: String = "hammer"
 var gauntlet_player_hp: int = -1     # HP carried into the next wave; -1 = spawn at full
+# Persistent meta perks snapshotted from MetaSave at run start (see meta_save.gd).
+var gauntlet_meta_hp_bonus: int = 0  # HARDENED: flat starting max-HP bonus
+var gauntlet_extra_draft: bool = false  # EXTRA DRAFT: offer 4 upgrade cards, not 3
 
 const UPGRADES := {
 	"sharp_claws":  {"name": "SHARP CLAWS",  "desc": "+25% ATTACK DAMAGE",      "mods": {"attack_damage": ["mul", 1.25], "heavy_damage": ["mul", 1.25], "special_damage": ["mul", 1.25]}},
@@ -486,6 +489,13 @@ func start_gauntlet(player_dino: String, player_weapon: String) -> void:
 	gauntlet_player_dino = player_dino
 	gauntlet_player_weapon = player_weapon
 	gauntlet_player_hp = -1
+	# Snapshot the cross-run meta perks unlocked so far.
+	gauntlet_meta_hp_bonus = MetaSave.hp_bonus()
+	gauntlet_extra_draft = MetaSave.has_unlock("extra_draft")
+	if MetaSave.has_unlock("veteran_start"):
+		var pool: Array = UPGRADES.keys()
+		pool.shuffle()
+		gauntlet_upgrades.append(pool[0])  # VETERAN START: begin with one upgrade
 	_apply_gauntlet_wave()
 
 # Each wave: a random foe (mirror matches allowed) on a random island, difficulty
@@ -528,7 +538,7 @@ func gauntlet_player_max_hp() -> int:
 		if mods.has("max_hp"):
 			var op: Array = mods["max_hp"]
 			hp = (hp * op[1]) if op[0] == "mul" else (hp + op[1])
-	return int(round(hp))
+	return int(round(hp)) + gauntlet_meta_hp_bonus
 
 # Fraction of max HP healed at the start of a wave: baseline breather + SECOND WIND.
 func gauntlet_wave_heal_frac() -> float:
@@ -537,11 +547,12 @@ func gauntlet_wave_heal_frac() -> float:
 		frac += UPGRADES.get(uid, {}).get("wave_heal", 0.0)
 	return frac
 
-# Three distinct random upgrade ids to offer in the between-wave draft.
+# Distinct random upgrade ids to offer in the between-wave draft — 3 normally,
+# 4 once the EXTRA DRAFT meta perk is unlocked.
 func gauntlet_draft_options() -> Array:
 	var pool: Array = UPGRADES.keys()
 	pool.shuffle()
-	return pool.slice(0, 3)
+	return pool.slice(0, 4 if gauntlet_extra_draft else 3)
 
 func gauntlet_scene() -> String:
 	return ISLAND_SCENES.get(island, "res://scenes/main.tscn")

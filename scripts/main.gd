@@ -916,7 +916,12 @@ func _end_match_gauntlet(winner: Node) -> void:
 	if not player_won:
 		hud_win.text = "RUN OVER"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
-		hud_hint.text = "REACHED WAVE %d   -   %d UPGRADES\n\npress START for the title" % [wave, MatchConfig.gauntlet_upgrades.size()]
+		var newly: Array = MetaSave.record_run(wave)
+		var msg: String = "REACHED WAVE %d   -   %d UPGRADES\nBEST WAVE %d" % [wave, MatchConfig.gauntlet_upgrades.size(), MetaSave.best_wave]
+		for u in newly:
+			msg += "\nNEW UNLOCK!   %s  -  %s" % [u["name"], u["blurb"]]
+		msg += "\n\npress START for the title"
+		hud_hint.text = msg
 		play_sfx("ko", 0.0)
 		return
 	# Carry the survivor's HP into the next wave (the winner is always p1 here).
@@ -936,7 +941,10 @@ func _open_draft() -> void:
 
 func _build_draft_cards() -> void:
 	_clear_draft_cards()
-	var total: float = DRAFT_CARD_W * float(draft_options.size()) + DRAFT_GAP * float(draft_options.size() - 1)
+	var n: int = draft_options.size()
+	# Shrink cards to fit when EXTRA DRAFT offers 4 (3 keeps the full width).
+	var card_w: float = min(DRAFT_CARD_W, (1200.0 - DRAFT_GAP * float(n - 1)) / float(n))
+	var total: float = card_w * float(n) + DRAFT_GAP * float(n - 1)
 	var x0: float = (1280.0 - total) / 2.0
 	var y: float = 268.0
 	# Header above the cards + prompt below — drawn in the HUD layer, tracked so
@@ -964,13 +972,13 @@ func _build_draft_cards() -> void:
 	for i in range(draft_options.size()):
 		var up: Dictionary = MatchConfig.UPGRADES.get(draft_options[i], {})
 		var card := ColorRect.new()
-		card.position = Vector2(x0 + i * (DRAFT_CARD_W + DRAFT_GAP), y)
-		card.size = Vector2(DRAFT_CARD_W, DRAFT_CARD_H)
+		card.position = Vector2(x0 + i * (card_w + DRAFT_GAP), y)
+		card.size = Vector2(card_w, DRAFT_CARD_H)
 		card.pivot_offset = card.size * 0.5  # scale the highlighted card from its center
 		card.z_index = 50
 		var name_l := Label.new()
 		name_l.position = Vector2(0, 40)
-		name_l.size = Vector2(DRAFT_CARD_W, 48)
+		name_l.size = Vector2(card_w, 48)
 		name_l.text = up.get("name", "")
 		name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name_l.add_theme_font_size_override("font_size", 30)
@@ -978,7 +986,7 @@ func _build_draft_cards() -> void:
 		card.add_child(name_l)
 		var desc_l := Label.new()
 		desc_l.position = Vector2(16, 116)
-		desc_l.size = Vector2(DRAFT_CARD_W - 32, 80)
+		desc_l.size = Vector2(card_w - 32, 80)
 		desc_l.text = up.get("desc", "")
 		desc_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		desc_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
