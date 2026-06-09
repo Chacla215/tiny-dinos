@@ -289,6 +289,21 @@ func _stats_for(dino_id: String) -> Array:
 		["SPC", str(spc), Color("e6c878")],
 	]
 
+# Largest value seen for each stat across the whole cast (Ralph + roster), so the
+# profile bars are relative — the fastest dino's SPD bar is full, and a glass
+# cannon's HP bar reads short. Cached after the first build.
+var _stat_max_cache: Array = []
+func _stat_maxes() -> Array:
+	if not _stat_max_cache.is_empty():
+		return _stat_max_cache
+	var maxes := [1, 1, 1, 1, 1]
+	for id in (["ralph"] + MatchConfig.ROSTER_ORDER):
+		var rows: Array = _stats_for(id)
+		for i in range(min(rows.size(), maxes.size())):
+			maxes[i] = max(maxes[i], int(rows[i][1]))
+	_stat_max_cache = maxes
+	return maxes
+
 
 # ================================================================== grid view ==
 func _build_grid_view() -> void:
@@ -548,13 +563,22 @@ func _refresh_profile(dino_id: String) -> void:
 	# The title tab is recreated by _panel — re-add it here.
 	_decorate_panel_title(stats_container, "STATS")
 	var rows: Array = _stats_for(dino_id)
+	var maxes: Array = _stat_maxes()
 	var y: float = 44.0
-	for row in rows:
-		var dot := _bg(stats_container, 22, y + 6, 16, 16, row[2])
+	for i in range(rows.size()):
+		var row: Array = rows[i]
+		var dot := _bg(stats_container, 22, y + 7, 14, 14, row[2])
 		dot.color = row[2]
-		_text(stats_container, row[0], 50, y, 24, TEXT)
+		_text(stats_container, row[0], 44, y, 24, TEXT)
+		# Bar: a dark track with a fill scaled to this stat vs. the cast max.
+		const BAR_X := 100.0
+		const BAR_W := 130.0
+		_bg(stats_container, BAR_X, y + 7, BAR_W, 14, Color("0e1118"))
+		var denom: float = float(maxes[i]) if i < maxes.size() and maxes[i] > 0 else 1.0
+		var frac: float = clamp(float(int(row[1])) / denom, 0.06, 1.0)
+		_bg(stats_container, BAR_X, y + 7, BAR_W * frac, 14, row[2])
 		var v := _text(stats_container, row[1], 0, y, 24, GOLD)
-		v.size = Vector2(258, 28)
+		v.size = Vector2(282, 28)
 		v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		y += 32
 	# Bio + personality.
