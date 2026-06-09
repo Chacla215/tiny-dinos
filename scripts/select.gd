@@ -11,7 +11,7 @@ const WEAPON_PICKS := ["sword", "dagger", "axe", "mace", "hammer", "nunchucks"]
 const DinoScript := preload("res://scripts/dino.gd")
 const TITLE_SCENE := "res://scenes/title.tscn"
 # Bottom-of-screen control hint. The game is gamepad-only, so this is constant.
-const HINT_PAD := "A CONFIRM    B BACK    LB ADD OPPONENT    RB CPU DIFFICULTY    Y GAME MODE    P1 PICKS EACH CPU'S DINO + WEAPON"
+const HINT_PAD := "A CONFIRM   B BACK   LB ADD OPPONENT   RB DIFFICULTY   Y MODE   X TEAMS   P1 PICKS EACH CPU"
 const ISLAND_PREVIEW := {
 	"laughing_lava":     "res://assets/tilesets/laughing_lava_bg.png",
 	"beauty_beach":      "res://assets/tilesets/beauty_beach_bg.png",
@@ -40,6 +40,9 @@ var difficulty_label: Label
 # Built in code too: the match's game mode, on its own line under the island.
 var mode_label: Label
 var mode_idx: int = 0
+# Teams line (also built in code): the chosen split, P1 cycles it with X.
+var teams_label: Label
+var team_preset_idx: int = 0
 # Solo setup (arcade ladder OR roguelike gauntlet): P1 picks only their own
 # fighter; the p2 slot is the CPU opponent, not host-configurable.
 var arcade: bool = false
@@ -86,6 +89,10 @@ func _ready() -> void:
 		mode_idx = 0
 	_build_mode_label()
 	_update_mode_label()
+	MatchConfig.teams_enabled = false  # versus defaults to FFA until P1 picks a split
+	team_preset_idx = 0
+	_build_teams_label()
+	_update_teams_label()
 	arcade = MatchConfig.arcade_setup
 	gauntlet = MatchConfig.gauntlet_setup
 	if _solo():
@@ -137,6 +144,10 @@ func _apply_active_count(n: int) -> void:
 		_update_display(pid)
 	_refresh_start()
 	_update_difficulty_label()
+	# Fewer/more fighters changes which splits are valid — reset to OFF.
+	team_preset_idx = 0
+	_apply_team_preset()
+	_update_teams_label()
 
 # Host adds a computer opponent (cycles 2 -> 3 -> 4 -> 2 players). Newly added
 # opponent slots default to CPU, so a solo player can fight 1-v-2 or 1-v-3.
@@ -184,6 +195,9 @@ func _process(delta: float) -> void:
 		# Host cycles the game mode (rounds / stock / king of the hill / egg grab).
 		if Input.is_action_just_pressed("p1_block"):
 			_cycle_mode()
+		# Host cycles the team split (OFF / 2v2 / 1v3 / 1v2, depending on count + mode).
+		if Input.is_action_just_pressed("p1_attack"):
+			_cycle_teams()
 	# P1 (the host) configures their own fighter first, then every CPU's dino
 	# AND weapon, all on the LEFT stick. Human opponents pick on their own pads.
 	var target: String = _host_focus()
@@ -366,6 +380,13 @@ func _update_display(pid: String) -> void:
 
 	var is_cpu: bool = cpu_states[pid]
 	header_label.text = "PLAYER %s  (CPU)" % pid.substr(1) if is_cpu else "PLAYER %s" % pid.substr(1)
+	# In team mode, tag + color the header by side so the split reads at a glance.
+	if MatchConfig.teams_enabled:
+		var side: String = MatchConfig.side_of(pid)
+		header_label.text += "  -  %s" % MatchConfig.TEAM_NAMES.get(side, "")
+		header_label.add_theme_color_override("font_color", MatchConfig.TEAM_COLORS.get(side, Color.WHITE))
+	else:
+		header_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 
 	# A CPU the host hasn't reached yet waits in line, dimmed; the slot P1 (or a
 	# human) is actively editing is at full brightness.
@@ -447,6 +468,11 @@ func _cycle_mode() -> void:
 	mode_idx = (mode_idx + 1) % order.size()
 	MatchConfig.game_mode = order[mode_idx]
 	_update_mode_label()
+	# Switching to/from an FFA-only mode changes whether teams are offered.
+	team_preset_idx = 0
+	_apply_team_preset()
+	_update_teams_label()
+	_refresh_displays()
 
 func _build_mode_label() -> void:
 	mode_label = Label.new()
@@ -469,6 +495,70 @@ func _update_mode_label() -> void:
 	var mname: String = MatchConfig.MODE_NAMES.get(MatchConfig.game_mode, "BEST OF ROUNDS")
 	var blurb: String = MatchConfig.MODE_BLURBS.get(MatchConfig.game_mode, "")
 	mode_label.text = "MODE:  %s  -  %s    (P1 Y)" % [mname, blurb]
+
+# --- Teams ---
+# Beast & Bomb Tag are inherently free-for-all (one crown / one bomb), so teams
+# are offered only for the other modes — and only with 3+ fighters.
+const TEAM_MODES := ["rounds", "stock", "koth", "eggs", "sumo", "flood"]
+
+func _mode_allows_teams() -> bool:
+	return MatchConfig.game_mode in TEAM_MODES
+
+# Index 0 is always OFF (free-for-all). The rest are split presets for the current
+# fighter count: 2v2 / 1v3 at four players, 1v2 at three.
+func _team_presets() -> Array:
+	var presets: Array = [{"name": "OFF", "teams": {}}]
+	if _mode_allows_teams():
+		if MatchConfig.player_count == 3:
+			presets.append({"name": "1 v 2", "teams": {"p1": "a", "p2": "b", "p3": "b"}})
+		elif MatchConfig.player_count == 4:
+			presets.append({"name": "2 v 2", "teams": {"p1": "a", "p2": "b", "p3": "a", "p4": "b"}})
+			presets.append({"name": "1 v 3", "teams": {"p1": "a", "p2": "b", "p3": "b", "p4": "b"}})
+	return presets
+
+func _cycle_teams() -> void:
+	var presets: Array = _team_presets()
+	if presets.size() <= 1:
+		return  # no split available for this count/mode
+	team_preset_idx = (team_preset_idx + 1) % presets.size()
+	_apply_team_preset()
+	_update_teams_label()
+	_refresh_displays()  # recolor cards by team
+
+# Push the chosen split into MatchConfig (live, so the cards/markers preview it).
+func _apply_team_preset() -> void:
+	var presets: Array = _team_presets()
+	team_preset_idx = clamp(team_preset_idx, 0, presets.size() - 1)
+	var preset: Dictionary = presets[team_preset_idx]
+	if preset["teams"].is_empty():
+		MatchConfig.teams_enabled = false
+	else:
+		MatchConfig.teams_enabled = true
+		MatchConfig.teams = preset["teams"].duplicate()
+
+func _build_teams_label() -> void:
+	teams_label = Label.new()
+	teams_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	teams_label.offset_top = 138.0
+	teams_label.offset_bottom = 162.0
+	teams_label.offset_left = 0.0
+	teams_label.offset_right = 1280.0
+	teams_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	teams_label.add_theme_font_size_override("font_size", 18)
+	teams_label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.95, 1))
+	add_child(teams_label)
+
+func _update_teams_label() -> void:
+	if teams_label == null:
+		return
+	# No split possible (solo, <3 fighters, or an FFA-only mode) → hide the line.
+	if _solo() or _team_presets().size() <= 1:
+		teams_label.visible = false
+		return
+	teams_label.visible = true
+	var presets: Array = _team_presets()
+	team_preset_idx = clamp(team_preset_idx, 0, presets.size() - 1)
+	teams_label.text = "TEAMS:  %s    (P1 X)" % presets[team_preset_idx]["name"]
 
 # --- Concept-art helpers ---
 
