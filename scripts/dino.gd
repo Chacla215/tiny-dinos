@@ -98,6 +98,11 @@ const ANIM_LAYOUTS := {
 @export var special_radius: float = 0.0       ## screech: AoE radius
 @export var special_slow_duration: float = 0.0 ## screech: how long victims are slowed
 
+# --- Gauntlet run-mechanic upgrades (player slot only; set in _apply_run_upgrades) ---
+var run_lifesteal: float = 0.0   ## VAMPIRE: heal this fraction of melee damage dealt
+var run_thorns: float = 0.0      ## SPIKED HIDE: reflect this fraction of damage taken
+var run_execute: float = 0.0     ## EXECUTIONER: bonus damage multiplier vs low-HP foes
+
 @export_group("Weapons")
 ## 2-weapon loadout (ids into MatchConfig.WEAPONS). RB swaps the active one.
 @export var weapons: Array = ["fists"]
@@ -284,6 +289,10 @@ func _apply_run_upgrades() -> void:
 			if typeof(cur) == TYPE_INT:
 				nv = int(round(nv))
 			set(stat, nv)
+		var eff: Dictionary = up.get("effect", {})
+		run_lifesteal += eff.get("lifesteal", 0.0)
+		run_thorns += eff.get("thorns", 0.0)
+		run_execute += eff.get("execute", 0.0)
 
 func _scale_stat(stat: String, mult: float) -> void:
 	if not (stat in self):
@@ -822,12 +831,21 @@ func try_hit(body: Node) -> void:
 	if not body.has_method("take_damage"):
 		return
 	hit_targets_this_swing.append(body)
-	body.take_damage(current_attack_damage, facing * current_attack_knockback, self)
+	var dmg: int = current_attack_damage
+	# EXECUTIONER: extra damage when the foe is already low.
+	if run_execute > 0.0 and "hp" in body and "max_hp" in body and body.max_hp > 0:
+		if float(body.hp) <= 0.35 * float(body.max_hp):
+			dmg = int(round(dmg * (1.0 + run_execute)))
+	body.take_damage(dmg, facing * current_attack_knockback, self)
 	var root := get_tree().current_scene
 	if root and root.has_method("add_dp"):
 		root.add_dp(player_id, 10)
+	# Lifesteal stacks the chomp special's innate drain with the VAMPIRE run upgrade.
+	var lifesteal: float = run_lifesteal
 	if current_is_special and special_lifesteal > 0.0:
-		hp = min(max_hp, hp + int(current_attack_damage * special_lifesteal))
+		lifesteal += special_lifesteal
+	if lifesteal > 0.0:
+		hp = min(max_hp, hp + int(dmg * lifesteal))
 		update_hp_bar()
 
 # --- Defense actions ---
@@ -954,6 +972,9 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	notify_hit(amount)
 	invuln_timer = hitstun_invuln
 	update_hp_bar()
+	# SPIKED HIDE: punish the attacker with a fraction of the damage they dealt.
+	if run_thorns > 0.0 and source != null and source != self and source.has_method("take_reflect"):
+		source.take_reflect(int(round(float(amount) * run_thorns)))
 	if hp <= 0:
 		die()
 
@@ -969,6 +990,17 @@ func apply_burn(amount: int, knockback: Vector2) -> bool:
 	hit_flash_timer = 0.08
 	update_hp_bar()
 	return hp <= 0
+
+# SPIKED HIDE reflection: chip damage with no knockback/invuln/recursion. Foes
+# don't carry thorns, so a reflected hit can't bounce back and loop.
+func take_reflect(amount: int) -> void:
+	if amount <= 0 or is_falling:
+		return
+	hp -= amount
+	hit_flash_timer = 0.08
+	update_hp_bar()
+	if hp <= 0:
+		die()
 
 func notify_hit(damage: int) -> void:
 	var scene_root := get_tree().current_scene

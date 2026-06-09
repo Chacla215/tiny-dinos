@@ -462,6 +462,11 @@ const UPGRADES := {
 	"berserker":    {"name": "BERSERKER",    "desc": "+35% DMG, -15% MAX HP",   "mods": {"attack_damage": ["mul", 1.35], "heavy_damage": ["mul", 1.35], "special_damage": ["mul", 1.35], "max_hp": ["mul", 0.85]}},
 	"tough_skin":   {"name": "TOUGH SKIN",   "desc": "+60% BLOCK REGEN",        "mods": {"block_regen": ["mul", 1.6]}},
 	"bulwark":      {"name": "BULWARK",      "desc": "+25 HP, +20 BLOCK",       "mods": {"max_hp": ["add", 25], "max_block": ["add", 20]}},
+	# Mechanic upgrades — these change how combat plays, not just a stat. "effect"
+	# keys map to run_* flags dino.gd reads in try_hit / take_damage (player only).
+	"vampire":      {"name": "VAMPIRE",      "desc": "HEAL 18% OF MELEE DAMAGE DEALT",      "effect": {"lifesteal": 0.18}},
+	"spiked_hide":  {"name": "SPIKED HIDE",  "desc": "REFLECT 30% OF DAMAGE TAKEN",         "effect": {"thorns": 0.30}},
+	"executioner":  {"name": "EXECUTIONER",  "desc": "+60% DAMAGE TO FOES BELOW 35% HP",    "effect": {"execute": 0.60}},
 }
 
 func start_gauntlet(player_dino: String, player_weapon: String) -> void:
