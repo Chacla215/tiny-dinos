@@ -1,5 +1,31 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-09 (gauntlet depth)
+
+Deepened the roguelike GAUNTLET across four themed commits — turning it from a
+flat upgrade ladder into a run with attrition, build variety, and cross-run
+stickiness. Each change validated headlessly (throwaway test scenes + full-scene
+boots; no errors).
+
+**Landed**
+- **Mechanic upgrades** — VAMPIRE (lifesteal), SPIKED HIDE (thorns), EXECUTIONER
+  (+dmg vs low-HP foes). `dino.gd` reads `effect` keys into `run_*` flags applied
+  in `try_hit` / `take_damage`.
+- **HP carries between waves** + heal upgrades. Wounds persist wave-to-wave (round
+  respawns still refill); each wave heals a 20% breather. FIELD MEDIC (instant
+  50%) + SECOND WIND (+20%/wave, stacks). Draft screen shows current HP/max.
+- **Cross-run meta-progression** — new `MetaSave` autoload (user:// ConfigFile)
+  tracks best wave; milestone unlocks auto-apply: wave 3 → EXTRA DRAFT (4 cards),
+  wave 6 → VETERAN START (begin with an upgrade), wave 10 → HARDENED (+20 HP).
+  Title shows best wave; RUN OVER reports best + newly-unlocked perks.
+- **Solo starting-island pick** — P1 UP/DOWN chooses the opening island in
+  gauntlet/arcade setup (gauntlet randomizes after wave 1; arcade rotates the
+  ladder to open there).
+
+**Possible next:** more mechanic upgrades (dash-on-KO, projectile riders);
+meta currency/shop instead of pure milestones; per-run modifiers/curses for
+higher-stakes waves; live in-engine Metal playtest of a full run.
+
 ## Session — 2026-06-09
 
 Follow-up to the review pass: a cleanup + in-engine visual verification of the
