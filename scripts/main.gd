@@ -77,6 +77,21 @@ var match_over: bool = false
 var round_active: bool = true
 var current_round: int = 1
 
+# --- Game-mode state (see MatchConfig.game_mode) ---
+var game_mode: String = "rounds"
+var stocks: Dictionary = {}          # STOCK: pid -> lives left
+var mode_score: Dictionary = {}      # KOTH (seconds) / EGGS (count): pid -> score
+var hill_center: Vector2 = Vector2.ZERO
+var hill_visual: Node2D = null
+var hill_ring: Line2D = null
+const HILL_RADIUS := 130.0
+var eliminated: Dictionary = {}      # STOCK: pid -> true once out of lives
+var eggs: Array = []                 # EGGS: live egg nodes on the field
+var egg_spawn_timer: float = 0.0
+const EGG_SPAWN_INTERVAL := 2.2
+const EGG_MAX_ON_FIELD := 3
+const EGG_PICKUP_RADIUS := 46.0
+
 var shake_amount: float = 0.0
 var shake_remaining: float = 0.0
 
@@ -118,10 +133,12 @@ func _ready() -> void:
 				child.body_exited.connect(_on_floe_exited)
 	hud_win.text = ""
 	hud_hint.text = ""
+	game_mode = MatchConfig.game_mode if MatchConfig and "game_mode" in MatchConfig else "rounds"
 	_setup_active_players()
 	_apply_match_colors()
 	_style_hud()
 	_build_special_pips()
+	_setup_game_mode()
 	update_score_display()
 	_load_sfx()
 	_build_debug_boundary()  # red ring-out outline when debug_draw_safe_zone is on
@@ -219,6 +236,178 @@ func _build_special_pips() -> void:
 		$HUD.add_child(fill)
 		special_pips[pid] = {"fill": fill}
 
+# --- Game modes ---
+# All four modes run on the same arena. STOCK/KOTH/EGGS keep play continuous (no
+# round resets); only ROUNDS uses the interstitial flow. The hill and the eggs are
+# built procedurally here so every island plays every mode without editing scenes.
+
+func _setup_game_mode() -> void:
+	for p in active_players:
+		stocks[p.player_id] = MatchConfig.STOCK_LIVES
+		mode_score[p.player_id] = 0.0
+	match game_mode:
+		"koth":
+			hill_center = _safe_center()
+			_build_hill()
+		"eggs":
+			egg_spawn_timer = 0.5
+
+func _circle_points(rx: float, ry: float, segs: int) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in range(segs):
+		var a: float = TAU * float(i) / float(segs)
+		pts.append(Vector2(cos(a) * rx, sin(a) * ry))
+	return pts
+
+# The arena background is at z 0 but earlier in the tree, so a runtime node at a
+# lower z hides BEHIND it. Insert just before Player1 instead: same z 0, but tree
+# order draws it over the background and under the fighters.
+func _insert_under_players(node: Node) -> void:
+	var first := get_node_or_null("Player1")
+	if first:
+		move_child(node, first.get_index())
+
+func _build_hill() -> void:
+	hill_visual = Node2D.new()
+	hill_visual.position = hill_center
+	add_child(hill_visual)
+	_insert_under_players(hill_visual)
+	var pts := _circle_points(HILL_RADIUS, HILL_RADIUS, 48)
+	var disc := Polygon2D.new()
+	disc.polygon = pts
+	disc.color = Color(1.0, 0.92, 0.4, 0.2)
+	hill_visual.add_child(disc)
+	var loop := pts
+	loop.append(pts[0])
+	hill_ring = Line2D.new()
+	hill_ring.points = loop
+	hill_ring.width = 7.0
+	hill_ring.default_color = Color(0.95, 0.9, 0.7, 0.85)  # bright neutral when empty/contested
+	hill_visual.add_child(hill_ring)
+
+# KOTH: the lone fighter inside the hill banks time; contested or empty scores
+# nobody. The ring glows the holder's colour so the state reads at a glance.
+func _update_koth(delta: float) -> void:
+	var holders: Array = []
+	for p in active_players:
+		if eliminated.get(p.player_id, false):
+			continue
+		if p.global_position.distance_to(hill_center) <= HILL_RADIUS:
+			holders.append(p)
+	var ring_color := Color(0.95, 0.9, 0.7, 0.85)  # bright neutral: empty or contested
+	if holders.size() == 1:
+		var p: Node = holders[0]
+		var pid: String = p.player_id
+		mode_score[pid] = mode_score.get(pid, 0.0) + delta
+		ring_color = MatchConfig.PLAYER_COLORS.get(pid, Color.WHITE)
+		if mode_score[pid] >= MatchConfig.KOTH_TARGET:
+			dp[pid] = dp.get(pid, 0) + 200
+			end_match(p, _dino_name(pid))
+			return
+	if hill_ring:
+		hill_ring.default_color = ring_color
+
+# EGGS: loose eggs trickle onto the field; walk over one to bag it. First to the
+# target wins. KOs just respawn (no score), so it's a frantic grab, not a brawl.
+func _update_eggs(delta: float) -> void:
+	egg_spawn_timer -= delta
+	if egg_spawn_timer <= 0.0 and eggs.size() < EGG_MAX_ON_FIELD:
+		_spawn_egg()
+		egg_spawn_timer = EGG_SPAWN_INTERVAL
+	for i in range(eggs.size() - 1, -1, -1):
+		var egg: Node2D = eggs[i]
+		if not is_instance_valid(egg):
+			eggs.remove_at(i)
+			continue
+		for p in active_players:
+			if eliminated.get(p.player_id, false):
+				continue
+			if p.global_position.distance_to(egg.position) <= EGG_PICKUP_RADIUS:
+				_collect_egg(p, egg, i)
+				break
+
+func _spawn_egg() -> void:
+	var egg := Node2D.new()
+	egg.position = _random_safe_point()
+	var shadow := Polygon2D.new()
+	shadow.polygon = _circle_points(15.0, 6.0, 18)
+	shadow.position = Vector2(0, 13)
+	shadow.color = Color(0, 0, 0, 0.22)
+	egg.add_child(shadow)
+	var shell := Polygon2D.new()
+	shell.polygon = _circle_points(13.0, 17.0, 22)
+	shell.color = Color(0.98, 0.96, 0.88)
+	egg.add_child(shell)
+	var spot := Polygon2D.new()
+	spot.polygon = _circle_points(4.0, 5.0, 14)
+	spot.position = Vector2(-4, -3)
+	spot.color = Color(0.85, 0.8, 0.6, 0.7)
+	egg.add_child(spot)
+	add_child(egg)
+	_insert_under_players(egg)
+	eggs.append(egg)
+
+func _collect_egg(p: Node, egg: Node2D, i: int) -> void:
+	var pid: String = p.player_id
+	mode_score[pid] = mode_score.get(pid, 0.0) + 1.0
+	dp[pid] = dp.get(pid, 0) + 60
+	play_sfx("dodge", 0.12)  # light pickup blip (reuses an existing sound)
+	if is_instance_valid(egg):
+		egg.queue_free()
+	eggs.remove_at(i)
+	update_score_display()
+	if mode_score[pid] >= float(MatchConfig.EGG_TARGET):
+		end_match(p, _dino_name(pid))
+
+func _random_safe_point() -> Vector2:
+	for _attempt in range(28):
+		var pt: Vector2
+		if safe_polygon.size() >= 3:
+			var bb := _polygon_bounds(safe_polygon)
+			pt = Vector2(randf_range(bb.position.x, bb.end.x), randf_range(bb.position.y, bb.end.y))
+			if not Geometry2D.is_point_in_polygon(pt, safe_polygon):
+				continue
+		else:
+			var r := safe_rect.grow(-60.0)
+			pt = Vector2(randf_range(r.position.x, r.end.x), randf_range(r.position.y, r.end.y))
+		return pt
+	return _safe_center()
+
+func _polygon_bounds(poly: PackedVector2Array) -> Rect2:
+	var r := Rect2(poly[0], Vector2.ZERO)
+	for pt in poly:
+		r = r.expand(pt)
+	return r
+
+# STOCK: a KO costs the victim a life; out of lives = eliminated. Last dino in wins.
+func _award_ko_stock(killer: Node, victim: Node) -> void:
+	dp[killer.player_id] = dp.get(killer.player_id, 0) + 100
+	var vp: String = victim.player_id
+	if eliminated.get(vp, false):
+		return
+	stocks[vp] = max(0, stocks.get(vp, 0) - 1)
+	update_score_display()
+	if stocks[vp] <= 0:
+		_eliminate(victim)
+		var alive: Array = _alive_players()
+		if alive.size() <= 1:
+			var winner: Node = alive[0] if alive.size() == 1 else killer
+			end_match(winner, _dino_name(winner.player_id))
+
+func _eliminate(p: Node) -> void:
+	eliminated[p.player_id] = true
+	p.visible = false
+	p.velocity = Vector2.ZERO
+	p.set_physics_process(false)
+	p.set_process_input(false)
+
+func _alive_players() -> Array:
+	var arr: Array = []
+	for p in active_players:
+		if not eliminated.get(p.player_id, false):
+			arr.append(p)
+	return arr
+
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	if connected:
 		print("Joypad connected: device %d  name=%s" % [device, Input.get_joy_name(device)])
@@ -269,8 +458,22 @@ func _update_hud_bars() -> void:
 		if label:
 			var wn: String = p.weapon_name() if p.has_method("weapon_name") else ""
 			var wsuffix: String = ("   " + wn) if wn != "" else ""
-			label.text = "%s  %d / %d%s" % [_dino_name(p.player_id), round_wins.get(p.player_id, 0), kos_to_win, wsuffix]
+			label.text = "%s  %s%s" % [_dino_name(p.player_id), _score_text(p), wsuffix]
 		_update_special_pip(p)
+
+# The per-mode scoreboard fragment shown after the dino name: round wins, lives
+# left, hill seconds, or eggs bagged.
+func _score_text(p: Node) -> String:
+	var pid: String = p.player_id
+	match game_mode:
+		"stock":
+			return "LIVES %d" % stocks.get(pid, 0)
+		"koth":
+			return "%ds / %ds" % [int(mode_score.get(pid, 0.0)), int(MatchConfig.KOTH_TARGET)]
+		"eggs":
+			return "EGGS %d / %d" % [int(mode_score.get(pid, 0.0)), MatchConfig.EGG_TARGET]
+		_:
+			return "%d / %d" % [round_wins.get(pid, 0), kos_to_win]
 
 # Fill the special pip by recharge progress; glow bright gold + full once it's
 # ready to fire (cooldown elapsed). A null/zero cooldown reads as always ready.
@@ -291,6 +494,8 @@ func _physics_process(delta: float) -> void:
 		return
 	_separate_players()
 	for p in active_players:
+		if eliminated.get(p.player_id, false):
+			continue  # out of the match (stock mode)
 		if p.is_falling:
 			continue  # tumbling off-screen; its own _physics_process drives it
 		p.current_push = global_current
@@ -303,6 +508,10 @@ func _physics_process(delta: float) -> void:
 		_process_lava(delta)
 	if drown_off_floes:
 		_process_drowning(delta)
+	if game_mode == "koth":
+		_update_koth(delta)
+	elif game_mode == "eggs":
+		_update_eggs(delta)
 
 func _process_lava(delta: float) -> void:
 	var overlapping := lava_area.get_overlapping_bodies()
@@ -526,9 +735,20 @@ func report_ko(victim: Node, killer: Node) -> void:
 # A KO ends the current round (in FFA: first KO of the round wins it). The
 # killer takes the round + DP; first to kos_to_win rounds wins the match.
 func award_ko(killer: Node, victim: Node) -> void:
-	if match_over or not round_active:
+	if match_over:
 		return
 	if killer == null or killer == victim or not (killer in active_players):
+		return
+	match game_mode:
+		"stock":
+			_award_ko_stock(killer, victim)
+		"koth", "eggs":
+			dp[killer.player_id] = dp.get(killer.player_id, 0) + 40  # KO bounty; no round
+		_:
+			_award_ko_rounds(killer)
+
+func _award_ko_rounds(killer: Node) -> void:
+	if not round_active:
 		return
 	round_active = false
 	var killer_pid: String = killer.player_id
@@ -593,7 +813,7 @@ func update_score_display() -> void:
 		var display_name: String = MatchConfig.DINOS[dino_id].display_name
 		var label := get_node_or_null("HUD/%sScore" % pid.to_upper())
 		if label:
-			label.text = "%s  %d / %d" % [display_name, round_wins.get(pid, 0), kos_to_win]
+			label.text = "%s  %s" % [display_name, _score_text(p)]
 
 func end_match(winner: CharacterBody2D, label: String) -> void:
 	match_over = true

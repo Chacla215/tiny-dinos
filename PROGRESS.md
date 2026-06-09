@@ -59,6 +59,32 @@ Chomp is a lunge-gap-closer *with lifesteal* that eats the kite — a genuine
 rock-paper-scissors layer, left intentional. T-Rex top / Anky strong / Bronto
 mid; Raptor's true ceiling needs human playtests (the bot doesn't aim ring-outs).
 
+### Game modes (stock / KotH / egg grab)
+
+Three new modes on top of best-of-rounds, picked on select (P1 **Y** cycles
+`MODE: …`). All four run on the same arena; the hill and eggs are built
+**procedurally in `main.gd`** so every island plays every mode with no scene edits.
+- **Last Dino Standing** (`stock`) — each fighter has `STOCK_LIVES` (3); a KO costs
+  a life; out of lives = eliminated (hidden → AI auto-ignores it via the existing
+  `visible` check); last one in wins.
+- **King of the Hill** (`koth`) — a procedural ring at the safe-centre; the lone
+  fighter inside banks time, contested/empty scores nobody; first to
+  `KOTH_TARGET` (20s) wins. Ring glows the holder's colour.
+- **Egg Grab** (`eggs`) — eggs trickle onto random safe ground; walk over one to
+  bag it; first to `EGG_TARGET` (6) wins. KOs just respawn.
+
+Flow: `award_ko` branches by mode (`_award_ko_stock` / KO-bounty / `_award_ko_rounds`);
+KOTH+EGGS keep `round_active` true (continuous, no interstitial). Score HUD is
+mode-aware via `_score_text` (LIVES n / `n s / 20s` / EGGS n / 6). CPUs now play
+objectives — `dino_ai._apply_objective` drifts them to the hill / nearest egg when
+not mid-exchange, so solo-vs-CPU party matches actually contest the goal.
+
+Verified: headless mode smoke-sim reached winners for rounds + stock + eggs (koth
+resolves too; two equal HARD bots stalemate the hill, a human breaks it). Live
+render (real Metal) confirmed the hill ring + mode score HUD draw correctly (over
+background, under fighters — fixed a z-order trap by inserting props before
+Player1 rather than via z_index). Roadmap: [[project_tiny_dinos_roadmap_2026_06_09]].
+
 ## Session — 2026-06-08
 
 Source-wide review pass → four worktrees, all merged to master (headless-validated

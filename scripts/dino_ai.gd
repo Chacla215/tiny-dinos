@@ -251,8 +251,48 @@ func think(owner: Node, target: Node, delta: float) -> void:
 			if skittish > 0.3:
 				_retreat_t = 0.35 + skittish * 0.25  # touch and go
 
+	# Objective modes: when not mid-exchange, drift toward the hill / nearest egg so
+	# a CPU actually contests King of the Hill and Egg Grab instead of only brawling.
+	_apply_objective(owner, dist)
+
 	# Never steer itself off a ledge / out of bounds.
 	move_dir = _avoid(owner, move_dir)
+
+# Blend the current heading toward the active mode's objective. Pull is strong
+# when the enemy is far (free to grab) and weak when they're close (fighting wins).
+func _apply_objective(owner: Node, dist_to_target: float) -> void:
+	var arena := owner.get_parent()
+	if arena == null or not ("game_mode" in arena):
+		return
+	var goal := Vector2.INF
+	if arena.game_mode == "koth":
+		if owner.global_position.distance_to(arena.hill_center) > arena.HILL_RADIUS * 0.6:
+			goal = arena.hill_center
+	elif arena.game_mode == "eggs":
+		goal = _nearest_egg(arena, owner)
+	if goal == Vector2.INF:
+		return
+	var to_goal: Vector2 = goal - owner.global_position
+	if to_goal.length() < 6.0:
+		return
+	var w: float = 0.7 if dist_to_target > 260.0 else 0.3
+	move_dir = move_dir * (1.0 - w) + to_goal.normalized() * w
+	if move_dir.length() > 0.05:
+		move_dir = move_dir.normalized()
+
+func _nearest_egg(arena: Node, owner: Node) -> Vector2:
+	if not ("eggs" in arena):
+		return Vector2.INF
+	var best := Vector2.INF
+	var best_d := INF
+	for egg in arena.eggs:
+		if not is_instance_valid(egg):
+			continue
+		var d: float = owner.global_position.distance_squared_to(egg.position)
+		if d < best_d:
+			best_d = d
+			best = egg.position
+	return best
 
 # Bends a desired direction away from the arena edge when near it. Islands ring
 # out on the painted safe_polygon (an oval/irregular shoreline), so prefer that

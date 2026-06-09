@@ -11,7 +11,7 @@ const WEAPON_PICKS := ["sword", "dagger", "axe", "mace", "hammer", "nunchucks"]
 const DinoScript := preload("res://scripts/dino.gd")
 const TITLE_SCENE := "res://scenes/title.tscn"
 # Bottom-of-screen control hint. The game is gamepad-only, so this is constant.
-const HINT_PAD := "A CONFIRM    B BACK (TO TITLE)    LB ADD OPPONENT    RB CPU DIFFICULTY    P1 PICKS EACH CPU'S DINO + WEAPON"
+const HINT_PAD := "A CONFIRM    B BACK    LB ADD OPPONENT    RB CPU DIFFICULTY    Y GAME MODE    P1 PICKS EACH CPU'S DINO + WEAPON"
 const ISLAND_PREVIEW := {
 	"laughing_lava":     "res://assets/tilesets/laughing_lava_bg.png",
 	"beauty_beach":      "res://assets/tilesets/beauty_beach_bg.png",
@@ -37,6 +37,9 @@ const ISLAND_BG_WIDTH := 680.0  # centerpiece island preview width
 # Built in code (so the .tscn isn't restructured): shows the CPU difficulty just
 # under the island line, only while at least one slot is a CPU.
 var difficulty_label: Label
+# Built in code too: the match's game mode, on its own line under the island.
+var mode_label: Label
+var mode_idx: int = 0
 
 var indexes: Dictionary = {"p1": 0, "p2": 1, "p3": 2, "p4": 3}
 var weapon_idx: Dictionary = {"p1": 0, "p2": 0, "p3": 0, "p4": 0}
@@ -71,6 +74,11 @@ func _ready() -> void:
 	_update_island()
 	_build_difficulty_label()
 	_update_difficulty_label()
+	mode_idx = MatchConfig.MODE_ORDER.find(MatchConfig.game_mode)
+	if mode_idx < 0:
+		mode_idx = 0
+	_build_mode_label()
+	_update_mode_label()
 
 # Activate the first n player slots (2-4); the rest are hidden. Rebuilds the row.
 func _apply_active_count(n: int) -> void:
@@ -121,6 +129,9 @@ func _process(delta: float) -> void:
 	# Host cycles the CPU difficulty (only matters when a CPU is in the match).
 	if Input.is_action_just_pressed("p1_swap") and _any_cpu():
 		_cycle_difficulty()
+	# Host cycles the game mode (rounds / stock / king of the hill / egg grab).
+	if Input.is_action_just_pressed("p1_block"):
+		_cycle_mode()
 	# P1 (the host) configures their own fighter first, then every CPU's dino
 	# AND weapon, all on the LEFT stick. Human opponents pick on their own pads.
 	var target: String = _host_focus()
@@ -359,6 +370,33 @@ func _update_difficulty_label() -> void:
 	difficulty_label.visible = true
 	var dname: String = MatchConfig.CPU_DIFFICULTY_NAMES.get(MatchConfig.cpu_difficulty, "NORMAL")
 	difficulty_label.text = "CPU DIFFICULTY:  %s    (P1 RB)" % dname
+
+# --- Game mode ---
+
+func _cycle_mode() -> void:
+	var order: Array = MatchConfig.MODE_ORDER
+	mode_idx = (mode_idx + 1) % order.size()
+	MatchConfig.game_mode = order[mode_idx]
+	_update_mode_label()
+
+func _build_mode_label() -> void:
+	mode_label = Label.new()
+	mode_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	mode_label.offset_top = 112.0
+	mode_label.offset_bottom = 138.0
+	mode_label.offset_left = 0.0
+	mode_label.offset_right = 1280.0
+	mode_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mode_label.add_theme_font_size_override("font_size", 20)
+	mode_label.add_theme_color_override("font_color", Color(0.45, 0.95, 0.6, 1))
+	add_child(mode_label)
+
+func _update_mode_label() -> void:
+	if mode_label == null:
+		return
+	var mname: String = MatchConfig.MODE_NAMES.get(MatchConfig.game_mode, "BEST OF ROUNDS")
+	var blurb: String = MatchConfig.MODE_BLURBS.get(MatchConfig.game_mode, "")
+	mode_label.text = "MODE:  %s  -  %s    (P1 Y)" % [mname, blurb]
 
 # --- Concept-art helpers ---
 

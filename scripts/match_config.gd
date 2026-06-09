@@ -334,6 +334,31 @@ const ISLAND_SCENES := {
 	"iciest_age": "res://scenes/arena_floes.tscn",
 }
 
+# --- Game modes ---
+# The match flow main.gd runs. ROUNDS is the classic best-of (a KO wins a round,
+# first to kos_to_win rounds). STOCK = each fighter has STOCK_LIVES; a KO costs a
+# life; last dino standing wins. KOTH = stand in the hill to bank time; first to
+# KOTH_TARGET seconds wins (KOs just respawn). EGGS = grab loose eggs off the
+# field; first to EGG_TARGET wins (KOs just respawn). All four reuse the one
+# arena + the procedural hill/egg props, so every island plays every mode.
+const MODE_ORDER := ["rounds", "stock", "koth", "eggs"]
+const MODE_NAMES := {
+	"rounds": "BEST OF ROUNDS",
+	"stock": "LAST DINO STANDING",
+	"koth": "KING OF THE HILL",
+	"eggs": "EGG GRAB",
+}
+const MODE_BLURBS := {
+	"rounds": "A KO WINS THE ROUND",
+	"stock": "LOSE A LIFE PER KO",
+	"koth": "HOLD THE HILL TO SCORE",
+	"eggs": "GRAB THE MOST EGGS",
+}
+var game_mode: String = "rounds"
+const STOCK_LIVES := 3        # lives each fighter starts with in LAST DINO STANDING
+const KOTH_TARGET := 20.0     # seconds of hill control needed to win KING OF THE HILL
+const EGG_TARGET := 6         # eggs to collect to win EGG GRAB
+
 var dino_choices: Dictionary = {"p1": "trex", "p2": "raptor", "p3": "trike", "p4": "pterry"}
 var island: String = "laughing_lava"
 var player_count: int = 2
