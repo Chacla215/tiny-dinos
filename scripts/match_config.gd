@@ -373,6 +373,70 @@ const CPU_DIFFICULTY_ORDER := ["easy", "normal", "hard"]
 const CPU_DIFFICULTY_NAMES := {"easy": "EASY", "normal": "NORMAL", "hard": "HARD"}
 var cpu_difficulty: String = "normal"
 
+# --- Arcade ladder (solo spine) ---
+# A single-player gauntlet: P1 fights a rising sequence of CPU foes, each on its
+# own island, ending on a HARD final boss. The commercial hook — something a lone
+# player can pick up, stream, and demo. main.gd drives the between-rung flow;
+# this just holds the ladder and reconfigures the match for each rung.
+var arcade_setup: bool = false       # title -> select handoff: configure a solo ladder
+var arcade: bool = false
+var arcade_rung: int = 0
+var arcade_ladder: Array = []        # [{dino, difficulty, island}]
+var arcade_player_dino: String = "trex"
+var arcade_player_weapon: String = "hammer"
+const ARCADE_DIFFS := ["easy", "easy", "normal", "normal", "hard"]
+
+func start_arcade(player_dino: String, player_weapon: String) -> void:
+	arcade = true
+	arcade_rung = 0
+	arcade_player_dino = player_dino
+	arcade_player_weapon = player_weapon
+	arcade_ladder = _build_ladder(player_dino)
+	_apply_arcade_rung()
+
+# The ladder is every OTHER dino, difficulty ramping easy->hard, each on a
+# different island for variety. The last rung is always the toughest foe on HARD.
+func _build_ladder(player_dino: String) -> Array:
+	var foes: Array = []
+	for d in ROSTER_ORDER:
+		if d != player_dino:
+			foes.append(d)
+	var ladder: Array = []
+	for i in range(foes.size()):
+		ladder.append({
+			"dino": foes[i],
+			"difficulty": ARCADE_DIFFS[min(i, ARCADE_DIFFS.size() - 1)],
+			"island": ISLAND_ORDER[i % ISLAND_ORDER.size()],
+		})
+	if not ladder.is_empty():
+		ladder[ladder.size() - 1]["difficulty"] = "hard"  # final boss
+	return ladder
+
+func _apply_arcade_rung() -> void:
+	var rung: Dictionary = arcade_ladder[arcade_rung]
+	player_count = 2
+	cpu_players = {"p1": false, "p2": true, "p3": false, "p4": false}
+	dino_choices["p1"] = arcade_player_dino
+	dino_choices["p2"] = rung["dino"]
+	weapon_choices = {"p1": arcade_player_weapon}
+	cpu_difficulty = rung["difficulty"]
+	island = rung["island"]
+	game_mode = "rounds"
+
+# Advance to the next rung. Returns false when the ladder is cleared (champion).
+func arcade_advance() -> bool:
+	arcade_rung += 1
+	if arcade_rung >= arcade_ladder.size():
+		return false
+	_apply_arcade_rung()
+	return true
+
+func arcade_scene() -> String:
+	return ISLAND_SCENES.get(island, "res://scenes/main.tscn")
+
+func arcade_is_final() -> bool:
+	return arcade_rung >= arcade_ladder.size() - 1
+
 func _ready() -> void:
 	_setup_input_actions()
 

@@ -86,6 +86,7 @@ var hill_visual: Node2D = null
 var hill_ring: Line2D = null
 const HILL_RADIUS := 130.0
 var eliminated: Dictionary = {}      # STOCK: pid -> true once out of lives
+var arcade_end: String = ""          # ARCADE end-state: "advance" / "champion" / "gameover"
 var eggs: Array = []                 # EGGS: live egg nodes on the field
 var egg_spawn_timer: float = 0.0
 const EGG_SPAWN_INTERVAL := 2.2
@@ -134,6 +135,8 @@ func _ready() -> void:
 	hud_win.text = ""
 	hud_hint.text = ""
 	game_mode = MatchConfig.game_mode if MatchConfig and "game_mode" in MatchConfig else "rounds"
+	if MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade:
+		kos_to_win = 2  # snappier rungs for the solo ladder
 	_setup_active_players()
 	_apply_match_colors()
 	_style_hud()
@@ -443,7 +446,10 @@ func _process(delta: float) -> void:
 		camera.offset = Vector2.ZERO
 	_update_hud_bars()
 	if match_over and Input.is_action_just_pressed("restart"):
-		get_tree().change_scene_to_file("res://scenes/select.tscn")
+		if MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade:
+			_arcade_continue()
+		else:
+			get_tree().change_scene_to_file("res://scenes/select.tscn")
 
 func _update_hud_bars() -> void:
 	for p in active_players:
@@ -816,6 +822,9 @@ func update_score_display() -> void:
 			label.text = "%s  %s" % [display_name, _score_text(p)]
 
 func end_match(winner: CharacterBody2D, label: String) -> void:
+	if MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade:
+		_end_match_arcade(winner)
+		return
 	match_over = true
 	round_active = false
 	hud_win.text = "%s WINS" % label
@@ -834,6 +843,46 @@ func end_match(winner: CharacterBody2D, label: String) -> void:
 		p.set_process_input(false)
 		p.set_physics_process(false)
 	play_sfx("win", 0.0)
+
+# Arcade ladder end-of-rung: win -> advance or crown champion; loss -> game over.
+# START then routes through _arcade_continue.
+func _end_match_arcade(winner: Node) -> void:
+	match_over = true
+	round_active = false
+	for p in active_players:
+		p.set_process_input(false)
+		p.set_physics_process(false)
+	var player_won: bool = winner != null and winner.player_id == "p1"
+	var stage: int = MatchConfig.arcade_rung + 1
+	var total: int = MatchConfig.arcade_ladder.size()
+	if not player_won:
+		arcade_end = "gameover"
+		hud_win.text = "DEFEATED"
+		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
+		hud_hint.text = "REACHED STAGE %d / %d\n\npress START for the title" % [stage, total]
+		play_sfx("ko", 0.0)
+	elif MatchConfig.arcade_is_final():
+		arcade_end = "champion"
+		hud_win.text = "CHAMPION!"
+		hud_win.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+		hud_hint.text = "YOU CLEARED THE GAUNTLET\n\npress START for the title"
+		play_sfx("win", 0.0)
+	else:
+		arcade_end = "advance"
+		var next_dino: String = MatchConfig.arcade_ladder[MatchConfig.arcade_rung + 1]["dino"]
+		var next_name: String = MatchConfig.DINOS[next_dino].display_name
+		hud_win.text = "STAGE %d CLEARED" % stage
+		hud_win.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5))
+		hud_hint.text = "NEXT:  %s   (STAGE %d / %d)\n\npress START to continue" % [next_name, stage + 1, total]
+		play_sfx("win", 0.0)
+
+func _arcade_continue() -> void:
+	if arcade_end == "advance":
+		MatchConfig.arcade_advance()
+		get_tree().change_scene_to_file(MatchConfig.arcade_scene())
+	else:  # champion or gameover -> end the run, back to the title
+		MatchConfig.arcade = false
+		get_tree().change_scene_to_file("res://scenes/title.tscn")
 
 # --- Audio ---
 

@@ -85,6 +85,29 @@ render (real Metal) confirmed the hill ring + mode score HUD draw correctly (ove
 background, under fighters — fixed a z-order trap by inserting props before
 Player1 rather than via z_index). Roadmap: [[project_tiny_dinos_roadmap_2026_06_09]].
 
+### Arcade ladder (solo spine)
+
+The commercial hook: a single-player gauntlet a lone player can pick up, stream,
+and demo. New **ARCADE** entry on the title (PLAY renamed **VERSUS**; the five
+items are re-stacked in code, no .tscn surgery). Picks your fighter on the select
+screen in a constrained "arcade" mode (`MatchConfig.arcade_setup`): only P1 is
+configurable, the p2 slot becomes a fixed **GAUNTLET** (CPU, auto-ready, not
+host-editable); the versus-only selectors (island / +opponents / difficulty /
+mode) are hidden.
+
+Ladder (`MatchConfig.start_arcade` / `_build_ladder` / `arcade_advance`): every
+dino but yours, difficulty ramping easy→easy→normal→normal→**HARD final boss**,
+each rung on a different island. `main.gd` drives the between-rung flow —
+`_end_match_arcade` shows STAGE CLEARED → next foe / CHAMPION / DEFEATED (reached
+stage N), and START routes through `_arcade_continue` (advance reloads the next
+island; champion/gameover clears `arcade` and returns to the title). Rungs are
+best-of-2 (`kos_to_win` overridden to 2 in arcade).
+
+Verified: headless functional sim built the 5-rung ladder correctly (anky HARD
+boss, islands rotating) and ran a rung to resolution with `arcade_end` set + the
+kos override applied. Live renders confirmed the title (5-item menu fits) and the
+arcade select (GAUNTLET panel, hidden selectors) both draw clean.
+
 ## Session — 2026-06-08
 
 Source-wide review pass → four worktrees, all merged to master (headless-validated

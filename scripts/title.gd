@@ -55,12 +55,24 @@ func _ready() -> void:
 	_setup_backdrop()
 	_setup_dino(left_graphic, LEFT_DINO, true)
 	_setup_dino(right_graphic, RIGHT_DINO, false)
+	# ARCADE is added in code (a clone of the PLAY label) so the .tscn isn't
+	# restructured; the five items are re-stacked evenly below.
+	var arcade_label: Label = $Menu/PlayItem.duplicate()
+	arcade_label.name = "ArcadeItem"
+	$Menu.add_child(arcade_label)
 	menu_items = [
-		{"label": $Menu/PlayItem, "base": "PLAY", "action": "play"},
+		{"label": $Menu/PlayItem, "base": "VERSUS", "action": "play"},
+		{"label": arcade_label, "base": "ARCADE", "action": "arcade"},
 		{"label": $Menu/CharacterItem, "base": "CHARACTER", "action": "creator"},
 		{"label": $Menu/HowToItem, "base": "HOW TO PLAY", "action": "howto"},
 		{"label": $Menu/QuitItem, "base": "QUIT", "action": "quit"},
 	]
+	var top0: float = $Menu/PlayItem.offset_top
+	var h0: float = $Menu/PlayItem.offset_bottom - $Menu/PlayItem.offset_top
+	for i in range(menu_items.size()):
+		var ml: Label = menu_items[i]["label"]
+		ml.offset_top = top0 + i * 48.0
+		ml.offset_bottom = ml.offset_top + h0
 	# Scale the selected item from its own center, not its top-left corner.
 	for item in menu_items:
 		var l: Label = item.label
@@ -145,6 +157,10 @@ func _refresh_menu() -> void:
 func _activate(action: String) -> void:
 	match action:
 		"play":
+			MatchConfig.arcade_setup = false
+			get_tree().change_scene_to_file(SELECT_SCENE)
+		"arcade":
+			MatchConfig.arcade_setup = true
 			get_tree().change_scene_to_file(SELECT_SCENE)
 		"creator":
 			get_tree().change_scene_to_file(CREATOR_SCENE)
