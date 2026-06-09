@@ -104,6 +104,10 @@ var run_thorns: float = 0.0      ## SPIKED HIDE: reflect this fraction of damage
 var run_execute: float = 0.0     ## EXECUTIONER: bonus damage multiplier vs low-HP foes
 var _run_start_hp: int = -1      ## gauntlet HP carried into this wave; -1 = spawn at full
 
+# SUMO / BOMB TAG: hits still shove (knockback applies) but never drain HP or KO —
+# the only way out is over the edge (or, in bomb tag, the bomb). Set by main.gd.
+var ringout_only: bool = false
+
 @export_group("Weapons")
 ## 2-weapon loadout (ids into MatchConfig.WEAPONS). RB swaps the active one.
 @export var weapons: Array = ["fists"]
@@ -966,10 +970,11 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 		if block_durability <= 0.0:
 			guard_break()  # fires its own guard-break juice
 			if remaining > 0.0:
-				hp -= int(remaining)
+				if not ringout_only:
+					hp -= int(remaining)
 				velocity += knockback * (1.0 - block_knockback_factor)
 				update_hp_bar()
-				if hp <= 0:
+				if hp <= 0 and not ringout_only:
 					die()
 					return
 		else:
@@ -977,7 +982,8 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 		invuln_timer = hitstun_invuln
 		return
 
-	hp -= amount
+	if not ringout_only:
+		hp -= amount
 	velocity += knockback
 	knockback_active = true
 	notify_hit(amount)
@@ -986,7 +992,7 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	# SPIKED HIDE: punish the attacker with a fraction of the damage they dealt.
 	if run_thorns > 0.0 and source != null and source != self and source.has_method("take_reflect"):
 		source.take_reflect(int(round(float(amount) * run_thorns)))
-	if hp <= 0:
+	if hp <= 0 and not ringout_only:
 		die()
 
 # Environmental damage tick (e.g. Laughing Lava). Bypasses block/invuln since
@@ -995,7 +1001,8 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 func apply_burn(amount: int, knockback: Vector2) -> bool:
 	if defense_state == DefenseState.DODGING:
 		return false
-	hp -= amount
+	if not ringout_only:
+		hp -= amount
 	velocity += knockback
 	knockback_active = true
 	hit_flash_timer = 0.08
@@ -1007,10 +1014,11 @@ func apply_burn(amount: int, knockback: Vector2) -> bool:
 func take_reflect(amount: int) -> void:
 	if amount <= 0 or is_falling:
 		return
-	hp -= amount
+	if not ringout_only:
+		hp -= amount
 	hit_flash_timer = 0.08
 	update_hp_bar()
-	if hp <= 0:
+	if hp <= 0 and not ringout_only:
 		die()
 
 func notify_hit(damage: int) -> void:

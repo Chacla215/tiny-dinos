@@ -264,6 +264,10 @@ func _setup_game_mode() -> void:
 			_build_hill()
 		"eggs":
 			egg_spawn_timer = 0.5
+		"sumo":
+			# HP is off — hits only shove. The edge does the KO-ing.
+			for p in active_players:
+				p.ringout_only = true
 
 func _circle_points(rx: float, ry: float, segs: int) -> PackedVector2Array:
 	var pts := PackedVector2Array()
@@ -494,6 +498,8 @@ func _score_text(p: Node) -> String:
 			return "%ds / %ds" % [int(mode_score.get(pid, 0.0)), int(MatchConfig.KOTH_TARGET)]
 		"eggs":
 			return "EGGS %d / %d" % [int(mode_score.get(pid, 0.0)), MatchConfig.EGG_TARGET]
+		"sumo":
+			return "K.O. %d / %d" % [int(mode_score.get(pid, 0.0)), MatchConfig.SUMO_TARGET]
 		_:
 			return "%d / %d" % [round_wins.get(pid, 0), kos_to_win]
 
@@ -766,8 +772,20 @@ func award_ko(killer: Node, victim: Node) -> void:
 			_award_ko_stock(killer, victim)
 		"koth", "eggs":
 			dp[killer.player_id] = dp.get(killer.player_id, 0) + 40  # KO bounty; no round
+		"sumo":
+			_award_ko_sumo(killer)
 		_:
 			_award_ko_rounds(killer)
+
+# SUMO: every ring-out is a point. The victim has already respawned by here; first
+# to the target wins. (HP can't KO in sumo, so this only fires on a shove-off.)
+func _award_ko_sumo(killer: Node) -> void:
+	var kp: String = killer.player_id
+	mode_score[kp] = mode_score.get(kp, 0.0) + 1.0
+	dp[kp] = dp.get(kp, 0) + 80
+	update_score_display()
+	if mode_score[kp] >= float(MatchConfig.SUMO_TARGET):
+		end_match(killer, _dino_name(kp))
 
 func _award_ko_rounds(killer: Node) -> void:
 	if not round_active:
