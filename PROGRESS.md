@@ -1,5 +1,30 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-09 (new game modes)
+
+Three new versus modes, each a themed commit, all reusing the one-arena +
+procedural-prop pattern (so every island plays every mode) and the central
+`award_ko()` KO hook. Each validated by a throwaway test scene that instances a
+real arena + asserts the rules, plus an all-scene headless boot sweep.
+
+**Landed**
+- **SUMO** — HP off; hits only shove (blocks/guard-breaks still matter), the edge
+  does the KO-ing. First to 5 ring-outs. New `dino.ringout_only` flag gates HP
+  loss/death in take_damage/apply_burn/take_reflect.
+- **BOMB TAG** — a fused bomb rides one fighter and jumps to whoever they strike
+  (pass hook in `take_damage`, so dodged/invuln hits don't count; a short catch
+  grace stops ping-pong). Detonates on its holder → costs a life; last dino wins.
+  Bomb flashes redder/faster as the fuse burns.
+- **THE BEAST** — one crowned juggernaut (+HP pool, +40% dmg, +45% kb, bigger,
+  gold glow) banks time; first to 25s crowned wins. KO the beast to steal the
+  crown; `become_beast`/`clear_beast` swap the buff cleanly across respawns.
+
+All auto-appear on the select screen (P1 Y cycles `MODE_ORDER`).
+
+**Wants a live Metal playtest to tune feel:** sumo knockback-to-target count;
+bomb fuse length + pass-lock; beast buff strength vs. ring-out-ability and the
+25s target (esp. snowball risk in 1v1).
+
 ## Session — 2026-06-09 (gauntlet depth)
 
 Deepened the roguelike GAUNTLET across four themed commits — turning it from a
