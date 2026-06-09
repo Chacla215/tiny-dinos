@@ -331,22 +331,54 @@ func _build_hill() -> void:
 
 # KOTH: the lone fighter inside the hill banks time; contested or empty scores
 # nobody. The ring glows the holder's colour so the state reads at a glance.
+# --- Team/side helpers (a "side" is a team when teams are on, else the fighter) ---
+func _side(pid: String) -> String:
+	return MatchConfig.side_of(pid)
+
+func _side_label(pid: String) -> String:
+	if MatchConfig.teams_enabled:
+		return "%s TEAM" % MatchConfig.TEAM_NAMES.get(_side(pid), "?")
+	return _dino_name(pid)
+
+func _side_color(pid: String) -> Color:
+	if MatchConfig.teams_enabled:
+		return MatchConfig.TEAM_COLORS.get(_side(pid), Color.WHITE)
+	return MatchConfig.PLAYER_COLORS.get(pid, Color.WHITE)
+
+func _alive_sides() -> Array:
+	var sides: Array = []
+	for p in active_players:
+		if not eliminated.get(p.player_id, false) and not (_side(p.player_id) in sides):
+			sides.append(_side(p.player_id))
+	return sides
+
+func _any_alive_on_side(side: String) -> Node:
+	for p in active_players:
+		if not eliminated.get(p.player_id, false) and _side(p.player_id) == side:
+			return p
+	return null
+
 func _update_koth(delta: float) -> void:
-	var holders: Array = []
+	# The hill banks for a side only when that side alone occupies it; two sides
+	# present is contested (and in FFA each fighter is its own side, as before).
+	var sides_in: Array = []
+	var rep: Node = null
 	for p in active_players:
 		if eliminated.get(p.player_id, false):
 			continue
 		if p.global_position.distance_to(hill_center) <= HILL_RADIUS:
-			holders.append(p)
+			var s: String = _side(p.player_id)
+			if not (s in sides_in):
+				sides_in.append(s)
+				rep = p
 	var ring_color := Color(0.95, 0.9, 0.7, 0.85)  # bright neutral: empty or contested
-	if holders.size() == 1:
-		var p: Node = holders[0]
-		var pid: String = p.player_id
-		mode_score[pid] = mode_score.get(pid, 0.0) + delta
-		ring_color = MatchConfig.PLAYER_COLORS.get(pid, Color.WHITE)
-		if mode_score[pid] >= MatchConfig.KOTH_TARGET:
-			dp[pid] = dp.get(pid, 0) + 200
-			end_match(p, _dino_name(pid))
+	if sides_in.size() == 1 and rep != null:
+		var side: String = sides_in[0]
+		mode_score[side] = mode_score.get(side, 0.0) + delta
+		ring_color = _side_color(rep.player_id)
+		if mode_score[side] >= MatchConfig.KOTH_TARGET:
+			dp[rep.player_id] = dp.get(rep.player_id, 0) + 200
+			end_match(rep, _side_label(rep.player_id))
 			return
 	if hill_ring:
 		hill_ring.default_color = ring_color
@@ -393,15 +425,16 @@ func _spawn_egg() -> void:
 
 func _collect_egg(p: Node, egg: Node2D, i: int) -> void:
 	var pid: String = p.player_id
-	mode_score[pid] = mode_score.get(pid, 0.0) + 1.0
+	var side: String = _side(pid)
+	mode_score[side] = mode_score.get(side, 0.0) + 1.0
 	dp[pid] = dp.get(pid, 0) + 60
 	play_sfx("dodge", 0.12)  # light pickup blip (reuses an existing sound)
 	if is_instance_valid(egg):
 		egg.queue_free()
 	eggs.remove_at(i)
 	update_score_display()
-	if mode_score[pid] >= float(MatchConfig.EGG_TARGET):
-		end_match(p, _dino_name(pid))
+	if mode_score[side] >= float(MatchConfig.EGG_TARGET):
+		end_match(p, _side_label(pid))
 
 func _random_safe_point() -> Vector2:
 	for _attempt in range(28):
@@ -433,10 +466,11 @@ func _award_ko_stock(killer: Node, victim: Node) -> void:
 	update_score_display()
 	if stocks[vp] <= 0:
 		_eliminate(victim)
-		var alive: Array = _alive_players()
-		if alive.size() <= 1:
-			var winner: Node = alive[0] if alive.size() == 1 else killer
-			end_match(winner, _dino_name(winner.player_id))
+		# A side is out once all its members are; last side standing wins.
+		var sides: Array = _alive_sides()
+		if sides.size() <= 1:
+			var winner: Node = _any_alive_on_side(sides[0]) if sides.size() == 1 else killer
+			end_match(winner, _side_label(winner.player_id))
 
 func _eliminate(p: Node) -> void:
 	eliminated[p.player_id] = true
@@ -618,10 +652,10 @@ func _flood_eliminate(victim: Node) -> void:
 	play_sfx("ko", 0.0)
 	shake(6.0, 0.12)
 	update_score_display()
-	var alive: Array = _alive_players()
-	if alive.size() <= 1:
-		var winner: Node = alive[0] if alive.size() == 1 else victim
-		end_match(winner, _dino_name(winner.player_id))
+	var sides: Array = _alive_sides()
+	if sides.size() <= 1:
+		var winner: Node = _any_alive_on_side(sides[0]) if sides.size() == 1 else victim
+		end_match(winner, _side_label(winner.player_id))
 
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	if connected:
@@ -689,25 +723,26 @@ func _update_hud_bars() -> void:
 # left, hill seconds, or eggs bagged.
 func _score_text(p: Node) -> String:
 	var pid: String = p.player_id
+	var side: String = _side(pid)
+	# In team mode the score fragment is prefixed with the fighter's team color tag.
+	var team: String = ("[%s] " % MatchConfig.TEAM_NAMES.get(side, "?")) if MatchConfig.teams_enabled else ""
 	match game_mode:
 		"stock":
-			return "LIVES %d" % stocks.get(pid, 0)
+			return "%sLIVES %d" % [team, stocks.get(pid, 0)]
 		"koth":
-			return "%ds / %ds" % [int(mode_score.get(pid, 0.0)), int(MatchConfig.KOTH_TARGET)]
+			return "%s%ds / %ds" % [team, int(mode_score.get(side, 0.0)), int(MatchConfig.KOTH_TARGET)]
 		"eggs":
-			return "EGGS %d / %d" % [int(mode_score.get(pid, 0.0)), MatchConfig.EGG_TARGET]
+			return "%sEGGS %d / %d" % [team, int(mode_score.get(side, 0.0)), MatchConfig.EGG_TARGET]
 		"sumo":
-			return "K.O. %d / %d" % [int(mode_score.get(pid, 0.0)), MatchConfig.SUMO_TARGET]
+			return "%sK.O. %d / %d" % [team, int(mode_score.get(side, 0.0)), MatchConfig.SUMO_TARGET]
 		"bombtag":
-			var tag: String = "  [BOMB]" if pid == bomb_holder else ""
-			return "LIVES %d%s" % [stocks.get(pid, 0), tag]
+			return "LIVES %d%s" % [stocks.get(pid, 0), "  [BOMB]" if pid == bomb_holder else ""]
 		"beast":
-			var crown: String = "  [BEAST]" if pid == beast_pid else ""
-			return "%ds / %ds%s" % [int(mode_score.get(pid, 0.0)), int(MatchConfig.BEAST_TARGET), crown]
+			return "%ds / %ds%s" % [int(mode_score.get(pid, 0.0)), int(MatchConfig.BEAST_TARGET), "  [BEAST]" if pid == beast_pid else ""]
 		"flood":
-			return "OUT" if eliminated.get(pid, false) else "DRY"
+			return "%s%s" % [team, "OUT" if eliminated.get(pid, false) else "DRY"]
 		_:
-			return "%d / %d" % [round_wins.get(pid, 0), kos_to_win]
+			return "%s%d / %d" % [team, round_wins.get(side, 0), kos_to_win]
 
 # Fill the special pip by recharge progress; glow bright gold + full once it's
 # ready to fire (cooldown elapsed). A null/zero cooldown reads as always ready.
@@ -1007,22 +1042,24 @@ func award_ko(killer: Node, victim: Node) -> void:
 # to the target wins. (HP can't KO in sumo, so this only fires on a shove-off.)
 func _award_ko_sumo(killer: Node) -> void:
 	var kp: String = killer.player_id
-	mode_score[kp] = mode_score.get(kp, 0.0) + 1.0
+	var side: String = _side(kp)
+	mode_score[side] = mode_score.get(side, 0.0) + 1.0
 	dp[kp] = dp.get(kp, 0) + 80
 	update_score_display()
-	if mode_score[kp] >= float(MatchConfig.SUMO_TARGET):
-		end_match(killer, _dino_name(kp))
+	if mode_score[side] >= float(MatchConfig.SUMO_TARGET):
+		end_match(killer, _side_label(kp))
 
 func _award_ko_rounds(killer: Node) -> void:
 	if not round_active:
 		return
 	round_active = false
 	var killer_pid: String = killer.player_id
+	var side: String = _side(killer_pid)
 	dp[killer_pid] = dp.get(killer_pid, 0) + 100
-	round_wins[killer_pid] = round_wins.get(killer_pid, 0) + 1
+	round_wins[side] = round_wins.get(side, 0) + 1
 	update_score_display()
-	if round_wins[killer_pid] >= kos_to_win:
-		end_match(killer, _dino_name(killer_pid))
+	if round_wins[side] >= kos_to_win:
+		end_match(killer, _side_label(killer_pid))
 	else:
 		_end_round(killer_pid)
 
@@ -1036,8 +1073,8 @@ func add_dp(pid: String, points: int) -> void:
 
 # Round-over interstitial → reset everyone → next round.
 func _end_round(winner_pid: String) -> void:
-	hud_win.text = "%s TAKES ROUND %d" % [_dino_name(winner_pid), current_round]
-	hud_win.add_theme_color_override("font_color", MatchConfig.PLAYER_COLORS.get(winner_pid, Color.WHITE))
+	hud_win.text = "%s TAKES ROUND %d" % [_side_label(winner_pid), current_round]
+	hud_win.add_theme_color_override("font_color", _side_color(winner_pid))
 	for p in active_players:
 		p.set_physics_process(false)
 		p.set_process_input(false)
