@@ -100,6 +100,13 @@ var egg_spawn_timer: float = 0.0
 const EGG_SPAWN_INTERVAL := 2.2
 const EGG_MAX_ON_FIELD := 3
 const EGG_PICKUP_RADIUS := 46.0
+# BOMB TAG: a lit bomb rides one fighter, passes on every connecting hit, and
+# detonates on its holder when the fuse runs out (costing a life). Last dino in wins.
+var bomb_holder: String = ""
+var bomb_timer: float = 0.0
+var bomb_pass_lock: float = 0.0      # grace after a catch before the bomb can move again
+var bomb_node: Node2D = null
+var bomb_core: Polygon2D = null
 
 var shake_amount: float = 0.0
 var shake_remaining: float = 0.0
@@ -268,6 +275,12 @@ func _setup_game_mode() -> void:
 			# HP is off — hits only shove. The edge does the KO-ing.
 			for p in active_players:
 				p.ringout_only = true
+		"bombtag":
+			# HP/edge are neutral here; the bomb is the only thing that costs lives.
+			for p in active_players:
+				p.ringout_only = true
+			_build_bomb()
+			_assign_bomb(active_players[randi() % active_players.size()].player_id)
 
 func _circle_points(rx: float, ry: float, segs: int) -> PackedVector2Array:
 	var pts := PackedVector2Array()
@@ -425,6 +438,94 @@ func _alive_players() -> Array:
 			arr.append(p)
 	return arr
 
+func _player_node(pid: String) -> Node:
+	for p in active_players:
+		if p.player_id == pid:
+			return p
+	return null
+
+# --- BOMB TAG ---
+# A connecting hit hands the bomb to whoever was struck (after a short catch grace
+# so a single exchange can't ping-pong it). dino.gd calls this on every clean hit.
+func on_strike(attacker: Node, victim: Node) -> void:
+	if game_mode != "bombtag" or match_over:
+		return
+	if bomb_pass_lock > 0.0:
+		return
+	if attacker.player_id != bomb_holder:
+		return
+	var vp: String = victim.player_id
+	if vp == bomb_holder or eliminated.get(vp, false):
+		return
+	_assign_bomb(vp)
+	play_sfx("dodge", 0.05)  # light "tag!" blip
+
+func _build_bomb() -> void:
+	bomb_node = Node2D.new()
+	bomb_node.z_index = 60
+	bomb_core = Polygon2D.new()
+	bomb_core.polygon = _circle_points(15.0, 15.0, 22)
+	bomb_core.color = Color(0.12, 0.12, 0.14)
+	bomb_node.add_child(bomb_core)
+	var fuse := Polygon2D.new()  # little stub on top
+	fuse.polygon = PackedVector2Array([Vector2(-3, -15), Vector2(3, -15), Vector2(4, -24), Vector2(-2, -24)])
+	fuse.color = Color(0.55, 0.4, 0.25)
+	bomb_node.add_child(fuse)
+	var spark := Polygon2D.new()
+	spark.polygon = _circle_points(4.0, 4.0, 10)
+	spark.position = Vector2(1, -26)
+	spark.color = Color(1.0, 0.75, 0.2)
+	bomb_node.add_child(spark)
+	add_child(bomb_node)
+
+func _assign_bomb(pid: String) -> void:
+	bomb_holder = pid
+	bomb_timer = MatchConfig.BOMB_FUSE
+	bomb_pass_lock = MatchConfig.BOMB_PASS_LOCK
+	update_score_display()
+
+func _update_bombtag(delta: float) -> void:
+	if bomb_pass_lock > 0.0:
+		bomb_pass_lock -= delta
+	var holder: Node = _player_node(bomb_holder)
+	# Holder gone (eliminated) — hand it to a random survivor.
+	if holder == null or eliminated.get(bomb_holder, false):
+		var alive: Array = _alive_players()
+		if alive.size() <= 1:
+			return
+		_assign_bomb(alive[randi() % alive.size()].player_id)
+		holder = _player_node(bomb_holder)
+	if bomb_node and holder:
+		bomb_node.global_position = holder.global_position + Vector2(0, -64)
+		# Flash redder + faster as the fuse burns down — visible panic meter.
+		var danger: float = 1.0 - clamp(bomb_timer / MatchConfig.BOMB_FUSE, 0.0, 1.0)
+		var clock: float = float(Time.get_ticks_msec()) / 1000.0
+		var blink: float = 0.5 + 0.5 * sin(clock * (6.0 + danger * 26.0))
+		bomb_core.color = Color(0.12, 0.12, 0.14).lerp(Color(1.0, 0.25, 0.15), danger * blink)
+	bomb_timer -= delta
+	if bomb_timer <= 0.0:
+		_bomb_detonate()
+
+func _bomb_detonate() -> void:
+	var holder: Node = _player_node(bomb_holder)
+	play_sfx("guard_break", 0.0)
+	play_sfx("ko", 0.04)
+	shake(11.0, 0.3)
+	if holder != null:
+		holder.hit_flash_timer = 0.2
+		stocks[bomb_holder] = max(0, stocks.get(bomb_holder, 0) - 1)
+		if holder.has_method("respawn"):
+			holder.respawn()  # blown back to spawn with brief invuln
+		if stocks[bomb_holder] <= 0:
+			_eliminate(holder)
+	update_score_display()
+	var alive: Array = _alive_players()
+	if alive.size() <= 1:
+		if alive.size() == 1:
+			end_match(alive[0], _dino_name(alive[0].player_id))
+		return
+	_assign_bomb(alive[randi() % alive.size()].player_id)
+
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	if connected:
 		print("Joypad connected: device %d  name=%s" % [device, Input.get_joy_name(device)])
@@ -500,6 +601,9 @@ func _score_text(p: Node) -> String:
 			return "EGGS %d / %d" % [int(mode_score.get(pid, 0.0)), MatchConfig.EGG_TARGET]
 		"sumo":
 			return "K.O. %d / %d" % [int(mode_score.get(pid, 0.0)), MatchConfig.SUMO_TARGET]
+		"bombtag":
+			var tag: String = "  [BOMB]" if pid == bomb_holder else ""
+			return "LIVES %d%s" % [stocks.get(pid, 0), tag]
 		_:
 			return "%d / %d" % [round_wins.get(pid, 0), kos_to_win]
 
@@ -540,6 +644,8 @@ func _physics_process(delta: float) -> void:
 		_update_koth(delta)
 	elif game_mode == "eggs":
 		_update_eggs(delta)
+	elif game_mode == "bombtag":
+		_update_bombtag(delta)
 
 func _process_lava(delta: float) -> void:
 	var overlapping := lava_area.get_overlapping_bodies()

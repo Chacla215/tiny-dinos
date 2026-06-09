@@ -341,13 +341,14 @@ const ISLAND_SCENES := {
 # KOTH_TARGET seconds wins (KOs just respawn). EGGS = grab loose eggs off the
 # field; first to EGG_TARGET wins (KOs just respawn). All four reuse the one
 # arena + the procedural hill/egg props, so every island plays every mode.
-const MODE_ORDER := ["rounds", "stock", "koth", "eggs", "sumo"]
+const MODE_ORDER := ["rounds", "stock", "koth", "eggs", "sumo", "bombtag"]
 const MODE_NAMES := {
 	"rounds": "BEST OF ROUNDS",
 	"stock": "LAST DINO STANDING",
 	"koth": "KING OF THE HILL",
 	"eggs": "EGG GRAB",
 	"sumo": "SUMO",
+	"bombtag": "BOMB TAG",
 }
 const MODE_BLURBS := {
 	"rounds": "A KO WINS THE ROUND",
@@ -355,12 +356,15 @@ const MODE_BLURBS := {
 	"koth": "HOLD THE HILL TO SCORE",
 	"eggs": "GRAB THE MOST EGGS",
 	"sumo": "SHOVE THEM OFF THE EDGE",
+	"bombtag": "PASS THE BOMB OR BOOM",
 }
 var game_mode: String = "rounds"
 const STOCK_LIVES := 3        # lives each fighter starts with in LAST DINO STANDING
 const KOTH_TARGET := 20.0     # seconds of hill control needed to win KING OF THE HILL
 const EGG_TARGET := 6         # eggs to collect to win EGG GRAB
 const SUMO_TARGET := 5        # ring-outs to win SUMO (HP off; only knockback scores)
+const BOMB_FUSE := 6.0        # BOMB TAG: seconds before the bomb detonates on its holder
+const BOMB_PASS_LOCK := 0.5   # grace after catching the bomb before it can pass again
 
 var dino_choices: Dictionary = {"p1": "trex", "p2": "raptor", "p3": "trike", "p4": "pterry"}
 var island: String = "laughing_lava"

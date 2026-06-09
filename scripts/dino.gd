@@ -951,6 +951,12 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	if source != null:
 		last_damaged_by = source
 	hit_flash_timer = 0.08
+	# A connecting hit (dodge/invuln/falling already returned above) — let the scene
+	# react, e.g. BOMB TAG passes the bomb to whoever just got struck.
+	if source != null:
+		var sr := get_tree().current_scene
+		if sr and sr.has_method("on_strike"):
+			sr.on_strike(source, self)
 
 	if defense_state == DefenseState.BLOCKING:
 		play_scene_sfx("block", 0.08)
