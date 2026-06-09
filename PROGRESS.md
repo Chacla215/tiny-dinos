@@ -1,5 +1,32 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-09
+
+Follow-up to the review pass: a cleanup + in-engine visual verification of the
+three player-facing changes (run on the real Metal/OpenGL renderer, not just
+headless — screenshots captured and inspected).
+
+**Landed**
+- **Removed the scrapped hand-drawn-Ralph experiment** — `art_preview.{gd,tscn}`,
+  `trex_handdrawn.png`, and the dormant `SHEET_HD` const + `trex_hd` ANIM_LAYOUTS
+  entry. Nothing in the game referenced them.
+- **Brightened the charging special pip** — the dim olive read as muddy in-game;
+  now a clearer muted gold, still distinct from the brighter ready color.
+
+**Verified in-engine**
+- **Special-cooldown pip** ✅ — charging state (forced 50% CD) shows a half-filled
+  muted-gold square at the inboard end of the block bar; ready state shows a full
+  bright-gold square. Placement mirrors correctly on left/right corners.
+- **CPU difficulty selector** ✅ — `CPU DIFFICULTY: NORMAL (P1 RB)` renders under
+  the island line (and hides in an all-human lobby); RB cycles it live
+  (NORMAL → HARD confirmed via the real handler).
+- **AI island-shape fix on Purple Fields** ✅ — traced two HARD CPUs for ~1100
+  frames. They roamed up to **y≈233–302**, above the old `safe_rect` top (y=325)
+  and far above the old margin-limited band (~y 405–595) — i.e. they now use the
+  upper oval the inscribed rect walled them out of. p1 stayed 100% inside the
+  oval, p2 97% (brief knockback excursions resolving as normal ring-outs, not
+  steering failures).
+
 ## Session — 2026-06-08
 
 Source-wide review pass → four worktrees, all merged to master (headless-validated
@@ -21,9 +48,9 @@ across every scene).
   `first_frame` statics; the picker, title, and character screen now build dino
   art through them instead of 4 copy-pasted loops.
 
-> Next candidates flagged but not built: remove dead hand-drawn-Ralph assets
-> (`art_preview.gd`, `trex_hd`, `trex_handdrawn.png`); deeper CPU tactics; then the
-> bigger beyond-melee systems (ranged/Bow, power-ups, status kits, grab/throw).
+> Next candidates flagged but not built: deeper CPU tactics; then the bigger
+> beyond-melee systems (ranged/Bow, power-ups, status kits, grab/throw).
+> (Dead hand-drawn-Ralph assets — since removed, see 2026-06-09.)
 
 ## Session — 2026-05-22
 
