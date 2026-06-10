@@ -255,7 +255,7 @@ func _add_portrait(parent: Control, dino_id: String, rect: Rect2, fallback_scale
 	var faces_left: bool = DinoScript.ANIM_LAYOUTS[role].get("faces_left", false)
 	var t := TextureRect.new()
 	t.texture = at
-	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # fighters are painterly now
 	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	# Sized so the sprite reads as a hero portrait, not a sticker — fits the
@@ -696,7 +696,7 @@ func _refresh_portrait_for_dino(dino_id: String) -> void:
 		portrait.texture = null
 		return
 	portrait.texture = at
-	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # fighters are painterly now
 	portrait.material = MatchConfig.skin_material(skin_idx)
 	portrait.flip_h = DinoScript.ANIM_LAYOUTS[role].get("faces_left", false)
 	var src: Vector2 = at.region.size

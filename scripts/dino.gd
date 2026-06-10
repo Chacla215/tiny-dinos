@@ -1029,6 +1029,7 @@ func update_dodge(delta: float) -> void:
 func _spawn_afterimage() -> void:
 	var ghost := Sprite2D.new()
 	ghost.texture = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	ghost.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # match the painterly sprite
 	ghost.global_position = global_position + Vector2(0, sprite_offset_y)
 	ghost.scale = sprite.scale
 	ghost.flip_h = sprite.flip_h
