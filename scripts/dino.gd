@@ -1005,6 +1005,7 @@ func start_dodge() -> void:
 	dodge_timer = dodge_duration
 	dodge_cooldown_timer = dodge_cooldown
 	afterimage_timer = 0.0
+	_spawn_dust(-dir)  # kick a puff of dust off the ground, opposite the dash
 	block_durability = max(0.0, block_durability - dodge_block_cost)
 	update_block_bar()
 	# Cancel any in-progress attack so dodge takes over cleanly
@@ -1107,6 +1108,30 @@ func _spawn_ko_flourish() -> void:
 	t.parallel().tween_property(ring, "modulate:a", 0.0, 0.3)
 	t.parallel().tween_property(ring, "width", 1.0, 0.3)
 	t.tween_callback(ring.queue_free)
+
+# Dodge dust: a few soft puffs kicked off the ground at the feet, spraying along
+# `dir`, so the dash reads as an explosive push-off. Cosmetic.
+func _spawn_dust(dir: Vector2) -> void:
+	var root := get_tree().current_scene
+	if root == null:
+		return
+	var ring := PackedVector2Array()
+	for j in range(8):
+		var a: float = TAU * j / 8.0
+		ring.append(Vector2(cos(a), sin(a)) * 5.0)
+	for i in range(4):
+		var puff := Polygon2D.new()
+		puff.polygon = ring
+		puff.color = Color(0.82, 0.78, 0.68, 0.45)
+		puff.position = global_position + Vector2(randf_range(-6, 6), randf_range(-4, 6))
+		puff.z_index = 1
+		root.add_child(puff)
+		var dest: Vector2 = puff.position + dir.rotated(randf_range(-0.6, 0.6)) * randf_range(14.0, 30.0)
+		var t := puff.create_tween()
+		t.tween_property(puff, "position", dest, 0.3).set_ease(Tween.EASE_OUT)
+		t.parallel().tween_property(puff, "scale", Vector2.ONE * 2.2, 0.3)
+		t.parallel().tween_property(puff, "modulate:a", 0.0, 0.3)
+		t.tween_callback(puff.queue_free)
 
 func guard_break() -> void:
 	defense_state = DefenseState.GUARD_BROKEN
