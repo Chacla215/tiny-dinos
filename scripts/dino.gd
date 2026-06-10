@@ -253,6 +253,11 @@ var powerup_dmg_mult: float = 1.0
 var powerup_timer: float = 0.0
 var powerup_aura: Node2D = null
 
+# [experiment] Combo counter: consecutive hits landed without getting hit. Pops a
+# "Nx HIT!" above the head at 2+; resets on a timeout or on taking a hit.
+var combo_count: int = 0
+var combo_timer: float = 0.0
+
 const AFTERIMAGE_INTERVAL := 0.05
 const SLOW_MOVE_FACTOR := 0.4
 const SLOW_ACCEL_FACTOR := 0.6
@@ -1183,6 +1188,40 @@ func _set_powerup_aura(col: Color) -> void:
 	tw.tween_property(aura, "scale", Vector2.ONE * 1.18, 0.5).set_trans(Tween.TRANS_SINE)
 	tw.tween_property(aura, "scale", Vector2.ONE * 0.9, 0.5).set_trans(Tween.TRANS_SINE)
 
+# [experiment] Landed a clean hit — extend the combo, pop the counter at 2+.
+func register_combo_hit() -> void:
+	combo_count += 1
+	combo_timer = 1.6
+	if combo_count >= 2:
+		_show_combo(combo_count)
+
+func _show_combo(n: int) -> void:
+	# Parent to the dino so it inherits the world transform (a Control floats
+	# reliably in the 2D world this way, and rides along above the head).
+	var lbl := Label.new()
+	lbl.text = "%d HIT!" % n
+	lbl.add_theme_font_size_override("font_size", 22 + mini(n, 6) * 3)
+	var hot: float = clampf(float(n - 2) / 6.0, 0.0, 1.0)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.95 - hot * 0.55, 0.3))
+	lbl.add_theme_color_override("font_outline_color", Color(0.1, 0.05, 0.0, 0.95))
+	lbl.add_theme_constant_override("outline_size", 6)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.size = Vector2(120, 32)
+	lbl.position = Vector2(-60, sprite_offset_y - 78.0)
+	lbl.pivot_offset = Vector2(60, 16)
+	lbl.z_index = 46
+	lbl.top_level = true  # ignore the dino's flip/scale; use our own world placement
+	lbl.global_position = global_position + Vector2(-60, sprite_offset_y - 78.0)
+	lbl.scale = Vector2(0.4, 0.4)
+	add_child(lbl)
+	var ty: float = lbl.global_position.y
+	var tw := lbl.create_tween()
+	tw.tween_property(lbl, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(lbl, "global_position:y", ty - 20.0, 0.7)
+	tw.tween_interval(0.4)
+	tw.tween_property(lbl, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(lbl.queue_free)
+
 func guard_break() -> void:
 	defense_state = DefenseState.GUARD_BROKEN
 	guard_break_timer = guard_break_duration
@@ -1269,6 +1308,9 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	# Impact burst at the contact point (cosmetic): spray along the knockback.
 	var kdir: Vector2 = knockback.normalized() if knockback.length() > 1.0 else facing
 	_spawn_hit_burst(global_position - kdir * 16.0 + Vector2(0, sprite_offset_y * 0.5), kdir, amount, hp <= 0 and not ringout_only)
+	combo_count = 0  # taking a clean hit breaks your own combo
+	if source != null and source != self and source.has_method("register_combo_hit"):
+		source.register_combo_hit()
 	invuln_timer = hitstun_invuln
 	update_hp_bar()
 	# SPIKED HIDE: punish the attacker with a fraction of the damage they dealt.
@@ -1567,6 +1609,10 @@ func update_timers(delta: float) -> void:
 		powerup_timer -= delta
 		if powerup_timer <= 0.0:
 			_end_powerup()
+	if combo_timer > 0.0:
+		combo_timer -= delta
+		if combo_timer <= 0.0:
+			combo_count = 0
 
 func update_visual() -> void:
 	var color := Color.WHITE
@@ -1654,6 +1700,8 @@ func exit_floe() -> void:
 
 func respawn() -> void:
 	_end_powerup()  # buffs don't carry across a death/respawn
+	combo_count = 0
+	combo_timer = 0.0
 	is_falling = false
 	fall_up = false
 	fall_timer = 0.0
