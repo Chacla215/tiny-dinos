@@ -66,8 +66,12 @@ const PLAYER_TINTS := {
 }
 
 # Weapons modify light + heavy attacks (not the signature special). RB swaps the
-# active weapon. "fists" = the dino's natural attack. Melee only for now — Bow
-# needs the projectile path (TODO). Each dino has a 2-weapon loadout (DINOS.weapons).
+# active weapon. "fists" = the dino's natural attack. A weapon flagged
+# "projectile" is RANGED: dino.gd fires a shot in the facing direction (reusing
+# the spike-projectile path) instead of swinging — its standout trait is reach,
+# paid for with modest damage. "range" still nudges the (unused) melee offset but
+# the shot itself flies via the dino's projectile_speed/lifetime exports. Each
+# dino has a 2-weapon loadout (DINOS.weapons).
 const WEAPONS := {
 	"fists":     {"display_name": "FISTS",     "dmg": 1.0,  "kb": 1.0,  "range": 0,   "windup": 1.0, "recovery": 1.0},
 	"sword":     {"display_name": "SWORD",      "dmg": 1.2,  "kb": 1.1,  "range": 16,  "windup": 1.0, "recovery": 1.0},
@@ -76,6 +80,7 @@ const WEAPONS := {
 	"mace":      {"display_name": "SPIKED MACE", "dmg": 1.4, "kb": 1.5,  "range": 10,  "windup": 1.3, "recovery": 1.3},
 	"hammer":    {"display_name": "WAR HAMMER", "dmg": 1.9,  "kb": 1.7,  "range": 10,  "windup": 1.6, "recovery": 1.5},
 	"nunchucks": {"display_name": "NUNCHUCKS",  "dmg": 0.85, "kb": 0.6,  "range": 4,   "windup": 0.5, "recovery": 0.7},
+	"bow":       {"display_name": "BOW",        "dmg": 0.8,  "kb": 0.8,  "range": 0,   "windup": 1.1, "recovery": 1.0, "projectile": true},
 }
 
 const DINOS := {
@@ -174,7 +179,7 @@ const DINOS := {
 	},
 	"pterry": {
 		"display_name": "PTERRY",
-		"weapons": ["fists", "sword"],
+		"weapons": ["fists", "bow"],
 		"dino_color": Color(0.85, 0.45, 0.30, 1.0),
 		"sprite_role": "pterry",
 		"sprite_scale": 0.55,
@@ -857,5 +862,8 @@ func weapon_shape(id: String) -> Dictionary:
 			return {"poly": PackedVector2Array([Vector2(0, -3), Vector2(22, -3), Vector2(22, -14), Vector2(42, -14), Vector2(42, 14), Vector2(22, 14), Vector2(22, 3), Vector2(0, 3)]), "color": Color(0.55, 0.55, 0.6)}
 		"nunchucks":
 			return {"poly": PackedVector2Array([Vector2(0, -2.5), Vector2(26, -2.5), Vector2(26, 2.5), Vector2(0, 2.5)]), "color": Color(0.45, 0.32, 0.2)}
+		"bow":
+			# A thin C-shaped bow limb facing +X (drawn arm side toward the dino).
+			return {"poly": PackedVector2Array([Vector2(2, -18), Vector2(10, -12), Vector2(13, 0), Vector2(10, 12), Vector2(2, 18), Vector2(5, 16), Vector2(9, 4), Vector2(9, -4), Vector2(5, -16)]), "color": Color(0.55, 0.38, 0.22)}
 		_:
 			return {"poly": PackedVector2Array(), "color": Color.WHITE}  # fists: no held item

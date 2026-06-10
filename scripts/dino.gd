@@ -244,6 +244,7 @@ var wpn_kb: float = 1.0
 var wpn_range: float = 0.0
 var wpn_windup: float = 1.0
 var wpn_recovery: float = 1.0
+var wpn_projectile: bool = false  # ranged weapon (e.g. bow): fires a shot, no melee swing
 
 const AFTERIMAGE_INTERVAL := 0.05
 const SLOW_MOVE_FACTOR := 0.4
@@ -804,6 +805,7 @@ func _refresh_weapon() -> void:
 	wpn_range = w.get("range", 0)
 	wpn_windup = w.get("windup", 1.0)
 	wpn_recovery = w.get("recovery", 1.0)
+	wpn_projectile = w.get("projectile", false)
 	if weapon_visual == null:
 		weapon_visual = Polygon2D.new()
 		weapon_visual.z_index = 1
@@ -932,6 +934,8 @@ func update_attack(delta: float) -> void:
 				_do_screech()  # Ralph's Tiny Meteor Stomp reuses the radial shockwave
 			elif current_is_special and special_type == "spikes":
 				_spawn_spike_volley()
+			elif not current_is_special and wpn_projectile:
+				_spawn_projectile()  # bow & other ranged weapons fire instead of swinging
 			elif current_is_heavy and heavy_attack_type == "projectile":
 				_spawn_projectile()
 			else:
