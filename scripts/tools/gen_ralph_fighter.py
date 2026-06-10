@@ -105,6 +105,19 @@ def pixelate(rgba):
     return out.crop(out.getbbox())
 
 
+def smoothen(rgba):
+    """Downscale to CHAR_H keeping the SMOOTH painterly RGB + soft anti-aliased
+    alpha (no posterize/dither, no hard alpha threshold) — the in-match painterly
+    look. Same frame geometry as pixelate() so the dino.gd ANIM_LAYOUTS cells line
+    up; only the in-match texture filter changes (LINEAR, not NEAREST)."""
+    w, h = rgba.size
+    scale = CHAR_H / h
+    out = rgba.resize((max(1, round(w * scale)), CHAR_H), Image.LANCZOS)
+    if FLIP_TO_FACE_RIGHT:
+        out = out.transpose(Image.FLIP_LEFT_RIGHT)
+    return out.crop(out.getbbox())
+
+
 def build_sheet(core, out_sheet):
     """idle(2) walk(4) attack(3) via squash/waddle/lunge transforms of `core`."""
     cw0, ch0 = core.size
@@ -169,9 +182,10 @@ def main():
     if not os.path.exists(src):
         sys.exit(f"no hero art at {src}\n"
                  f"  generate it per scripts/tools/dino_art_prompts.md, then re-run.")
+    smooth = "--smooth" in sys.argv
     out_sheet = os.path.join(ROOT, f"assets/sprites/{dino}_fighter.png")
     out_preview = f"/tmp/ralph/{dino}_fighter_preview.png"
-    core = pixelate(cutout(Image.open(src)))
+    core = (smoothen if smooth else pixelate)(cutout(Image.open(src)))
     cw, ch, n = build_sheet(core, out_sheet)
     preview(out_sheet, out_preview)
     print(f"wrote {out_sheet}  cell={cw}x{ch}  char_h={core.size[1]}  frames={n}")

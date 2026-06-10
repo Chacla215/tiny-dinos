@@ -611,6 +611,7 @@ func _set_graphic(graphic: AnimatedSprite2D, dino_id: String) -> void:
 		return
 	var layout: Dictionary = DinoScript.ANIM_LAYOUTS[role]
 	graphic.sprite_frames = sf
+	graphic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # fighters are painterly now
 	var src_h: float = layout["idle"].rects[0].size.y
 	var s: float = GRAPHIC_TARGET_H / src_h
 	graphic.scale = Vector2(s, s)

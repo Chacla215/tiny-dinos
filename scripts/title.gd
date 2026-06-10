@@ -249,6 +249,7 @@ func _setup_dino(graphic: AnimatedSprite2D, dino_id: String, on_left: bool) -> v
 		return
 	var layout: Dictionary = DinoScript.ANIM_LAYOUTS[role]
 	graphic.sprite_frames = sf
+	graphic.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # fighters are painterly now
 	var s: float = DINO_TARGET_H / float(layout["idle"].rects[0].size.y)
 	graphic.scale = Vector2(s, s)
 	# Left-side dino looks right, right-side looks left — they square off.

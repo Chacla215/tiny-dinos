@@ -459,6 +459,9 @@ func _setup_sprite() -> void:
 		sprite.visible = false
 		return
 	sprite.sprite_frames = sf
+	# Fighters are baked SMOOTH (painterly) from the hero art, so filter linear
+	# rather than nearest — keeps the in-match look consistent with the menus.
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	sprite.scale = Vector2(sprite_scale, sprite_scale)
 	sprite.position.y = sprite_offset_y
 	# Cosmetic skin: recolor the fighter to the player's chosen skin for this dino
