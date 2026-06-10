@@ -1,5 +1,52 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-10 (identity + content blitz)
+
+A long multi-part day. All landed on `master` and pushed.
+
+**Roster art → in-match**
+- Baked the 6 remaining dinos (trex/raptor/trike/pterry/bronto/anky) from their
+  painterly heroes into in-match fighters via `gen_ralph_fighter.py <dino>`; the
+  whole roster now renders Ralph-style art in match (was old Rynosaur sprites).
+- Corrected the in-match render scale (old sprite scales were ~4x oversized for
+  the new sheets) and gave each dino **size personality** (bronto 0.72 … raptor
+  0.52), footing held via `offset_y ≈ 7.6 − 66·scale`.
+- **PAINTERLY IN-MATCH** (late in the day, Charlie's call): added
+  `gen_ralph_fighter.py --smooth` (skips the pixel dither) and re-baked the roster
+  SMOOTH — fighters are now painterly in match too, not pixel-dithered. Same frame
+  geometry = drop-in; only texture filter flips to LINEAR (in-match + previews +
+  afterimage ghost). Reverses the old two-tier (pixel in-match) plan.
+
+**Character creator — finished**
+- Real **SKIN system** for all 7 dinos: live HSV recolor shader
+  (`assets/shaders/skin_recolor.gdshader`) + `MatchConfig.SKINS` + `skin_material()`,
+  persisted per-dino in `MetaSave`, equipped via the creator carousel (A equips),
+  shown in match. No per-skin art needed. Hues tuned (Crystal/Volcano).
+- **EMOTES**: 8 quick-taunt bubbles on **Select** in-match (`MatchConfig.EMOTES`,
+  `dino.gd play_emote`), plus a creator gallery. Retired the last "COMING SOON".
+- Cut the dead part-swap UI → unified to the WEAPONS loadout panel.
+
+**Modes — curated to 7 distinct verbs**
+- Cut LAST DINO STANDING (twin of ROUNDS); kept rounds/koth/eggs/sumo/bombtag/
+  beast/flood. THE BEAST gated to 3-4 players. Concrete win-condition blurbs on
+  select; mode-name banner at versus match start.
+- **Solo**: arcade final rung is now **BRUTAL** with a "FINAL BOSS" banner.
+
+**Combat + CPU**
+- **BOW** ranged weapon (Pterry) — fires arrows reusing the projectile path.
+- **Smarter CPU AI** + new **BRUTAL** tier: dodge-vs-block reads, edge-awareness
+  (won't ring itself out), finisher instinct. **Ranged kiting** so bow-users poke
+  from range instead of charging in (sim: kiting Pterry beats T-Rex 2-0).
+- **Balance** (sim-driven, 2 passes): lifted Raptor (was never winning), trimmed
+  T-Rex. **Pre-playtest** — T-Rex still the one to watch; final call is feel.
+
+**Misc**: added `CLAUDE.md` (architecture orientation); `sim_ai.gd` upgraded to a
+full round-robin KO matrix. Most of the above was done via a 4-way parallel
+worktree-agent batch (one agent ran away and had to be killed — see memory).
+
+> Resume hint: everything compiles + boots headless clean. The open item is
+> **balance feel** — playtest, then tune by feel.
+
 ## Session — 2026-06-09 (arcade co-op duo)
 
 Merged the `feat/arcade-coop-duo` branch into master (fast-forward, clean) after
