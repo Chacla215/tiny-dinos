@@ -9,13 +9,16 @@ const SHEET_REF := "res://assets/sprites/rynosaurlandcharacters.png"
 const SHEET_ENEMY := "res://assets/sprites/enemysprites_revision.png"
 const SHEET_RALPH := "res://assets/sprites/ralph_fighter.png"
 const SHEET_TREX := "res://assets/sprites/trex_fighter.png"
+const SHEET_RAPTOR := "res://assets/sprites/raptor_fighter.png"
 
 const ANIM_LAYOUTS := {
+	# Raptor as an in-match fighter — pixel sheet baked from the painterly hero
+	# by scripts/tools/gen_ralph_fighter.py raptor (165x160 cells).
 	"raptor": {
-		"sheet": SHEET_PLAYER,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(99, 79, 22, 35), Rect2(125, 79, 23, 35)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(99, 127, 22, 35), Rect2(130, 129, 22, 35)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(97, 228, 32, 34), Rect2(136, 232, 22, 34)]},
+		"sheet": SHEET_RAPTOR,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 165, 160), Rect2(165, 0, 165, 160)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(330, 0, 165, 160), Rect2(495, 0, 165, 160), Rect2(660, 0, 165, 160), Rect2(825, 0, 165, 160)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(990, 0, 165, 160), Rect2(1155, 0, 165, 160), Rect2(1320, 0, 165, 160)]},
 	},
 	# Ralph the mascot as an in-match fighter — pixel-art sheet baked from the
 	# existing painterly hero by scripts/tools/gen_ralph_fighter.py (118x160 cells).
