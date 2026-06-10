@@ -1215,7 +1215,9 @@ func begin_ringout(go_up: bool = false, center_y: float = 360.0) -> void:
 	defense_state = DefenseState.NORMAL
 	knockback_active = false
 	current_push = Vector2.ZERO
-	hitbox_shape.disabled = true
+	# Deferred: a KO can fire from inside a physics collision callback (e.g. a
+	# weapon-item pickup), and the server forbids toggling shapes mid-flush.
+	hitbox_shape.set_deferred("disabled", true)
 	hitbox_visual.visible = false
 	if weapon_visual:
 		weapon_visual.visible = false
@@ -1280,7 +1282,7 @@ func _recover_ringout(scene_root: Node) -> void:
 	modulate = Color.WHITE
 	velocity = Vector2.ZERO
 	invuln_timer = RECOVER_INVULN
-	hitbox_shape.disabled = true
+	hitbox_shape.set_deferred("disabled", true)  # may run inside a physics flush
 	hitbox_visual.visible = false
 	if scene_root and scene_root.has_method("on_ringout_recovered"):
 		scene_root.on_ringout_recovered(self)  # cancels the pending KO credit
@@ -1426,7 +1428,7 @@ func respawn() -> void:
 	dodge_timer = 0.0
 	dodge_cooldown_timer = 0.0
 	guard_break_timer = 0.0
-	hitbox_shape.disabled = true
+	hitbox_shape.set_deferred("disabled", true)  # respawn may run inside a physics flush
 	hitbox_visual.visible = false
 	last_damaged_by = null
 	hit_flash_timer = 0.0
