@@ -519,8 +519,8 @@ func same_side(a: String, b: String) -> bool:
 	return teams_enabled and teams.get(a, a) == teams.get(b, b)
 ## Difficulty applied to every CPU this match (chosen on the select screen).
 ## Maps to a knob preset in dino_ai.gd via apply_difficulty().
-const CPU_DIFFICULTY_ORDER := ["easy", "normal", "hard"]
-const CPU_DIFFICULTY_NAMES := {"easy": "EASY", "normal": "NORMAL", "hard": "HARD"}
+const CPU_DIFFICULTY_ORDER := ["easy", "normal", "hard", "brutal"]
+const CPU_DIFFICULTY_NAMES := {"easy": "EASY", "normal": "NORMAL", "hard": "HARD", "brutal": "BRUTAL"}
 var cpu_difficulty: String = "normal"
 
 # --- Arcade ladder (solo spine) ---
