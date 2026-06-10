@@ -460,6 +460,9 @@ func _setup_sprite() -> void:
 	sprite.sprite_frames = sf
 	sprite.scale = Vector2(sprite_scale, sprite_scale)
 	sprite.position.y = sprite_offset_y
+	# Cosmetic skin: recolor the fighter to the player's chosen skin for this dino
+	# (null material = DEFAULT, unchanged). Display-only, no gameplay effect.
+	sprite.material = MatchConfig.skin_material(MetaSave.get_skin(sprite_role))
 	sprite.play("idle")
 	polygon.visible = false
 
