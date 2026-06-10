@@ -513,6 +513,8 @@ func _process_input_actions() -> void:
 		end_block()
 	if Input.is_action_just_pressed(_action("dodge")) and can_dodge():
 		start_dodge()
+	if Input.is_action_just_pressed(_action("emote")):
+		play_emote()
 
 func _process_cpu_actions() -> void:
 	if ai.consume_throw() and can_throw():
@@ -531,6 +533,65 @@ func _process_cpu_actions() -> void:
 		end_block()
 	if ai.consume_dodge() and can_dodge():
 		start_dodge()
+
+# --- Emotes -------------------------------------------------------------------
+var emote_idx: int = 0
+var _emote_bubble: Node2D = null
+
+# Pop the next quick-taunt emote in a speech bubble above the head. Art-free for
+# now (MatchConfig.EMOTES text); cycles through the list on each tap.
+func play_emote() -> void:
+	if MatchConfig.EMOTES.is_empty():
+		return
+	var emote: Dictionary = MatchConfig.EMOTES[emote_idx % MatchConfig.EMOTES.size()]
+	emote_idx += 1
+	if is_instance_valid(_emote_bubble):
+		_emote_bubble.queue_free()
+	_emote_bubble = _build_emote_bubble(String(emote.get("text", "!")))
+	add_child(_emote_bubble)
+
+func _build_emote_bubble(txt: String) -> Node2D:
+	var root := Node2D.new()
+	root.z_index = 50
+	# Sit just above the head; the sprite spans ~80*scale up from the body origin.
+	var head_y: float = sprite_offset_y - 80.0 * sprite_scale - 28.0
+	root.position = Vector2(0, head_y)
+	var w: float = maxf(58.0, txt.length() * 17.0 + 26.0)
+	var h := 44.0
+	var accent: Color = MatchConfig.PLAYER_COLORS.get(player_id, Color("e6c878"))
+	var panel := Panel.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color("f5f1e6")
+	sb.border_color = accent
+	sb.set_border_width_all(3)
+	sb.set_corner_radius_all(12)
+	panel.add_theme_stylebox_override("panel", sb)
+	panel.position = Vector2(-w / 2.0, -h / 2.0)
+	panel.size = Vector2(w, h)
+	root.add_child(panel)
+	# Little downward tail toward the dino.
+	var tail := Polygon2D.new()
+	tail.color = accent
+	tail.polygon = PackedVector2Array([Vector2(-9, h / 2.0 - 2), Vector2(9, h / 2.0 - 2), Vector2(0, h / 2.0 + 12)])
+	root.add_child(tail)
+	var lbl := Label.new()
+	lbl.text = txt
+	lbl.add_theme_font_size_override("font_size", 26)
+	lbl.add_theme_color_override("font_color", Color("2a2118"))
+	lbl.position = Vector2(-w / 2.0, -h / 2.0)
+	lbl.size = Vector2(w, h)
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	root.add_child(lbl)
+	# Pop in, hold, fade out, free.
+	root.scale = Vector2(0.4, 0.4)
+	var tw := create_tween()
+	tw.tween_property(root, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(root, "position:y", head_y - 12.0, 0.22).set_trans(Tween.TRANS_SINE)
+	tw.tween_interval(0.9)
+	tw.tween_property(root, "modulate:a", 0.0, 0.35)
+	tw.tween_callback(root.queue_free)
+	return root
 
 # Nearest active opposing dino, or null. Active = visible (inactive slots are
 # hidden by main.gd). Used by the CPU brain as its target.
