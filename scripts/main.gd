@@ -168,6 +168,58 @@ func _ready() -> void:
 	update_score_display()
 	_load_sfx()
 	_build_debug_boundary()  # red ring-out outline when debug_draw_safe_zone is on
+	_spawn_ambient()  # [experiment] per-island atmosphere particles
+
+# [experiment] Per-island ambient atmosphere — a subtle drifting-particle layer
+# (snow / petals / embers / motes) that leans into the painterly islands. Attached
+# to the camera so it always covers the view (and rides the shake). Cosmetic only.
+const AMBIENT_STYLES := {
+	"laughing_lava":     {"color": Color(1.0, 0.55, 0.2, 0.5),  "rise": true,  "amount": 46, "size": 3.2, "spd": 26.0, "life": 5.0},
+	"beauty_beach":      {"color": Color(1.0, 0.97, 0.8, 0.45), "rise": false, "amount": 40, "size": 2.8, "spd": 16.0, "life": 6.0},
+	"sunny_springs":     {"color": Color(1.0, 0.7, 0.84, 0.6),  "rise": false, "amount": 44, "size": 5.0, "spd": 24.0, "life": 6.0},
+	"white_water_falls": {"color": Color(0.85, 0.93, 1.0, 0.5), "rise": false, "amount": 56, "size": 2.4, "spd": 40.0, "life": 4.5},
+	"purple_fields":     {"color": Color(0.82, 0.6, 1.0, 0.55), "rise": false, "amount": 44, "size": 4.0, "spd": 18.0, "life": 6.5},
+	"iciest_age":        {"color": Color(0.96, 0.99, 1.0, 0.8), "rise": false, "amount": 56, "size": 3.6, "spd": 30.0, "life": 5.5},
+}
+
+func _spawn_ambient() -> void:
+	if camera == null:
+		return
+	var key: String = MatchConfig.island if MatchConfig and "island" in MatchConfig else ""
+	var s: Dictionary = AMBIENT_STYLES.get(key, {})
+	if s.is_empty():
+		return
+	var rise: bool = s["rise"]
+	var p := CPUParticles2D.new()
+	p.amount = int(s["amount"])
+	p.lifetime = float(s["life"])
+	p.preprocess = float(s["life"])  # start already populated, no warm-up gap
+	p.lifetime_randomness = 0.5
+	# Emit across the WHOLE view (camera-local) so particles are always present and
+	# gently drift, rather than streaming in from one edge.
+	p.position = camera.global_position
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.emission_rect_extents = Vector2(820, 480)  # covers the zoomed-out view
+	p.direction = Vector2(0, -1) if rise else Vector2(0, 1)
+	p.spread = 22.0
+	p.gravity = Vector2(8.0, -12.0 if rise else 14.0)  # slight sideways drift
+	p.initial_velocity_min = float(s["spd"]) * 0.5
+	p.initial_velocity_max = float(s["spd"]) * 1.1
+	p.scale_amount_min = float(s["size"]) * 0.6
+	p.scale_amount_max = float(s["size"]) * 1.3
+	p.angle_min = 0.0
+	p.angle_max = 360.0
+	p.angular_velocity_min = -50.0
+	p.angular_velocity_max = 50.0
+	# Fade in + out over each particle's life so they don't pop on/off.
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, 0.2, 0.8, 1.0])
+	ramp.colors = PackedColorArray([
+		Color(1, 1, 1, 0.0), Color(1, 1, 1, 1.0), Color(1, 1, 1, 1.0), Color(1, 1, 1, 0.0)])
+	p.color_ramp = ramp
+	p.color = s["color"]
+	p.z_index = 55  # in front of fighters/effects, behind the HUD layer
+	add_child(p)  # world-space at the arena centre (camera barely moves)
 
 func _setup_active_players() -> void:
 	var count: int = MatchConfig.player_count
