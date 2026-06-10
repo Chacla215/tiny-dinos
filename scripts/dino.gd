@@ -1083,6 +1083,31 @@ func _spawn_hit_burst(pos: Vector2, dir: Vector2, dmg: int, lethal: bool) -> voi
 		st.parallel().tween_property(shard, "modulate:a", 0.0, 0.2)
 		st.tween_callback(shard.queue_free)
 
+# KO flourish: a bright shockwave ring snapping outward from the fallen dino, so
+# a KO reads as a climactic beat (on top of the existing shake + freeze + burst).
+func _spawn_ko_flourish() -> void:
+	var root := get_tree().current_scene
+	if root == null:
+		return
+	var ring := Line2D.new()
+	var pts := PackedVector2Array()
+	for i in range(33):
+		var a: float = TAU * i / 32.0
+		pts.append(Vector2(cos(a), sin(a)) * 30.0)
+	ring.points = pts
+	ring.closed = true
+	ring.width = 6.0
+	ring.default_color = Color(1, 1, 1, 0.9)
+	ring.position = global_position + Vector2(0, sprite_offset_y * 0.5)
+	ring.z_index = 45
+	ring.scale = Vector2(0.2, 0.2)
+	root.add_child(ring)
+	var t := ring.create_tween()
+	t.tween_property(ring, "scale", Vector2(2.3, 2.3), 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(ring, "modulate:a", 0.0, 0.3)
+	t.parallel().tween_property(ring, "width", 1.0, 0.3)
+	t.tween_callback(ring.queue_free)
+
 func guard_break() -> void:
 	defense_state = DefenseState.GUARD_BROKEN
 	guard_break_timer = guard_break_duration
@@ -1445,6 +1470,7 @@ func die() -> void:
 	var scene_root := get_tree().current_scene
 	if scene_root and scene_root.has_method("on_ko_landed"):
 		scene_root.on_ko_landed()
+	_spawn_ko_flourish()
 	if scene_root and scene_root.has_method("report_ko"):
 		scene_root.report_ko(self, last_damaged_by)
 	respawn()
