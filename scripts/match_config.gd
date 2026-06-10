@@ -11,8 +11,8 @@ const ROSTER_ORDER := ["trex", "raptor", "trike", "pterry", "bronto", "anky", "r
 const SKIN_SHADER := preload("res://assets/shaders/skin_recolor.gdshader")
 const SKINS := [
 	{"name": "DEFAULT", "rarity": "COMMON", "swatch": Color("9aa3b4"), "recolor": false},
-	{"name": "CRYSTAL", "rarity": "RARE",   "swatch": Color("8fd6e8"), "hue": 0.52, "sat": 0.65, "val": 1.12},
-	{"name": "VOLCANO", "rarity": "RARE",   "swatch": Color("e0622a"), "hue": 0.035, "sat": 1.15, "val": 0.82},
+	{"name": "CRYSTAL", "rarity": "RARE",   "swatch": Color("8fd6e8"), "hue": 0.50, "sat": 0.88, "val": 1.14},
+	{"name": "VOLCANO", "rarity": "RARE",   "swatch": Color("e0622a"), "hue": 0.015, "sat": 1.35, "val": 0.66},
 	{"name": "FROZEN",  "rarity": "RARE",   "swatch": Color("bcd8ec"), "hue": 0.55, "sat": 0.45, "val": 1.15},
 	{"name": "SPRING",  "rarity": "RARE",   "swatch": Color("a9d98c"), "hue": 0.27, "sat": 0.85, "val": 1.06},
 	{"name": "VOID",    "rarity": "EPIC",   "swatch": Color("8a5cc8"), "hue": 0.75, "sat": 0.85, "val": 0.90},
