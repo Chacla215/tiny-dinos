@@ -37,8 +37,6 @@ const GRID_ROWS := [
 # required — but a painterly override at assets/concept/<dino>/<dino>_<name>.png
 # is used for the big portrait when it exists (Ralph ships frozen/spring/void/
 # golden). The equipped skin is persisted per dino in MetaSave.
-const EMOTES := ["WAVE", "EXCITED", "CONFUSED", "LOVE", "ROAR", "SLEEPY", "DIZZY", "PROUD"]
-
 # Painterly per-skin portrait override path, or "" if none exists. idx 0 = the
 # dino's base hero; other skins look for <dino>_<skinname>.png.
 func _skin_img(dino_id: String, idx: int) -> String:
@@ -603,7 +601,7 @@ func _refresh_profile(dino_id: String) -> void:
 	_populate_weapons(customization_panel, dino_id)
 	_clear_children(emotes_panel)
 	_decorate_panel_title(emotes_panel, "EMOTES")
-	_populate_panel_placeholder(emotes_panel, "EMOTES COMING SOON")
+	_populate_emotes()
 	_populate_skins(dino_id)
 	# Portrait + rarity badge reflect the equipped/previewed skin.
 	_refresh_skin_selection()
@@ -756,6 +754,28 @@ func _populate_panel_placeholder(panel: Panel, msg: String) -> void:
 	l.size = panel.size
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+
+# Emote gallery: the same quick-taunt bubbles you can pop in a match with SELECT.
+func _populate_emotes() -> void:
+	var cw := 122.0
+	var ch := 50.0
+	for i in MatchConfig.EMOTES.size():
+		var em: Dictionary = MatchConfig.EMOTES[i]
+		var x: float = 14.0 + (i % 4) * cw
+		var y: float = 18.0 + (i / 4) * (ch + 10)
+		var bubble := Panel.new()
+		bubble.add_theme_stylebox_override("panel", _sb(Color("f5f1e6"), GOLD, 2, 9))
+		bubble.position = Vector2(x, y)
+		bubble.size = Vector2(cw - 16, ch - 18)
+		emotes_panel.add_child(bubble)
+		var t := _text(bubble, em["text"], 0, 0, 18, Color("2a2118"))
+		t.size = bubble.size
+		t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		t.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		var nm := _text(emotes_panel, em["name"], x, y + ch - 18, 11, TEXT_DIM)
+		nm.size = Vector2(cw - 16, 14)
+		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 # Cursor (gold) = previewed skin; green = currently equipped. Updates rarity,
