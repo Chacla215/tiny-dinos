@@ -10,6 +10,7 @@ const SHEET_ENEMY := "res://assets/sprites/enemysprites_revision.png"
 const SHEET_RALPH := "res://assets/sprites/ralph_fighter.png"
 const SHEET_TREX := "res://assets/sprites/trex_fighter.png"
 const SHEET_RAPTOR := "res://assets/sprites/raptor_fighter.png"
+const SHEET_TRIKE := "res://assets/sprites/trike_fighter.png"
 
 const ANIM_LAYOUTS := {
 	# Raptor as an in-match fighter — pixel sheet baked from the painterly hero
@@ -36,11 +37,13 @@ const ANIM_LAYOUTS := {
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(278, 0, 139, 160), Rect2(417, 0, 139, 160), Rect2(556, 0, 139, 160), Rect2(695, 0, 139, 160)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(834, 0, 139, 160), Rect2(973, 0, 139, 160), Rect2(1112, 0, 139, 160)]},
 	},
+	# Trike as an in-match fighter — pixel sheet baked from the painterly hero
+	# by scripts/tools/gen_ralph_fighter.py trike (147x160 cells).
 	"trike": {
-		"sheet": SHEET_ENEMY,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(4, 438, 42, 50), Rect2(50, 437, 42, 50)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(96, 437, 42, 50), Rect2(150, 436, 42, 50), Rect2(196, 435, 42, 50), Rect2(246, 435, 42, 50)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(246, 435, 42, 50)]},
+		"sheet": SHEET_TRIKE,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 147, 160), Rect2(147, 0, 147, 160)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(294, 0, 147, 160), Rect2(441, 0, 147, 160), Rect2(588, 0, 147, 160), Rect2(735, 0, 147, 160)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(882, 0, 147, 160), Rect2(1029, 0, 147, 160), Rect2(1176, 0, 147, 160)]},
 	},
 	"pterry": {
 		"sheet": SHEET_ENEMY,
