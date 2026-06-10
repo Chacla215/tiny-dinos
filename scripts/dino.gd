@@ -16,55 +16,55 @@ const SHEET_ANKY := "res://assets/sprites/anky_fighter.png"
 
 const ANIM_LAYOUTS := {
 	# Raptor as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py raptor (165x160 cells).
+	# by scripts/tools/gen_ralph_fighter.py raptor (173x168 cells).
 	"raptor": {
 		"sheet": SHEET_RAPTOR,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 165, 160), Rect2(165, 0, 165, 160)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(330, 0, 165, 160), Rect2(495, 0, 165, 160), Rect2(660, 0, 165, 160), Rect2(825, 0, 165, 160)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(990, 0, 165, 160), Rect2(1155, 0, 165, 160), Rect2(1320, 0, 165, 160)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 173, 168), Rect2(173, 0, 173, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(346, 0, 173, 168), Rect2(519, 0, 173, 168), Rect2(692, 0, 173, 168), Rect2(865, 0, 173, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1038, 0, 173, 168), Rect2(1211, 0, 173, 168), Rect2(1384, 0, 173, 168)]},
 	},
 	# Ralph the mascot as an in-match fighter — pixel-art sheet baked from the
-	# existing painterly hero by scripts/tools/gen_ralph_fighter.py (118x160 cells).
+	# existing painterly hero by scripts/tools/gen_ralph_fighter.py (126x168 cells).
 	"ralph": {
 		"sheet": SHEET_RALPH,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 118, 160), Rect2(118, 0, 118, 160)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(236, 0, 118, 160), Rect2(354, 0, 118, 160), Rect2(472, 0, 118, 160), Rect2(590, 0, 118, 160)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(708, 0, 118, 160), Rect2(826, 0, 118, 160), Rect2(944, 0, 118, 160)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 126, 168), Rect2(126, 0, 126, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(252, 0, 126, 168), Rect2(378, 0, 126, 168), Rect2(504, 0, 126, 168), Rect2(630, 0, 126, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(756, 0, 126, 168), Rect2(882, 0, 126, 168), Rect2(1008, 0, 126, 168)]},
 	},
 	# Trike as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py trike (147x160 cells).
+	# by scripts/tools/gen_ralph_fighter.py trike (155x168 cells).
 	"trike": {
 		"sheet": SHEET_TRIKE,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 147, 160), Rect2(147, 0, 147, 160)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(294, 0, 147, 160), Rect2(441, 0, 147, 160), Rect2(588, 0, 147, 160), Rect2(735, 0, 147, 160)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(882, 0, 147, 160), Rect2(1029, 0, 147, 160), Rect2(1176, 0, 147, 160)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 155, 168), Rect2(155, 0, 155, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(310, 0, 155, 168), Rect2(465, 0, 155, 168), Rect2(620, 0, 155, 168), Rect2(775, 0, 155, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(930, 0, 155, 168), Rect2(1085, 0, 155, 168), Rect2(1240, 0, 155, 168)]},
 	},
 	# Pterry as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py pterry (160x160 cells).
+	# by scripts/tools/gen_ralph_fighter.py pterry (168x168 cells).
 	"pterry": {
 		"sheet": SHEET_PTERRY,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 160, 160), Rect2(160, 0, 160, 160)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(320, 0, 160, 160), Rect2(480, 0, 160, 160), Rect2(640, 0, 160, 160), Rect2(800, 0, 160, 160)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(960, 0, 160, 160), Rect2(1120, 0, 160, 160), Rect2(1280, 0, 160, 160)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 168, 168), Rect2(168, 0, 168, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(336, 0, 168, 168), Rect2(504, 0, 168, 168), Rect2(672, 0, 168, 168), Rect2(840, 0, 168, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1008, 0, 168, 168), Rect2(1176, 0, 168, 168), Rect2(1344, 0, 168, 168)]},
 	},
 	# Bronto as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py bronto (128x160 cells). New art faces
+	# by scripts/tools/gen_ralph_fighter.py bronto (136x168 cells). New art faces
 	# right, so the old Goober faces_left flag is gone. Long neck eats the height
 	# budget by design — he reads tall and slender.
 	"bronto": {
 		"sheet": SHEET_BRONTO,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 128, 160), Rect2(128, 0, 128, 160)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(256, 0, 128, 160), Rect2(384, 0, 128, 160), Rect2(512, 0, 128, 160), Rect2(640, 0, 128, 160)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(768, 0, 128, 160), Rect2(896, 0, 128, 160), Rect2(1024, 0, 128, 160)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 136, 168), Rect2(136, 0, 136, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(272, 0, 136, 168), Rect2(408, 0, 136, 168), Rect2(544, 0, 136, 168), Rect2(680, 0, 136, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(816, 0, 136, 168), Rect2(952, 0, 136, 168), Rect2(1088, 0, 136, 168)]},
 	},
 	# Anky as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py anky (261x160 cells). Low and long,
+	# by scripts/tools/gen_ralph_fighter.py anky (269x168 cells). Low and long,
 	# so the cell is wide; height-normalized like the rest of the roster.
 	"anky": {
 		"sheet": SHEET_ANKY,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 261, 160), Rect2(261, 0, 261, 160)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(522, 0, 261, 160), Rect2(783, 0, 261, 160), Rect2(1044, 0, 261, 160), Rect2(1305, 0, 261, 160)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1566, 0, 261, 160), Rect2(1827, 0, 261, 160), Rect2(2088, 0, 261, 160)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 269, 168), Rect2(269, 0, 269, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(538, 0, 269, 168), Rect2(807, 0, 269, 168), Rect2(1076, 0, 269, 168), Rect2(1345, 0, 269, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1614, 0, 269, 168), Rect2(1883, 0, 269, 168), Rect2(2152, 0, 269, 168)]},
 	},
 }
 
