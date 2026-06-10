@@ -1,5 +1,20 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-10 (Ralph absorbs the T-Rex)
+
+Charlie's call while reviewing the juice experiments: his original Ralph design
+**was** the T-Rex concept — so the two near-clone slots merged into one.
+
+- **Roster is now 6**: `ralph, raptor, trike, pterry, bronto, anky`. The
+  standalone `trex` entry is gone everywhere (MatchConfig roster/defaults,
+  dino.gd sheet + ANIM_LAYOUTS, title flank, creator grid/profile, sim_ai).
+- **Ralph carries the heavyweight-king kit**: the old T-Rex stats wholesale
+  (135 HP, slow/heavy, big hitboxes, fists + war hammer) and the **CHOMP**
+  lifesteal lunge as his special. Ralph's old STOMP special retired with the
+  merge. His art/identity (sprite, color, bio) is unchanged.
+- Creator profile updated: subtitle "THE TINY KING", move = CHOMP. T-Rex
+  assets (`trex_fighter.png`, `assets/concept/trex/`) kept on disk, unused.
+
 ## Session — 2026-06-10 (identity + content blitz)
 
 A long multi-part day. All landed on `master` and pushed.

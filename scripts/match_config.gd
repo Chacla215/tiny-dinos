@@ -1,6 +1,6 @@
 extends Node
 
-const ROSTER_ORDER := ["trex", "raptor", "trike", "pterry", "bronto", "anky", "ralph"]
+const ROSTER_ORDER := ["ralph", "raptor", "trike", "pterry", "bronto", "anky"]
 
 # ---- Cosmetic skins (shared across every dino) -------------------------------
 # A skin is a live recolor of the fighter via assets/shaders/skin_recolor.gdshader
@@ -84,53 +84,6 @@ const WEAPONS := {
 }
 
 const DINOS := {
-	"trex": {
-		"display_name": "T-REX",
-		"weapons": ["fists", "hammer"],
-		"dino_color": Color(0.4, 0.85, 0.55, 1.0),
-		"sprite_role": "trex",
-		"sprite_scale": 0.70,
-		"sprite_offset_y": -39.0,
-		"hit_sfx_name": "hit_chomp",
-		"max_speed": 240.0,
-		"ground_accel": 1500.0,
-		"ground_friction": 2200.0,
-		"ice_accel": 300.0,
-		"ice_friction": 90.0,
-		"max_hp": 135,
-		"attack_damage": 21,
-		"attack_knockback": 460.0,
-		"attack_windup": 0.22,
-		"attack_active": 0.14,
-		"attack_recovery": 0.40,
-		"attack_hitbox_size": Vector2(80, 72),
-		"attack_hitbox_offset": 60.0,
-		"heavy_damage": 34,
-		"heavy_knockback": 700.0,
-		"heavy_windup": 0.40,
-		"heavy_active": 0.20,
-		"heavy_recovery": 0.60,
-		"heavy_hitbox_size": Vector2(110, 90),
-		"heavy_hitbox_offset": 70.0,
-		"heavy_self_dash": 0.0,
-		"max_block": 120.0,
-		"block_regen": 25.0,
-		"dodge_duration": 0.22,
-		"dodge_cooldown": 0.7,
-		"dodge_distance": 110.0,
-		"dodge_block_cost": 40.0,
-		"special_type": "chomp",
-		"special_damage": 24,
-		"special_knockback": 300.0,
-		"special_windup": 0.22,
-		"special_active": 0.12,
-		"special_recovery": 0.45,
-		"special_hitbox_size": Vector2(72, 64),
-		"special_hitbox_offset": 58.0,
-		"special_self_dash": 700.0,
-		"special_cooldown": 5.0,
-		"special_lifesteal": 0.28,
-	},
 	"trike": {
 		"display_name": "TRIKE",
 		"weapons": ["fists", "mace"],
@@ -361,6 +314,9 @@ const DINOS := {
 	# Ralph the mascot — a scrappy medium bruiser whose niche is the AoE signature
 	# "Tiny Meteor Stomp" (reuses the radial screech shockwave). Stats track the
 	# character-screen flavor: HP 120, ATK 28 ((19+37)/2), DEF 20 (block 120/6).
+	# Ralph absorbed the old T-Rex slot (2026-06-10): Ralph's design WAS the
+	# T-Rex concept, so he now carries the heavyweight-king kit (chomp lifesteal
+	# lunge) with his own art. The standalone trex entry is gone.
 	"ralph": {
 		"display_name": "RALPH",
 		"weapons": ["fists", "hammer"],
@@ -369,42 +325,44 @@ const DINOS := {
 		"sprite_scale": 0.6,
 		"sprite_offset_y": -32.0,
 		"hit_sfx_name": "hit_chomp",
-		"max_speed": 250.0,
-		"ground_accel": 2200.0,
-		"ground_friction": 3200.0,
-		"ice_accel": 450.0,
-		"ice_friction": 130.0,
-		"max_hp": 120,
+		"max_speed": 240.0,
+		"ground_accel": 1500.0,
+		"ground_friction": 2200.0,
+		"ice_accel": 300.0,
+		"ice_friction": 90.0,
+		"max_hp": 135,
 		"attack_damage": 21,
-		"attack_knockback": 380.0,
-		"attack_windup": 0.18,
-		"attack_active": 0.12,
-		"attack_recovery": 0.34,
-		"attack_hitbox_size": Vector2(72, 62),
-		"attack_hitbox_offset": 52.0,
-		"heavy_damage": 37,
-		"heavy_knockback": 600.0,
-		"heavy_windup": 0.32,
-		"heavy_active": 0.17,
-		"heavy_recovery": 0.55,
-		"heavy_hitbox_size": Vector2(92, 76),
-		"heavy_hitbox_offset": 58.0,
+		"attack_knockback": 460.0,
+		"attack_windup": 0.22,
+		"attack_active": 0.14,
+		"attack_recovery": 0.40,
+		"attack_hitbox_size": Vector2(80, 72),
+		"attack_hitbox_offset": 60.0,
+		"heavy_damage": 34,
+		"heavy_knockback": 700.0,
+		"heavy_windup": 0.40,
+		"heavy_active": 0.20,
+		"heavy_recovery": 0.60,
+		"heavy_hitbox_size": Vector2(110, 90),
+		"heavy_hitbox_offset": 70.0,
 		"heavy_self_dash": 0.0,
 		"max_block": 120.0,
-		"block_regen": 26.0,
-		"dodge_duration": 0.20,
-		"dodge_cooldown": 0.65,
-		"dodge_distance": 130.0,
-		"dodge_block_cost": 34.0,
-		"special_type": "stomp",
-		"special_damage": 22,
-		"special_knockback": 520.0,
-		"special_windup": 0.30,
-		"special_active": 0.10,
-		"special_recovery": 0.55,
-		"special_radius": 210.0,
-		"special_slow_duration": 1.0,
-		"special_cooldown": 6.5,
+		"block_regen": 25.0,
+		"dodge_duration": 0.22,
+		"dodge_cooldown": 0.7,
+		"dodge_distance": 110.0,
+		"dodge_block_cost": 40.0,
+		"special_type": "chomp",
+		"special_damage": 24,
+		"special_knockback": 300.0,
+		"special_windup": 0.22,
+		"special_active": 0.12,
+		"special_recovery": 0.45,
+		"special_hitbox_size": Vector2(72, 64),
+		"special_hitbox_offset": 58.0,
+		"special_self_dash": 700.0,
+		"special_cooldown": 5.0,
+		"special_lifesteal": 0.28,
 	},
 }
 
@@ -493,7 +451,7 @@ func mode_blurb(mode: String) -> String:
 		"beast": int(BEAST_TARGET),
 	})
 
-var dino_choices: Dictionary = {"p1": "trex", "p2": "raptor", "p3": "trike", "p4": "pterry"}
+var dino_choices: Dictionary = {"p1": "ralph", "p2": "raptor", "p3": "trike", "p4": "pterry"}
 var island: String = "laughing_lava"
 var player_count: int = 2
 ## Which slots are CPU-controlled this match. Set on the select screen.
@@ -532,7 +490,7 @@ var arcade_setup: bool = false       # title -> select handoff: configure a solo
 var arcade: bool = false
 var arcade_rung: int = 0
 var arcade_ladder: Array = []        # [{foes: [dino,...], difficulty, island}]
-var arcade_player_dino: String = "trex"
+var arcade_player_dino: String = "ralph"
 var arcade_player_weapon: String = "hammer"
 var arcade_duo: bool = false         # co-op: P1 + a CPU ally climb as a 2-fighter team
 var arcade_ally_dino: String = "raptor"
@@ -627,7 +585,7 @@ var gauntlet_setup: bool = false     # title -> select handoff
 var gauntlet: bool = false
 var gauntlet_wave: int = 0           # 0-indexed; displayed as wave+1
 var gauntlet_upgrades: Array = []    # upgrade ids picked this run (may repeat)
-var gauntlet_player_dino: String = "trex"
+var gauntlet_player_dino: String = "ralph"
 var gauntlet_player_weapon: String = "hammer"
 var gauntlet_player_hp: int = -1     # HP carried into the next wave; -1 = spawn at full
 var gauntlet_start_island: String = ""  # solo-setup pick for wave 1; "" = random

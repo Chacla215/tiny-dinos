@@ -26,9 +26,9 @@ const TEXT := Color("dce2ec")
 const TEXT_DIM := Color("8b95a8")
 const GREEN := Color("7fd06a")
 
-# Grid: Ralph first as featured mascot, then the 6 playable dinos. Two rows.
+# Grid: Ralph first as featured mascot, then the rest of the roster. Two rows.
 const GRID_ROWS := [
-	["ralph", "trex", "raptor", "trike"],
+	["ralph", "raptor", "trike"],
 	["pterry", "bronto", "anky"],
 ]
 
@@ -53,29 +53,16 @@ func _skin_img(dino_id: String, idx: int) -> String:
 const PROFILES := {
 	"ralph": {
 		"display_name": "RALPH",
-		"subtitle": "TINY DINO",
+		"subtitle": "THE TINY KING",
 		"rarity": "COMMON",
 		"bio": "A tiny dino with a big heart and an even bigger attitude. Ralph may be small, but his courage is larger than life.",
 		"personality": "BRAVE • CURIOUS • LOYAL",
-		"move_name": "TINY METEOR STOMP",
-		"move_desc": "Ralph leaps high into the air, spinning into a ball and crashes down, causing a shockwave that deals damage in all directions.",
-		"move_type": "PHYSICAL",
-		"move_cooldown": "12s",
-		"hero": RALPH_HERO,
-		"has_creator": true,
-	},
-	"trex": {
-		"display_name": "T-REX",
-		"subtitle": "THE KING",
-		"rarity": "EPIC",
-		"bio": "A tiny king with the loudest roar on the island. His arms can't reach a thing, but his jaws never miss what matters.",
-		"personality": "BOLD • DRAMATIC • SOFT-HEARTED",
 		"move_name": "CHOMP",
-		"move_desc": "T-Rex lunges with jaws wide. Each bite heals him for half the damage dealt — the bigger the king feasts, the longer he reigns.",
+		"move_desc": "Ralph lunges with jaws wide. Each bite heals him for part of the damage dealt — the more the tiny king feasts, the longer he reigns.",
 		"move_type": "PHYSICAL",
 		"move_cooldown": "5s",
-		"hero": "res://assets/concept/trex/trex_hero.png",
-		"has_creator": false,
+		"hero": RALPH_HERO,
+		"has_creator": true,
 	},
 	"raptor": {
 		"display_name": "RAPTOR",

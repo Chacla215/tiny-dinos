@@ -9,7 +9,7 @@ const CREATOR_SCENE := "res://scenes/ralph_creator.tscn"
 const BACKDROP_PATH := "res://assets/tilesets/beauty_beach_bg.png"
 
 # Two crowd-pleasers flanking the logo, facing center (echoes the versus screen).
-const LEFT_DINO := "trex"
+const LEFT_DINO := "ralph"
 const RIGHT_DINO := "raptor"
 const DINO_TARGET_H := 220.0          # both sprites normalized to this height
 

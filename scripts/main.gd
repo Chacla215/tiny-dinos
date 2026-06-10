@@ -1200,7 +1200,7 @@ func _award_ko_rounds(killer: Node) -> void:
 		_end_round(killer_pid)
 
 func _dino_name(pid: String) -> String:
-	var dino_id: String = MatchConfig.dino_choices.get(pid, "trex")
+	var dino_id: String = MatchConfig.dino_choices.get(pid, "ralph")
 	return MatchConfig.DINOS[dino_id].display_name
 
 func add_dp(pid: String, points: int) -> void:
@@ -1264,7 +1264,7 @@ func _grade(points: int) -> String:
 func update_score_display() -> void:
 	for p in active_players:
 		var pid: String = p.player_id
-		var dino_id: String = MatchConfig.dino_choices.get(pid, "trex")
+		var dino_id: String = MatchConfig.dino_choices.get(pid, "ralph")
 		var display_name: String = MatchConfig.DINOS[dino_id].display_name
 		var label := get_node_or_null("HUD/%sScore" % pid.to_upper())
 		if label:
