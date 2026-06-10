@@ -146,6 +146,19 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	if finisher:
 		gap = standoff_gap * 0.4  # crowd in for the finish instead of circling
 
+	# Ranged kit (bow): a projectile-weapon dino KITES — pokes from arrow range and
+	# holds its distance instead of closing to a melee swing. `attack_reach` is the
+	# range it fires within; `kite_dist` is the pocket it tries to hold (in range,
+	# outside the enemy's melee). reach/heavy_reach stay the true melee values so it
+	# still reads and dodges incoming swings by real threat range. Everyone else: the
+	# attack_reach is just the melee reach, so this is a no-op for non-ranged dinos.
+	var ranged: bool = ("wpn_projectile" in owner) and owner.wpn_projectile
+	var attack_reach: float = reach
+	var kite_dist: float = 0.0
+	if ranged:
+		attack_reach = clampf(owner.projectile_speed * owner.projectile_lifetime * 0.5, 260.0, 460.0)
+		kite_dist = attack_reach * 0.72
+
 	# Ring-out hunting (arenas with a lethal edge). `ro` carries the push direction
 	# (arena centre -> target), whether the target is near the edge, and whether our
 	# current facing would shove it off-stage. Empty on confined arenas.
@@ -218,15 +231,19 @@ func think(owner: Node, target: Node, delta: float) -> void:
 		# Close a big gap instantly by dodging through it — a deliberate gap-closer,
 		# not a panic. Gated on a cooldown and a healthy block bar so it never strips
 		# the defense it still needs, and never fired toward a lethal edge.
-		if dist > heavy_reach + 120.0 and _dash_cd <= 0.0 and owner.can_dodge() \
+		# Melee gap-closer dash — ranged dinos skip it; they shoot from where they are.
+		if not ranged and dist > heavy_reach + 120.0 and _dash_cd <= 0.0 and owner.can_dodge() \
 				and owner.block_durability > owner.max_block * 0.6 and randf() < 0.5 \
 				and _dash_safe(owner, dir):
 			move_dir = _avoid(owner, dir)
 			_dodge_q = true
 			_dash_cd = randf_range(0.8, 1.4)
 			return
-		move_dir = _avoid(owner, dir)  # bee-line for the opening
-		if dist <= heavy_reach + 16.0 and owner.can_attack() and _attack_cd <= 0.0:
+		# Close on the opening — but a ranged dino only closes until it's in shot range.
+		if not ranged or dist > attack_reach:
+			move_dir = _avoid(owner, dir)  # bee-line for the opening
+		# Punish from shot range (ranged) or heavy reach (melee, unchanged).
+		if dist <= (attack_reach if ranged else heavy_reach) + 16.0 and owner.can_attack() and _attack_cd <= 0.0:
 			move_dir = dir
 			# A guard-broken target is stunned for a long beat — the surest moment to
 			# cash the signature for max damage. A recovery whiff is a shorter window,
@@ -259,7 +276,16 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	# stand-off rather than lingering in trade range. This is the whole point of a
 	# glass cannon — touch and go, never stand and bang.
 	var perp := Vector2(-dir.y, dir.x) * _strafe
-	if _retreat_t > 0.0 and dist < reach + gap + 30.0:
+	if ranged:
+		# Kite: hold the pocket — close in if out of shot range, back off (always, not
+		# just on _make_space) if the enemy creeps into melee, otherwise strafe and poke.
+		if dist > kite_dist + 30.0:
+			move_dir = (dir + perp * 0.3).normalized()
+		elif dist < kite_dist - 24.0:
+			move_dir = (-dir + perp * 0.45).normalized()
+		else:
+			move_dir = (perp * 0.7 + dir * 0.05).normalized()
+	elif _retreat_t > 0.0 and dist < reach + gap + 30.0:
 		move_dir = (-dir + perp * 0.4).normalized()
 	# Spacing: approach, peel off if too close, otherwise circle.
 	elif dist > reach + gap + 24.0:
@@ -327,7 +353,7 @@ func think(owner: Node, target: Node, delta: float) -> void:
 
 	# Ranged poke: hurl the weapon at mid range, but only when it won't clear the
 	# platform edge on a miss and be wasted (see _throw_safe).
-	if not disarmed and _throw_cd <= 0.0 and owner.can_throw() \
+	if not disarmed and not ranged and _throw_cd <= 0.0 and owner.can_throw() \
 			and dist > reach + standoff_gap and dist < THROW_RANGE \
 			and target.invuln_timer <= 0.0 \
 			and randf() < throw_chance and _throw_safe(owner, dir, dist):
@@ -335,8 +361,9 @@ func think(owner: Node, target: Node, delta: float) -> void:
 		_throw_q = true
 		_throw_cd = randf_range(2.2, 3.6)
 
-	# Attack when in range and off cooldown. Mostly avoid swinging into i-frames.
-	if dist <= reach + 16.0 and _attack_cd <= 0.0 and owner.can_attack():
+	# Attack when in range and off cooldown (shot range for ranged). Mostly avoid
+	# swinging/firing into i-frames.
+	if dist <= attack_reach + 16.0 and _attack_cd <= 0.0 and owner.can_attack():
 		if target.invuln_timer <= 0.0 or randf() < 0.25:
 			move_dir = dir  # face the target on the commit frame
 			var edge_kill: bool = not ro.is_empty() and ro["near_edge"] and ro["aligned"]
