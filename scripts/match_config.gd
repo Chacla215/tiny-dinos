@@ -435,7 +435,12 @@ const ISLAND_SCENES := {
 # KOTH_TARGET seconds wins (KOs just respawn). EGGS = grab loose eggs off the
 # field; first to EGG_TARGET wins (KOs just respawn). All four reuse the one
 # arena + the procedural hill/egg props, so every island plays every mode.
-const MODE_ORDER := ["rounds", "stock", "koth", "eggs", "sumo", "bombtag", "beast", "flood"]
+# Curated set of 6 (2026-06-10): 2 fight formats + zone control + 2 party +
+# survival, each mechanically distinct. EGG GRAB (redundant with KOTH) and THE
+# BEAST (high-maintenance, swingy) were retired from the menu; their main.gd
+# logic stays dormant/unreachable (game_mode can never select them) so it can be
+# revived without re-deriving it.
+const MODE_ORDER := ["rounds", "stock", "koth", "sumo", "bombtag", "flood"]
 const MODE_NAMES := {
 	"rounds": "BEST OF ROUNDS",
 	"stock": "LAST DINO STANDING",
@@ -446,15 +451,17 @@ const MODE_NAMES := {
 	"beast": "THE BEAST",
 	"flood": "RISING TIDE",
 }
+# Concrete win conditions (with the actual targets) so the select screen reads
+# as rules, not vibes. {n} tokens are filled from the tuning consts in _blurb().
 const MODE_BLURBS := {
-	"rounds": "A KO WINS THE ROUND",
-	"stock": "LOSE A LIFE PER KO",
-	"koth": "HOLD THE HILL TO SCORE",
-	"eggs": "GRAB THE MOST EGGS",
-	"sumo": "SHOVE THEM OFF THE EDGE",
-	"bombtag": "PASS THE BOMB OR BOOM",
-	"beast": "BE THE BEAST THE LONGEST",
-	"flood": "STAY ON DRY LAND",
+	"rounds": "FIRST TO {rounds} ROUNDS  -  A KO TAKES THE ROUND",
+	"stock": "{lives} LIVES EACH  -  LAST DINO STANDING",
+	"koth": "HOLD THE HILL  -  FIRST TO {koth}s  -  KOs RESPAWN",
+	"eggs": "GRAB EGGS  -  FIRST TO {eggs}  -  KOs RESPAWN",
+	"sumo": "NO HP  -  SHOVE THEM OFF  -  FIRST TO {sumo} RING-OUTS",
+	"bombtag": "PASS THE BOMB OR BOOM  -  SURVIVE TO WIN",
+	"beast": "BE THE CROWNED BEAST  -  FIRST TO {beast}s",
+	"flood": "THE TIDE RISES  -  LAST DINO ON DRY LAND WINS",
 }
 var game_mode: String = "rounds"
 const STOCK_LIVES := 3        # lives each fighter starts with in LAST DINO STANDING
@@ -466,6 +473,18 @@ const BOMB_PASS_LOCK := 0.5   # grace after catching the bomb before it can pass
 const BEAST_TARGET := 25.0    # THE BEAST: seconds spent crowned needed to win
 const FLOOD_DURATION := 28.0  # RISING TIDE: seconds for the safe zone to fully close in
 const FLOOD_MIN := 0.15       # smallest the safe zone shrinks to (a final-showdown platform)
+const ROUNDS_TO_WIN := 3      # BEST OF ROUNDS: round wins needed (standard versus default)
+
+# Win-condition blurb for `mode` with its real targets filled in (see MODE_BLURBS).
+func mode_blurb(mode: String) -> String:
+	return String(MODE_BLURBS.get(mode, "")).format({
+		"rounds": ROUNDS_TO_WIN,
+		"lives": STOCK_LIVES,
+		"koth": int(KOTH_TARGET),
+		"eggs": EGG_TARGET,
+		"sumo": SUMO_TARGET,
+		"beast": int(BEAST_TARGET),
+	})
 
 var dino_choices: Dictionary = {"p1": "trex", "p2": "raptor", "p3": "trike", "p4": "pterry"}
 var island: String = "laughing_lava"

@@ -492,8 +492,8 @@ func _cycle_mode() -> void:
 func _build_mode_label() -> void:
 	mode_label = Label.new()
 	mode_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	mode_label.offset_top = 112.0
-	mode_label.offset_bottom = 138.0
+	mode_label.offset_top = 110.0
+	mode_label.offset_bottom = 158.0
 	mode_label.offset_left = 0.0
 	mode_label.offset_right = 1280.0
 	mode_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -508,13 +508,13 @@ func _update_mode_label() -> void:
 		mode_label.visible = false
 		return
 	var mname: String = MatchConfig.MODE_NAMES.get(MatchConfig.game_mode, "BEST OF ROUNDS")
-	var blurb: String = MatchConfig.MODE_BLURBS.get(MatchConfig.game_mode, "")
-	mode_label.text = "MODE:  %s  -  %s    (P1 Y)" % [mname, blurb]
+	var blurb: String = MatchConfig.mode_blurb(MatchConfig.game_mode)
+	mode_label.text = "MODE:  %s    (P1 Y)\n%s" % [mname, blurb]
 
 # --- Teams ---
-# Beast & Bomb Tag are inherently free-for-all (one crown / one bomb), so teams
-# are offered only for the other modes — and only with 3+ fighters.
-const TEAM_MODES := ["rounds", "stock", "koth", "eggs", "sumo", "flood"]
+# Bomb Tag is inherently free-for-all (one bomb), so teams are offered only for
+# the other modes — and only with 3+ fighters.
+const TEAM_MODES := ["rounds", "stock", "koth", "sumo", "flood"]
 
 func _mode_allows_teams() -> bool:
 	return MatchConfig.game_mode in TEAM_MODES
@@ -554,8 +554,8 @@ func _apply_team_preset() -> void:
 func _build_teams_label() -> void:
 	teams_label = Label.new()
 	teams_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	teams_label.offset_top = 138.0
-	teams_label.offset_bottom = 162.0
+	teams_label.offset_top = 162.0
+	teams_label.offset_bottom = 186.0
 	teams_label.offset_left = 0.0
 	teams_label.offset_right = 1280.0
 	teams_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
