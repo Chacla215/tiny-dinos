@@ -92,7 +92,7 @@ const ANIM_LAYOUTS := {
 @export_group("Special")
 ## Signature move on the special button. Type drives the few unique behaviors;
 ## everything else is a normal melee swing with these numbers.
-## "none" | "chomp" (lifesteal) | "dash_claw" | "headbutt" | "screech" (AoE)
+## "none" | "chomp" (lifesteal) | "dash_claw" | "headbutt" | "screech"/"stomp" (AoE)
 @export var special_type: String = "none"
 @export var special_damage: int = 25
 @export var special_knockback: float = 350.0
@@ -844,8 +844,8 @@ func update_attack(delta: float) -> void:
 		AttackPhase.WINDUP:
 			attack_phase = AttackPhase.ACTIVE
 			attack_timer = current_attack_active
-			if current_is_special and special_type == "screech":
-				_do_screech()
+			if current_is_special and (special_type == "screech" or special_type == "stomp"):
+				_do_screech()  # Ralph's Tiny Meteor Stomp reuses the radial shockwave
 			elif current_is_special and special_type == "spikes":
 				_spawn_spike_volley()
 			elif current_is_heavy and heavy_attack_type == "projectile":

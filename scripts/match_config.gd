@@ -1,6 +1,6 @@
 extends Node
 
-const ROSTER_ORDER := ["trex", "raptor", "trike", "pterry", "bronto", "anky"]
+const ROSTER_ORDER := ["trex", "raptor", "trike", "pterry", "bronto", "anky", "ralph"]
 
 const PLAYER_COLORS := {
 	"p1": Color(1.00, 0.88, 0.30, 1.0),
@@ -306,6 +306,54 @@ const DINOS := {
 		"special_hitbox_size": Vector2(100, 80),
 		"special_hitbox_offset": 44.0,
 		"special_cooldown": 4.5,
+	},
+	# Ralph the mascot — a scrappy medium bruiser whose niche is the AoE signature
+	# "Tiny Meteor Stomp" (reuses the radial screech shockwave). Stats track the
+	# character-screen flavor: HP 120, ATK 28 ((19+37)/2), DEF 20 (block 120/6).
+	"ralph": {
+		"display_name": "RALPH",
+		"weapons": ["fists", "hammer"],
+		"dino_color": Color(0.5, 0.82, 0.52, 1.0),
+		"sprite_role": "ralph",
+		"sprite_scale": 0.6,
+		"sprite_offset_y": -32.0,
+		"hit_sfx_name": "hit_chomp",
+		"max_speed": 250.0,
+		"ground_accel": 2200.0,
+		"ground_friction": 3200.0,
+		"ice_accel": 450.0,
+		"ice_friction": 130.0,
+		"max_hp": 120,
+		"attack_damage": 19,
+		"attack_knockback": 380.0,
+		"attack_windup": 0.18,
+		"attack_active": 0.12,
+		"attack_recovery": 0.34,
+		"attack_hitbox_size": Vector2(72, 62),
+		"attack_hitbox_offset": 52.0,
+		"heavy_damage": 37,
+		"heavy_knockback": 600.0,
+		"heavy_windup": 0.32,
+		"heavy_active": 0.17,
+		"heavy_recovery": 0.55,
+		"heavy_hitbox_size": Vector2(92, 76),
+		"heavy_hitbox_offset": 58.0,
+		"heavy_self_dash": 0.0,
+		"max_block": 120.0,
+		"block_regen": 26.0,
+		"dodge_duration": 0.20,
+		"dodge_cooldown": 0.65,
+		"dodge_distance": 130.0,
+		"dodge_block_cost": 34.0,
+		"special_type": "stomp",
+		"special_damage": 16,
+		"special_knockback": 520.0,
+		"special_windup": 0.30,
+		"special_active": 0.10,
+		"special_recovery": 0.55,
+		"special_radius": 210.0,
+		"special_slow_duration": 1.0,
+		"special_cooldown": 8.0,
 	},
 }
 
