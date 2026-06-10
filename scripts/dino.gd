@@ -8,6 +8,7 @@ const SHEET_PLAYER := "res://assets/sprites/playersprites_revision.png"
 const SHEET_REF := "res://assets/sprites/rynosaurlandcharacters.png"
 const SHEET_ENEMY := "res://assets/sprites/enemysprites_revision.png"
 const SHEET_RALPH := "res://assets/sprites/ralph_fighter.png"
+const SHEET_TREX := "res://assets/sprites/trex_fighter.png"
 
 const ANIM_LAYOUTS := {
 	"raptor": {
@@ -24,11 +25,13 @@ const ANIM_LAYOUTS := {
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(236, 0, 118, 160), Rect2(354, 0, 118, 160), Rect2(472, 0, 118, 160), Rect2(590, 0, 118, 160)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(708, 0, 118, 160), Rect2(826, 0, 118, 160), Rect2(944, 0, 118, 160)]},
 	},
+	# T-Rex as an in-match fighter — pixel sheet baked from the painterly hero
+	# by scripts/tools/gen_ralph_fighter.py trex (139x160 cells).
 	"trex": {
-		"sheet": SHEET_REF,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(221, 4, 19, 21), Rect2(247, 3, 19, 22)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(219, 30, 20, 21), Rect2(245, 29, 20, 22)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(245, 29, 20, 22)]},
+		"sheet": SHEET_TREX,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 139, 160), Rect2(139, 0, 139, 160)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(278, 0, 139, 160), Rect2(417, 0, 139, 160), Rect2(556, 0, 139, 160), Rect2(695, 0, 139, 160)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(834, 0, 139, 160), Rect2(973, 0, 139, 160), Rect2(1112, 0, 139, 160)]},
 	},
 	"trike": {
 		"sheet": SHEET_ENEMY,
