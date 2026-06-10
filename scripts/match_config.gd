@@ -43,7 +43,20 @@ const PLAYER_COLORS := {
 }
 
 const PLAYER_IDS := ["p1", "p2", "p3", "p4"]
-const ACTION_NAMES := ["up", "down", "left", "right", "attack", "heavy", "special", "swap", "block", "dodge", "pickup", "throw", "confirm"]
+const ACTION_NAMES := ["up", "down", "left", "right", "attack", "heavy", "special", "swap", "block", "dodge", "pickup", "throw", "confirm", "emote"]
+
+# Quick taunt emotes. Tapping Select in a match pops the next one over your dino.
+# `text` is the art-free bubble shown today; a painterly pose can swap in later.
+const EMOTES := [
+	{"name": "WAVE",     "text": "HI!"},
+	{"name": "EXCITED",  "text": "YEAH!"},
+	{"name": "CONFUSED", "text": "HUH?"},
+	{"name": "LOVE",     "text": "<3"},
+	{"name": "ROAR",     "text": "ROAR!"},
+	{"name": "SLEEPY",   "text": "ZZZ"},
+	{"name": "DIZZY",    "text": "@_@"},
+	{"name": "PROUD",    "text": "TA-DA!"},
+]
 
 const PLAYER_TINTS := {
 	"p1": Color(1.30, 1.20, 0.50),
@@ -768,6 +781,7 @@ func _register_player_actions(prefix: String, device: int) -> void:
 		"block":   JOY_BUTTON_Y,
 		"dodge":   JOY_BUTTON_A,
 		"confirm": JOY_BUTTON_A,
+		"emote":   JOY_BUTTON_BACK,
 	}
 	# Analog triggers (LT/RT) rest at 0 and climb to 1 when squeezed, so they're
 	# bound as positive-axis motions rather than buttons.
