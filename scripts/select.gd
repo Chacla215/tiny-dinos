@@ -155,6 +155,12 @@ func _apply_active_count(n: int) -> void:
 		_update_display(pid)
 	_refresh_start()
 	_update_difficulty_label()
+	# THE BEAST needs 3-4 fighters; if the count dropped below that, fall back to
+	# ROUNDS so the menu never sits on an unplayable mode.
+	if not _mode_available(MatchConfig.game_mode):
+		MatchConfig.game_mode = "rounds"
+		mode_idx = MatchConfig.MODE_ORDER.find("rounds")
+		_update_mode_label()
 	# Fewer/more fighters changes which splits are valid — reset to OFF.
 	team_preset_idx = 0
 	_apply_team_preset()
@@ -478,9 +484,19 @@ func _update_difficulty_label() -> void:
 
 # --- Game mode ---
 
+# THE BEAST is a 1-vs-all crowd mode — only offered with 3-4 fighters.
+func _mode_available(mode: String) -> bool:
+	if mode == "beast":
+		return MatchConfig.player_count >= MatchConfig.BEAST_MIN_PLAYERS
+	return true
+
 func _cycle_mode() -> void:
 	var order: Array = MatchConfig.MODE_ORDER
-	mode_idx = (mode_idx + 1) % order.size()
+	# Advance to the next AVAILABLE mode (skips THE BEAST at <3 players).
+	for _i in order.size():
+		mode_idx = (mode_idx + 1) % order.size()
+		if _mode_available(order[mode_idx]):
+			break
 	MatchConfig.game_mode = order[mode_idx]
 	_update_mode_label()
 	# Switching to/from an FFA-only mode changes whether teams are offered.
@@ -512,9 +528,9 @@ func _update_mode_label() -> void:
 	mode_label.text = "MODE:  %s    (P1 Y)\n%s" % [mname, blurb]
 
 # --- Teams ---
-# Bomb Tag is inherently free-for-all (one bomb), so teams are offered only for
-# the other modes — and only with 3+ fighters.
-const TEAM_MODES := ["rounds", "koth", "sumo", "flood"]
+# Bomb Tag (one bomb) and The Beast (one crown) are inherently free-for-all, so
+# teams are offered only for the other modes — and only with 3+ fighters.
+const TEAM_MODES := ["rounds", "koth", "eggs", "sumo", "flood"]
 
 func _mode_allows_teams() -> bool:
 	return MatchConfig.game_mode in TEAM_MODES

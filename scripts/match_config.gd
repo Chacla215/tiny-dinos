@@ -435,13 +435,14 @@ const ISLAND_SCENES := {
 # KOTH_TARGET seconds wins (KOs just respawn). EGGS = grab loose eggs off the
 # field; first to EGG_TARGET wins (KOs just respawn). All four reuse the one
 # arena + the procedural hill/egg props, so every island plays every mode.
-# Curated set of 5 (2026-06-10): every mode is a DISTINCT verb so none feel like
-# another — best-of duels, hold-the-zone, shove-off, bomb-pass, outlast-the-tide.
-# Retired from the menu: EGG GRAB (redundant with KOTH), THE BEAST (heavy/swingy),
-# and LAST DINO STANDING (its HP-KO loop felt the same as BEST OF ROUNDS; the
-# survival itch is covered by sumo/bombtag/flood). Their main.gd logic stays
-# dormant/unreachable (game_mode can never select them) so it's revivable.
-const MODE_ORDER := ["rounds", "koth", "sumo", "bombtag", "flood"]
+# Curated set (2026-06-10): every mode is a DISTINCT verb so none feel like
+# another — duels (rounds), hold-the-zone (koth), scramble-for-eggs (eggs),
+# shove-off (sumo), bomb-pass (bombtag), hunt-the-beast (beast), outlast-the-tide
+# (flood). LAST DINO STANDING was retired (its HP-KO loop felt the same as BEST
+# OF ROUNDS; its dormant main.gd logic stays revivable). THE BEAST is gated to
+# 3-4 players by the select screen (it collapses in 1v1) — see select._mode_available.
+const MODE_ORDER := ["rounds", "koth", "eggs", "sumo", "bombtag", "beast", "flood"]
+const BEAST_MIN_PLAYERS := 3  # THE BEAST is a 1-vs-all crowd mode; hidden in 1v1
 const MODE_NAMES := {
 	"rounds": "BEST OF ROUNDS",
 	"stock": "LAST DINO STANDING",
