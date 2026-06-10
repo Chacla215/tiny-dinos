@@ -1622,7 +1622,12 @@ func update_visual() -> void:
 		var flash := int(invuln_timer * 30.0) % 2 == 0
 		if flash:
 			color.a *= 0.5
+	# Soften the per-player tint to a hue HINT: a full multiply made sense on
+	# the old flat sprites, but it crushes the painterly fighters (P2's 0.5-red
+	# tint turned the red raptor near-black). 35% keeps who's-who readable
+	# without destroying each species' palette.
 	var sprite_tint: Color = MatchConfig.PLAYER_TINTS.get(player_id, Color.WHITE) if MatchConfig else Color.WHITE
+	sprite_tint = Color.WHITE.lerp(sprite_tint, 0.35)
 	if beast_active:
 		color *= BEAST_TINT  # gold glow marks the juggernaut
 	polygon.modulate = color
