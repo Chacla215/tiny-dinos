@@ -411,33 +411,46 @@ var cpu_difficulty: String = "normal"
 var arcade_setup: bool = false       # title -> select handoff: configure a solo ladder
 var arcade: bool = false
 var arcade_rung: int = 0
-var arcade_ladder: Array = []        # [{dino, difficulty, island}]
+var arcade_ladder: Array = []        # [{foes: [dino,...], difficulty, island}]
 var arcade_player_dino: String = "trex"
 var arcade_player_weapon: String = "hammer"
+var arcade_duo: bool = false         # co-op: P1 + a CPU ally climb as a 2-fighter team
+var arcade_ally_dino: String = "raptor"
 const ARCADE_DIFFS := ["easy", "easy", "normal", "normal", "hard"]
 
-func start_arcade(player_dino: String, player_weapon: String, start_island: String = "") -> void:
+func start_arcade(player_dino: String, player_weapon: String, start_island: String = "", duo: bool = false) -> void:
 	arcade = true
-	teams_enabled = false  # solo ladder is always 1-v-1
+	arcade_duo = duo
+	teams_enabled = duo
 	arcade_rung = 0
 	arcade_player_dino = player_dino
 	arcade_player_weapon = player_weapon
+	if duo:
+		# A partner different from the player, fixed for the whole run.
+		var pool: Array = ROSTER_ORDER.filter(func(d): return d != player_dino)
+		pool.shuffle()
+		arcade_ally_dino = pool[0] if not pool.is_empty() else player_dino
 	arcade_ladder = _build_ladder(player_dino, start_island)
 	_apply_arcade_rung()
 
 # The ladder is every OTHER dino, difficulty ramping easy->hard, each on a
-# different island for variety. The last rung is always the toughest foe on HARD.
+# different island for variety. The last rung is always the toughest on HARD.
 # start_island rotates the island sequence so rung 1 opens on the chosen island.
+# In duo each rung fields TWO foes (you + ally vs two), drawn from the pool.
 func _build_ladder(player_dino: String, start_island: String = "") -> Array:
 	var foes: Array = []
 	for d in ROSTER_ORDER:
-		if d != player_dino:
+		if d != player_dino and (not arcade_duo or d != arcade_ally_dino):
 			foes.append(d)
 	var offset: int = max(0, ISLAND_ORDER.find(start_island))
 	var ladder: Array = []
-	for i in range(foes.size()):
+	var n: int = foes.size()
+	for i in range(n):
+		var rung_foes: Array = [foes[i]]
+		if arcade_duo:
+			rung_foes.append(foes[(i + 1) % n])  # a second foe so it's a 2-v-2
 		ladder.append({
-			"dino": foes[i],
+			"foes": rung_foes,
 			"difficulty": ARCADE_DIFFS[min(i, ARCADE_DIFFS.size() - 1)],
 			"island": ISLAND_ORDER[(offset + i) % ISLAND_ORDER.size()],
 		})
@@ -447,14 +460,25 @@ func _build_ladder(player_dino: String, start_island: String = "") -> Array:
 
 func _apply_arcade_rung() -> void:
 	var rung: Dictionary = arcade_ladder[arcade_rung]
-	player_count = 2
-	cpu_players = {"p1": false, "p2": true, "p3": false, "p4": false}
-	dino_choices["p1"] = arcade_player_dino
-	dino_choices["p2"] = rung["dino"]
+	var foes: Array = rung["foes"]
 	weapon_choices = {"p1": arcade_player_weapon}
 	cpu_difficulty = rung["difficulty"]
 	island = rung["island"]
 	game_mode = "rounds"
+	dino_choices["p1"] = arcade_player_dino
+	if arcade_duo:
+		player_count = 4
+		teams_enabled = true
+		teams = {"p1": "a", "p3": "a", "p2": "b", "p4": "b"}
+		cpu_players = {"p1": false, "p3": true, "p2": true, "p4": true}
+		dino_choices["p3"] = arcade_ally_dino
+		dino_choices["p2"] = foes[0]
+		dino_choices["p4"] = foes[1] if foes.size() > 1 else foes[0]
+	else:
+		player_count = 2
+		teams_enabled = false
+		cpu_players = {"p1": false, "p2": true, "p3": false, "p4": false}
+		dino_choices["p2"] = foes[0]
 
 # Advance to the next rung. Returns false when the ladder is cleared (champion).
 func arcade_advance() -> bool:

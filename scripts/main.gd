@@ -1176,7 +1176,8 @@ func _end_match_arcade(winner: Node) -> void:
 	for p in active_players:
 		p.set_process_input(false)
 		p.set_physics_process(false)
-	var player_won: bool = winner != null and winner.player_id == "p1"
+	# In duo the ally can land the winning KO — a win is anyone on the player's side.
+	var player_won: bool = winner != null and (winner.player_id == "p1" or MatchConfig.same_side(winner.player_id, "p1"))
 	var stage: int = MatchConfig.arcade_rung + 1
 	var total: int = MatchConfig.arcade_ladder.size()
 	if not player_won:
@@ -1193,11 +1194,13 @@ func _end_match_arcade(winner: Node) -> void:
 		play_sfx("win", 0.0)
 	else:
 		arcade_end = "advance"
-		var next_dino: String = MatchConfig.arcade_ladder[MatchConfig.arcade_rung + 1]["dino"]
-		var next_name: String = MatchConfig.DINOS[next_dino].display_name
+		var next_foes: Array = MatchConfig.arcade_ladder[MatchConfig.arcade_rung + 1]["foes"]
+		var names: Array = []
+		for f in next_foes:
+			names.append(MatchConfig.DINOS[f].display_name)
 		hud_win.text = "STAGE %d CLEARED" % stage
 		hud_win.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5))
-		hud_hint.text = "NEXT:  %s   (STAGE %d / %d)\n\npress START to continue" % [next_name, stage + 1, total]
+		hud_hint.text = "NEXT:  %s   (STAGE %d / %d)\n\npress START to continue" % [" + ".join(names), stage + 1, total]
 		play_sfx("win", 0.0)
 
 func _arcade_continue() -> void:

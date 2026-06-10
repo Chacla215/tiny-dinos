@@ -47,6 +47,7 @@ var team_preset_idx: int = 0
 # fighter; the p2 slot is the CPU opponent, not host-configurable.
 var arcade: bool = false
 var gauntlet: bool = false
+var solo_duo: bool = false   # arcade co-op: P1 + a CPU partner
 
 func _solo() -> bool:
 	return arcade or gauntlet
@@ -105,14 +106,24 @@ func _enter_solo_setup() -> void:
 	cpu_states["p2"] = true
 	ready_states["p2"] = true   # the opponent is always ready; the host can't edit it
 	stages["p2"] = "ready"
-	if difficulty_label:
-		difficulty_label.visible = false
 	island_label.text = "ROGUELIKE GAUNTLET  -  SURVIVE + UPGRADE" if gauntlet else "ARCADE LADDER  -  CLIMB THE GAUNTLET"
-	hint_label.text = "A CONFIRM    B BACK    P1 PICK FIGHTER  -  UP/DOWN ISLAND"
+	# Arcade can be played co-op (you + a CPU partner); the gauntlet stays solo.
+	hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER  -  UP/DOWN ISLAND" + ("   X PARTNER" if arcade else "")
+	_update_solo_duo_label()
 	_update_solo_island_label()  # repurposes the (otherwise-hidden) mode label
 	_set_island_bg(MatchConfig.ISLAND_ORDER[island_idx])
 	_refresh_displays()
 	_refresh_start()
+
+# Arcade co-op toggle, shown on the (otherwise-hidden-in-solo) difficulty line.
+func _update_solo_duo_label() -> void:
+	if not difficulty_label:
+		return
+	if not arcade:
+		difficulty_label.visible = false
+		return
+	difficulty_label.visible = true
+	difficulty_label.text = "PARTNER (CO-OP):  %s    (P1 X)" % ("ON" if solo_duo else "OFF")
 
 # Solo setup borrows the mode label to show the chosen starting island; the
 # gauntlet randomizes islands after wave 1, the arcade ladder opens here.
@@ -172,6 +183,10 @@ func _process(delta: float) -> void:
 			_cycle_solo_island(-1)
 		elif Input.is_action_just_pressed("p1_down"):
 			_cycle_solo_island(1)
+		# Arcade only: X toggles the co-op partner.
+		if arcade and Input.is_action_just_pressed("p1_attack"):
+			solo_duo = not solo_duo
+			_update_solo_duo_label()
 	if _all_ready():
 		_process_launch(delta)
 		return
@@ -646,7 +661,7 @@ func _start_match() -> void:
 			get_tree().change_scene_to_file(MatchConfig.gauntlet_scene())
 		else:
 			MatchConfig.arcade_setup = false
-			MatchConfig.start_arcade(pd, pw, pi)
+			MatchConfig.start_arcade(pd, pw, pi, solo_duo)
 			get_tree().change_scene_to_file(MatchConfig.arcade_scene())
 		return
 	MatchConfig.weapon_choices = {}
