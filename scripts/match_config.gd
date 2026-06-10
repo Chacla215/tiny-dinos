@@ -575,8 +575,12 @@ func _build_ladder(player_dino: String, start_island: String = "") -> Array:
 			"island": ISLAND_ORDER[(offset + i) % ISLAND_ORDER.size()],
 		})
 	if not ladder.is_empty():
-		ladder[ladder.size() - 1]["difficulty"] = "hard"  # final boss
+		ladder[ladder.size() - 1]["difficulty"] = "brutal"  # final boss: the BRUTAL capstone
 	return ladder
+
+# True when the player is on the last rung of the arcade ladder (the final boss).
+func arcade_is_final_rung() -> bool:
+	return arcade and not arcade_ladder.is_empty() and arcade_rung == arcade_ladder.size() - 1
 
 func _apply_arcade_rung() -> void:
 	var rung: Dictionary = arcade_ladder[arcade_rung]

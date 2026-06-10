@@ -1094,7 +1094,13 @@ func _end_round(winner_pid: String) -> void:
 	var is_special: bool = (MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet) \
 		or (MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade)
 	var intro_t := 0.8
-	if current_round == 1 and not is_special:
+	var arcade_final: bool = MatchConfig.has_method("arcade_is_final_rung") and MatchConfig.arcade_is_final_rung()
+	if current_round == 1 and arcade_final:
+		# The BRUTAL capstone of the arcade climb — announce it so the spike feels earned.
+		hud_win.text = "FINAL BOSS"
+		hud_win.add_theme_color_override("font_color", Color(1.0, 0.5, 0.3))
+		intro_t = 1.6
+	elif current_round == 1 and not is_special:
 		hud_win.text = MatchConfig.MODE_NAMES.get(game_mode, "BEST OF ROUNDS")
 		intro_t = 1.4
 	else:
