@@ -7,6 +7,7 @@ enum DefenseState { NORMAL, BLOCKING, DODGING, GUARD_BROKEN }
 const SHEET_PLAYER := "res://assets/sprites/playersprites_revision.png"
 const SHEET_REF := "res://assets/sprites/rynosaurlandcharacters.png"
 const SHEET_ENEMY := "res://assets/sprites/enemysprites_revision.png"
+const SHEET_RALPH := "res://assets/sprites/ralph_fighter.png"
 
 const ANIM_LAYOUTS := {
 	"raptor": {
@@ -14,6 +15,14 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(99, 79, 22, 35), Rect2(125, 79, 23, 35)]},
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(99, 127, 22, 35), Rect2(130, 129, 22, 35)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(97, 228, 32, 34), Rect2(136, 232, 22, 34)]},
+	},
+	# Ralph the mascot as an in-match fighter — pixel-art sheet baked from the
+	# existing painterly hero by scripts/tools/gen_ralph_fighter.py (118x160 cells).
+	"ralph": {
+		"sheet": SHEET_RALPH,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 118, 160), Rect2(118, 0, 118, 160)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(236, 0, 118, 160), Rect2(354, 0, 118, 160), Rect2(472, 0, 118, 160), Rect2(590, 0, 118, 160)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(708, 0, 118, 160), Rect2(826, 0, 118, 160), Rect2(944, 0, 118, 160)]},
 	},
 	"trex": {
 		"sheet": SHEET_REF,
