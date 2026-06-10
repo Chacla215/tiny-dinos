@@ -9,6 +9,10 @@ const SAVE_PATH := "user://gauntlet_save.cfg"
 var best_wave: int = 0
 var runs: int = 0
 
+# Cosmetic skin chosen per dino id -> SKINS index (see MatchConfig.SKINS).
+# Display-only progression; defaults to 0 (DEFAULT) for any dino not set.
+var skins: Dictionary = {}
+
 # Reach this wave (ever) to permanently unlock the perk. Ordered by threshold.
 const UNLOCKS := [
 	{"id": "extra_draft",   "wave": 3,  "name": "EXTRA DRAFT",   "blurb": "DRAFTS OFFER 4 UPGRADES"},
@@ -24,12 +28,23 @@ func _load() -> void:
 	if cfg.load(SAVE_PATH) == OK:
 		best_wave = int(cfg.get_value("gauntlet", "best_wave", 0))
 		runs = int(cfg.get_value("gauntlet", "runs", 0))
+		skins = cfg.get_value("cosmetics", "skins", {})
 
 func _save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("gauntlet", "best_wave", best_wave)
 	cfg.set_value("gauntlet", "runs", runs)
+	cfg.set_value("cosmetics", "skins", skins)
 	cfg.save(SAVE_PATH)
+
+# Selected skin index for a dino (0 = DEFAULT).
+func get_skin(dino_id: String) -> int:
+	return int(skins.get(dino_id, 0))
+
+# Equip + persist a dino's skin.
+func set_skin(dino_id: String, idx: int) -> void:
+	skins[dino_id] = int(idx)
+	_save()
 
 func has_unlock(id: String) -> bool:
 	for u in UNLOCKS:

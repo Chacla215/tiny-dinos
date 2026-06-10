@@ -2,6 +2,39 @@ extends Node
 
 const ROSTER_ORDER := ["trex", "raptor", "trike", "pterry", "bronto", "anky", "ralph"]
 
+# ---- Cosmetic skins (shared across every dino) -------------------------------
+# A skin is a live recolor of the fighter via assets/shaders/skin_recolor.gdshader
+# (no per-skin art needed in-match). DEFAULT (index 0) is the un-recolored fighter.
+# `swatch` is the carousel fallback colour; hue/sat/val drive the shader. The
+# painterly creator portrait uses assets/concept/<dino>/<dino>_<name>.png when it
+# exists, else the recoloured base hero. Persisted per dino in MetaSave.
+const SKIN_SHADER := preload("res://assets/shaders/skin_recolor.gdshader")
+const SKINS := [
+	{"name": "DEFAULT", "rarity": "COMMON", "swatch": Color("9aa3b4"), "recolor": false},
+	{"name": "CRYSTAL", "rarity": "RARE",   "swatch": Color("8fd6e8"), "hue": 0.52, "sat": 0.65, "val": 1.12},
+	{"name": "VOLCANO", "rarity": "RARE",   "swatch": Color("e0622a"), "hue": 0.035, "sat": 1.15, "val": 0.82},
+	{"name": "FROZEN",  "rarity": "RARE",   "swatch": Color("bcd8ec"), "hue": 0.55, "sat": 0.45, "val": 1.15},
+	{"name": "SPRING",  "rarity": "RARE",   "swatch": Color("a9d98c"), "hue": 0.27, "sat": 0.85, "val": 1.06},
+	{"name": "VOID",    "rarity": "EPIC",   "swatch": Color("8a5cc8"), "hue": 0.75, "sat": 0.85, "val": 0.90},
+	{"name": "GOLDEN",  "rarity": "EPIC",   "swatch": Color("e6c860"), "hue": 0.12, "sat": 1.00, "val": 1.12},
+]
+
+# A ShaderMaterial configured for skin `idx`, or null for DEFAULT / out-of-range
+# (so callers can do `node.material = MatchConfig.skin_material(idx)` uniformly).
+func skin_material(idx: int) -> ShaderMaterial:
+	if idx <= 0 or idx >= SKINS.size():
+		return null
+	var s: Dictionary = SKINS[idx]
+	if not s.get("recolor", true):
+		return null
+	var m := ShaderMaterial.new()
+	m.shader = SKIN_SHADER
+	m.set_shader_parameter("target_hue", float(s.get("hue", 0.0)))
+	m.set_shader_parameter("sat_mul", float(s.get("sat", 1.0)))
+	m.set_shader_parameter("val_mul", float(s.get("val", 1.0)))
+	m.set_shader_parameter("strength", 1.0)
+	return m
+
 const PLAYER_COLORS := {
 	"p1": Color(1.00, 0.88, 0.30, 1.0),
 	"p2": Color(0.30, 0.80, 1.00, 1.0),
