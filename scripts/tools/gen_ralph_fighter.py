@@ -1,25 +1,37 @@
 #!/usr/bin/env python3
-"""Turn the EXISTING painterly Ralph hero into an in-match pixel-art fighter sheet.
+"""Bake a painterly dino hero into an in-match pixel-art fighter sheet.
 
-No new art: loads assets/concept/ralph/ralph_hero.png, keys out its flat blue-grey
-background, shrinks it to fighter size, runs it through the SAME Bayer dither the
-island backgrounds use (so Ralph reads as pixel art on the pixel islands), then
-bakes idle(2)/walk(4)/attack(3) frames via cheap transforms (same recipe as
-gen_ralph.py). Output: assets/sprites/ralph_fighter.png + a contact preview, and it
-prints the Rect2 cells for dino.gd ANIM_LAYOUTS.
+No new art: loads a hero PNG, keys out its flat background (or uses existing
+alpha), shrinks it to fighter size, runs it through the SAME Bayer dither the
+island backgrounds use (so the dino reads as pixel art on the pixel islands),
+then bakes idle(2)/walk(4)/attack(3) frames via cheap transforms. Output:
+assets/sprites/<dino>_fighter.png + a contact preview, and it prints the Rect2
+cells + SHEET const for dino.gd ANIM_LAYOUTS.
 
-Run:  python3 scripts/tools/gen_ralph_fighter.py
+Run:  python3 scripts/tools/gen_ralph_fighter.py [dino]
+      dino defaults to "ralph". Once Charlie drops assets/concept/<dino>/<dino>_hero.png
+      (per scripts/tools/dino_art_prompts.md), e.g. `... gen_ralph_fighter.py trike`
+      bakes that species' fighter the same way.
 """
 import os
+import sys
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-HERO = os.path.join(ROOT, "assets/concept/ralph/ralph_hero.png")
-OUT_SHEET = os.path.join(ROOT, "assets/sprites/ralph_fighter.png")
-OUT_PREVIEW = "/tmp/ralph/ralph_fighter_preview.png"
+
+# Per-dino hero source. Ralph's file is named ralph_hero.png; the rest follow the
+# <dino>/<dino>_hero.png convention from dino_art_prompts.md.
+HERO_SRC = {
+    "ralph":  "assets/concept/ralph/ralph_hero.png",
+    "trex":   "assets/concept/trex/trex_hero.png",
+    "raptor": "assets/concept/raptor/raptor_hero.png",
+    "trike":  "assets/concept/trike/trike_hero.png",
+    "pterry": "assets/concept/pterry/pterry_hero.png",
+    "bronto": "assets/concept/bronto/bronto_hero.png",
+    "anky":   "assets/concept/anky/anky_hero.png",
+}
 
 CHAR_H = 132          # target character height in px (reads ~1:1 at gameplay scale)
-BG = (125, 136, 158)  # measured flat hero background
 KEY_LO, KEY_HI = 34, 70   # color-distance band for the alpha ramp (soft edges)
 POSTERIZE = 6         # levels/channel -> flatten painterly gradients toward pixels
 DITHER_AMP = 12       # Bayer stipple strength (islands use ~16)
@@ -34,9 +46,21 @@ BAYER8 = [
 ]
 
 
+def sample_bg(im):
+    """Average the four corners -> the flat background color to key out."""
+    w, h = im.size
+    px = im.load()
+    cs = [px[2, 2], px[w - 3, 2], px[2, h - 3], px[w - 3, h - 3]]
+    return tuple(sum(c[i] for c in cs) // 4 for i in range(3))
+
+
 def cutout(im):
-    """Key out the flat BG with a soft distance ramp -> RGBA with clean edges."""
+    """RGBA with a clean alpha: use real transparency if present, else key the
+    flat corner background with a soft distance ramp."""
+    if im.mode == "RGBA" and im.getextrema()[3][0] < 250:
+        return im.crop(im.getbbox())          # already has a usable alpha
     im = im.convert("RGB")
+    bg = sample_bg(im)
     w, h = im.size
     src = im.load()
     out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -44,7 +68,7 @@ def cutout(im):
     for y in range(h):
         for x in range(w):
             r, g, b = src[x, y]
-            d = ((r - BG[0]) ** 2 + (g - BG[1]) ** 2 + (b - BG[2]) ** 2) ** 0.5
+            d = ((r - bg[0]) ** 2 + (g - bg[1]) ** 2 + (b - bg[2]) ** 2) ** 0.5
             if d <= KEY_LO:
                 a = 0
             elif d >= KEY_HI:
@@ -62,10 +86,8 @@ def pixelate(rgba):
     small = rgba.resize((max(1, round(w * scale)), CHAR_H), Image.LANCZOS)
     r, g, b, a = small.split()
     rgb = Image.merge("RGB", (r, g, b))
-    # posterize toward flat pixel bands
     step = 255 / (POSTERIZE - 1)
     rgb = rgb.point(lambda v: int(round(round(v / step) * step)))
-    # ordered Bayer dither
     sw, sh = rgb.size
     px = rgb.load()
     for y in range(sh):
@@ -76,7 +98,6 @@ def pixelate(rgba):
             px[x, y] = (max(0, min(255, cr + nudge)),
                         max(0, min(255, cg + nudge)),
                         max(0, min(255, cb + nudge)))
-    # harden alpha edges so they don't look fuzzy at pixel scale
     a = a.point(lambda v: 0 if v < 110 else 255)
     out = Image.merge("RGBA", (*rgb.split(), a))
     if FLIP_TO_FACE_RIGHT:
@@ -84,7 +105,7 @@ def pixelate(rgba):
     return out.crop(out.getbbox())
 
 
-def build_sheet(core):
+def build_sheet(core, out_sheet):
     """idle(2) walk(4) attack(3) via squash/waddle/lunge transforms of `core`."""
     cw0, ch0 = core.size
     pad = 14
@@ -113,27 +134,27 @@ def build_sheet(core):
     sheet = Image.new("RGBA", (CW * len(frames), CH), (0, 0, 0, 0))
     for i, f in enumerate(frames):
         sheet.alpha_composite(f, (i * CW, 0))
-    os.makedirs(os.path.dirname(OUT_SHEET), exist_ok=True)
-    sheet.save(OUT_SHEET)
+    os.makedirs(os.path.dirname(out_sheet), exist_ok=True)
+    sheet.save(out_sheet)
     return CW, CH, len(frames)
 
 
-def preview(cw, ch, n):
-    """A contact sheet on a mid-grey so transparent areas are obvious."""
-    sheet = Image.open(OUT_SHEET)
+def preview(out_sheet, out_preview):
+    sheet = Image.open(out_sheet)
     bg = Image.new("RGB", sheet.size, (90, 96, 110))
     bg.paste(sheet, (0, 0), sheet)
-    os.makedirs(os.path.dirname(OUT_PREVIEW), exist_ok=True)
-    bg.resize((bg.width * 2, bg.height * 2), Image.NEAREST).save(OUT_PREVIEW)
+    os.makedirs(os.path.dirname(out_preview), exist_ok=True)
+    bg.resize((bg.width * 2, bg.height * 2), Image.NEAREST).save(out_preview)
 
 
-def rects(cw, ch):
-    """Print the ANIM_LAYOUTS rects (idle 0-1, walk 2-5, attack 6-8)."""
+def rects(dino, cw, ch):
     def R(i):
         return f"Rect2({i*cw}, 0, {cw}, {ch})"
-    print(f"\n# paste into ANIM_LAYOUTS (cell {cw}x{ch}):")
-    print('"ralph": {')
-    print("    \"sheet\": SHEET_RALPH,")
+    sheet_const = f"SHEET_{dino.upper()}"
+    print(f"\n# add const {sheet_const} := \"res://assets/sprites/{dino}_fighter.png\"")
+    print(f"# paste into ANIM_LAYOUTS (cell {cw}x{ch}):")
+    print(f'"{dino}": {{')
+    print(f"    \"sheet\": {sheet_const},")
     print(f'    "idle":   {{"loop": true,  "speed": 4.0,  "rects": [{R(0)}, {R(1)}]}},')
     print(f'    "walk":   {{"loop": true,  "speed": 8.0,  "rects": [{R(2)}, {R(3)}, {R(4)}, {R(5)}]}},')
     print(f'    "attack": {{"loop": false, "speed": 12.0, "rects": [{R(6)}, {R(7)}, {R(8)}]}},')
@@ -141,13 +162,21 @@ def rects(cw, ch):
 
 
 def main():
-    hero = Image.open(HERO)
-    core = pixelate(cutout(hero))
-    cw, ch, n = build_sheet(core)
-    preview(cw, ch, n)
-    print(f"wrote {OUT_SHEET}  cell={cw}x{ch}  char_h={core.size[1]}  frames={n}")
-    print(f"preview -> {OUT_PREVIEW}")
-    rects(cw, ch)
+    dino = sys.argv[1] if len(sys.argv) > 1 else "ralph"
+    if dino not in HERO_SRC:
+        sys.exit(f"unknown dino '{dino}'; known: {', '.join(HERO_SRC)}")
+    src = os.path.join(ROOT, HERO_SRC[dino])
+    if not os.path.exists(src):
+        sys.exit(f"no hero art at {src}\n"
+                 f"  generate it per scripts/tools/dino_art_prompts.md, then re-run.")
+    out_sheet = os.path.join(ROOT, f"assets/sprites/{dino}_fighter.png")
+    out_preview = f"/tmp/ralph/{dino}_fighter_preview.png"
+    core = pixelate(cutout(Image.open(src)))
+    cw, ch, n = build_sheet(core, out_sheet)
+    preview(out_sheet, out_preview)
+    print(f"wrote {out_sheet}  cell={cw}x{ch}  char_h={core.size[1]}  frames={n}")
+    print(f"preview -> {out_preview}")
+    rects(dino, cw, ch)
 
 
 if __name__ == "__main__":
