@@ -13,6 +13,7 @@ const SHEET_RAPTOR := "res://assets/sprites/raptor_fighter.png"
 const SHEET_TRIKE := "res://assets/sprites/trike_fighter.png"
 const SHEET_PTERRY := "res://assets/sprites/pterry_fighter.png"
 const SHEET_BRONTO := "res://assets/sprites/bronto_fighter.png"
+const SHEET_ANKY := "res://assets/sprites/anky_fighter.png"
 
 const ANIM_LAYOUTS := {
 	# Raptor as an in-match fighter — pixel sheet baked from the painterly hero
@@ -65,11 +66,14 @@ const ANIM_LAYOUTS := {
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(256, 0, 128, 160), Rect2(384, 0, 128, 160), Rect2(512, 0, 128, 160), Rect2(640, 0, 128, 160)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(768, 0, 128, 160), Rect2(896, 0, 128, 160), Rect2(1024, 0, 128, 160)]},
 	},
-	"anky": {  # Tortuka (turtle) from rynosaurlandcharacters
-		"sheet": SHEET_REF,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(120, 0, 18, 30), Rect2(148, 0, 21, 30)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(120, 0, 18, 30), Rect2(148, 0, 21, 30), Rect2(175, 0, 18, 30)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(175, 0, 18, 30)]},
+	# Anky as an in-match fighter — pixel sheet baked from the painterly hero
+	# by scripts/tools/gen_ralph_fighter.py anky (261x160 cells). Low and long,
+	# so the cell is wide; height-normalized like the rest of the roster.
+	"anky": {
+		"sheet": SHEET_ANKY,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 261, 160), Rect2(261, 0, 261, 160)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(522, 0, 261, 160), Rect2(783, 0, 261, 160), Rect2(1044, 0, 261, 160), Rect2(1305, 0, 261, 160)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1566, 0, 261, 160), Rect2(1827, 0, 261, 160), Rect2(2088, 0, 261, 160)]},
 	},
 }
 
