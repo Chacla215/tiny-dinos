@@ -1,5 +1,26 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-09 (arcade co-op duo)
+
+Merged the `feat/arcade-coop-duo` branch into master (fast-forward, clean) after
+verifying it compiles under a full headless project load. Builds directly on the
+existing arcade ladder; the gauntlet stays solo.
+
+**Landed**
+- **Co-op ladder** — `MatchConfig.start_arcade(.., duo)` seats P1 + a fixed CPU
+  partner (rolled once per run, never the player's dino) on side A; each rung now
+  fields TWO foes on side B, so the whole climb is a 2-v-2. Ladder rungs refactored
+  from `{dino}` to `{foes: [..]}`; `_apply_arcade_rung` branches solo vs. duo for
+  player_count / teams / cpu_players.
+- **Select toggle** — on the arcade setup screen, P1 **X** flips `PARTNER (CO-OP):
+  ON/OFF` (shown on the otherwise-hidden difficulty line); hint gains "X PARTNER".
+  Gauntlet hides it.
+- **Win/flow** — a win now counts when anyone on the player's side lands the KO
+  (`same_side`), and the STAGE-CLEARED "NEXT" preview lists both upcoming foes.
+
+Verified: full-project headless load reports no script errors. **Wants a live
+playtest** to feel the 2-v-2 co-op pacing vs. the solo ladder.
+
 ## Session — 2026-06-09 (team play)
 
 2v2 / uneven team support across the six team-friendly modes, in three themed
