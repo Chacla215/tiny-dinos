@@ -246,6 +246,13 @@ var wpn_windup: float = 1.0
 var wpn_recovery: float = 1.0
 var wpn_projectile: bool = false  # ranged weapon (e.g. bow): fires a shot, no melee swing
 
+# [experiment] Map power-up buffs: temporary multipliers applied at the movement
+# + damage hooks, reverted when the timer runs out (or on respawn). 1.0 = no buff.
+var powerup_speed_mult: float = 1.0
+var powerup_dmg_mult: float = 1.0
+var powerup_timer: float = 0.0
+var powerup_aura: Node2D = null
+
 const AFTERIMAGE_INTERVAL := 0.05
 const SLOW_MOVE_FACTOR := 0.4
 const SLOW_ACCEL_FACTOR := 0.6
@@ -754,7 +761,7 @@ func update_movement(delta: float) -> void:
 			knockback_active = false
 
 	if direction != Vector2.ZERO:
-		velocity = velocity.move_toward(direction * max_speed * move_factor, accel * delta)
+		velocity = velocity.move_toward(direction * max_speed * move_factor * powerup_speed_mult, accel * delta)
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 
@@ -792,7 +799,7 @@ func start_attack(heavy: bool = false) -> void:
 		current_attack_hitbox_offset = attack_hitbox_offset
 		attack_timer = attack_windup
 	# Active weapon modifies light + heavy (the signature special is unaffected).
-	current_attack_damage = int(round(current_attack_damage * wpn_dmg))
+	current_attack_damage = int(round(current_attack_damage * wpn_dmg * powerup_dmg_mult))
 	current_attack_knockback *= wpn_kb
 	current_attack_hitbox_offset += wpn_range
 	current_attack_recovery *= wpn_recovery
@@ -1132,6 +1139,49 @@ func _spawn_dust(dir: Vector2) -> void:
 		t.parallel().tween_property(puff, "scale", Vector2.ONE * 2.2, 0.3)
 		t.parallel().tween_property(puff, "modulate:a", 0.0, 0.3)
 		t.tween_callback(puff.queue_free)
+
+# [experiment] Grant a map power-up: instant heal, or a temp speed/damage buff
+# with a pulsing aura. Temp buffs revert via powerup_timer in update_timers().
+func apply_powerup(kind: String) -> void:
+	match kind:
+		"heal":
+			hp = min(max_hp, hp + 35)
+			update_hp_bar()
+			_spawn_hit_burst(global_position + Vector2(0, sprite_offset_y * 0.5), Vector2.UP, 18, false)
+		"speed":
+			powerup_speed_mult = 1.4
+			powerup_timer = 7.0
+			_set_powerup_aura(Color(0.4, 0.95, 1.0))
+		"power":
+			powerup_dmg_mult = 1.35
+			powerup_timer = 7.0
+			_set_powerup_aura(Color(1.0, 0.55, 0.3))
+
+func _end_powerup() -> void:
+	powerup_speed_mult = 1.0
+	powerup_dmg_mult = 1.0
+	powerup_timer = 0.0
+	if is_instance_valid(powerup_aura):
+		powerup_aura.queue_free()
+	powerup_aura = null
+
+func _set_powerup_aura(col: Color) -> void:
+	if is_instance_valid(powerup_aura):
+		powerup_aura.queue_free()
+	var aura := Polygon2D.new()
+	var ring := PackedVector2Array()
+	for j in range(16):
+		var a: float = TAU * j / 16.0
+		ring.append(Vector2(cos(a), sin(a)) * 22.0)
+	aura.polygon = ring
+	aura.color = Color(col.r, col.g, col.b, 0.28)
+	aura.position = Vector2(0, sprite_offset_y * 0.4)
+	aura.z_index = -1
+	add_child(aura)
+	powerup_aura = aura
+	var tw := aura.create_tween().set_loops()
+	tw.tween_property(aura, "scale", Vector2.ONE * 1.18, 0.5).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(aura, "scale", Vector2.ONE * 0.9, 0.5).set_trans(Tween.TRANS_SINE)
 
 func guard_break() -> void:
 	defense_state = DefenseState.GUARD_BROKEN
@@ -1513,6 +1563,10 @@ func update_timers(delta: float) -> void:
 		special_cooldown_timer -= delta
 	if timed_slow_timer > 0.0:
 		timed_slow_timer -= delta
+	if powerup_timer > 0.0:
+		powerup_timer -= delta
+		if powerup_timer <= 0.0:
+			_end_powerup()
 
 func update_visual() -> void:
 	var color := Color.WHITE
@@ -1599,6 +1653,7 @@ func exit_floe() -> void:
 # --- Respawn ---
 
 func respawn() -> void:
+	_end_powerup()  # buffs don't carry across a death/respawn
 	is_falling = false
 	fall_up = false
 	fall_timer = 0.0

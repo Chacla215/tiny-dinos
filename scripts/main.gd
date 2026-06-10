@@ -117,6 +117,15 @@ var flood_ring: Node2D = null
 var shake_amount: float = 0.0
 var shake_remaining: float = 0.0
 
+# [experiment] Map power-ups: a glowing pickup periodically spawns on the arena;
+# grabbing it grants HEAL / SPEED / POWER. Versus only (off in the tuned solo
+# ladders + the pickup-driven party modes). See _update_powerups / _spawn_powerup.
+const POWERUP_KINDS := ["heal", "speed", "power"]
+const POWERUP_COLORS := {"heal": Color(0.4, 0.95, 0.5), "speed": Color(0.4, 0.95, 1.0), "power": Color(1.0, 0.55, 0.3)}
+var powerups_enabled: bool = false
+var powerup_spawn_timer: float = 0.0
+var active_powerups: Array = []
+
 var _pause_until_ms: int = 0
 var _pause_active: bool = false
 
@@ -169,6 +178,12 @@ func _ready() -> void:
 	_load_sfx()
 	_build_debug_boundary()  # red ring-out outline when debug_draw_safe_zone is on
 	_spawn_ambient()  # [experiment] per-island atmosphere particles
+	# [experiment] Power-ups in standard versus only (not the balance-tuned solo
+	# ladders, and not the modes that already revolve around their own pickups).
+	var special: bool = (MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet) \
+		or (MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade)
+	powerups_enabled = not special and game_mode in ["rounds", "koth", "sumo", "flood"]
+	powerup_spawn_timer = 6.0
 
 # [experiment] Per-island ambient atmosphere — a subtle drifting-particle layer
 # (snow / petals / embers / motes) that leans into the painterly islands. Attached
@@ -743,6 +758,7 @@ func _process(delta: float) -> void:
 	else:
 		camera.offset = Vector2.ZERO
 	_update_hud_bars()
+	_update_powerups(delta)
 	if match_over:
 		if gauntlet_drafting:
 			_draft_input()
@@ -754,6 +770,74 @@ func _process(delta: float) -> void:
 				_arcade_continue()
 			else:
 				get_tree().change_scene_to_file("res://scenes/select.tscn")
+
+# --- [experiment] Map power-ups ---
+func _update_powerups(delta: float) -> void:
+	if not powerups_enabled or match_over or not round_active:
+		return
+	for i in range(active_powerups.size() - 1, -1, -1):
+		if not is_instance_valid(active_powerups[i]):
+			active_powerups.remove_at(i)
+	# Manual grab: any active dino within reach picks it up (no collision-layer setup).
+	for a in active_powerups.duplicate():
+		if not is_instance_valid(a):
+			continue
+		for p in _alive_players():
+			if not p.has_method("apply_powerup"):
+				continue
+			if p.global_position.distance_to(a.global_position) < 32.0:
+				p.apply_powerup(a.get_meta("kind", "heal"))
+				shake(5.0, 0.1)
+				active_powerups.erase(a)
+				a.queue_free()
+				break
+	if active_powerups.size() >= 1:
+		return
+	powerup_spawn_timer -= delta
+	if powerup_spawn_timer <= 0.0:
+		_spawn_powerup()
+		powerup_spawn_timer = randf_range(10.0, 14.0)
+
+func _spawn_powerup() -> void:
+	var kind: String = POWERUP_KINDS[randi() % POWERUP_KINDS.size()]
+	var col: Color = POWERUP_COLORS[kind]
+	var area := Node2D.new()
+	area.position = _random_safe_point()
+	area.z_index = 30
+	area.set_meta("kind", kind)
+	var diamond := PackedVector2Array([Vector2(0, -15), Vector2(13, 0), Vector2(0, 15), Vector2(-13, 0)])
+	var body := Polygon2D.new()
+	body.polygon = diamond
+	body.color = col
+	area.add_child(body)
+	var rim := Line2D.new()
+	rim.points = PackedVector2Array([Vector2(0, -15), Vector2(13, 0), Vector2(0, 15), Vector2(-13, 0), Vector2(0, -15)])
+	rim.width = 2.5
+	rim.default_color = Color(1, 1, 1, 0.9)
+	area.add_child(rim)
+	# Soft glow behind it.
+	var glow := Polygon2D.new()
+	var ring := PackedVector2Array()
+	for j in range(16):
+		var ang: float = TAU * j / 16.0
+		ring.append(Vector2(cos(ang), sin(ang)) * 24.0)
+	glow.polygon = ring
+	glow.color = Color(col.r, col.g, col.b, 0.25)
+	glow.z_index = -1
+	area.add_child(glow)
+	add_child(area)
+	active_powerups.append(area)
+	var base_y: float = area.position.y
+	var tw := area.create_tween().set_loops()
+	tw.tween_property(area, "position:y", base_y - 8.0, 0.8).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(area, "position:y", base_y, 0.8).set_trans(Tween.TRANS_SINE)
+
+func _clear_powerups() -> void:
+	for a in active_powerups:
+		if is_instance_valid(a):
+			a.queue_free()
+	active_powerups.clear()
+	powerup_spawn_timer = randf_range(5.0, 8.0)
 
 func _update_hud_bars() -> void:
 	for p in active_players:
@@ -1135,6 +1219,7 @@ func _end_round(winner_pid: String) -> void:
 		return
 	current_round += 1
 	_clear_world_weapons()
+	_clear_powerups()  # [experiment] stale pickups don't carry between rounds
 	for p in active_players:
 		p.set_physics_process(true)
 		p.set_process_input(true)
