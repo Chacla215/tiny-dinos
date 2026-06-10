@@ -32,20 +32,21 @@ const GRID_ROWS := [
 	["pterry", "bronto", "anky"],
 ]
 
-# Ralph's per-skin art (real PNGs where they exist; tinted swatch placeholder
-# otherwise). Each other dino's skins live in its own profile dict below.
-const RALPH_SKINS := [
-	{"name": "EXPLORER", "tint": Color("8cc47a"), "img": RALPH_DIR + "ralph_hero.png", "rarity": "COMMON"},
-	{"name": "CRYSTAL",  "tint": Color("8fd6e8"), "img": "",                              "rarity": "RARE"},
-	{"name": "VOLCANO",  "tint": Color("4a4650"), "img": "",                              "rarity": "RARE"},
-	{"name": "FROZEN",   "tint": Color("bcd8ec"), "img": RALPH_DIR + "ralph_frozen.png",  "rarity": "RARE"},
-	{"name": "SPRING",   "tint": Color("a9d98c"), "img": RALPH_DIR + "ralph_spring.png",  "rarity": "RARE"},
-	{"name": "VOID",     "tint": Color("6a4a98"), "img": RALPH_DIR + "ralph_void.png",    "rarity": "EPIC"},
-	{"name": "GOLDEN",   "tint": Color("e6c860"), "img": RALPH_DIR + "ralph_golden.png",  "rarity": "EPIC"},
-]
-
+# Skins are shared across every dino (see MatchConfig.SKINS). The carousel
+# previews each by recolouring the dino's own portrait, so no per-skin art is
+# required — but a painterly override at assets/concept/<dino>/<dino>_<name>.png
+# is used for the big portrait when it exists (Ralph ships frozen/spring/void/
+# golden). The equipped skin is persisted per dino in MetaSave.
 const EMOTES := ["WAVE", "EXCITED", "CONFUSED", "LOVE", "ROAR", "SLEEPY", "DIZZY", "PROUD"]
-const CUSTOM := ["HEAD", "SPIKES", "OUTFIT", "NECK", "TAIL", "COLOR"]
+
+# Painterly per-skin portrait override path, or "" if none exists. idx 0 = the
+# dino's base hero; other skins look for <dino>_<skinname>.png.
+func _skin_img(dino_id: String, idx: int) -> String:
+	if idx == 0:
+		return PROFILES.get(dino_id, {}).get("hero", "")
+	var key: String = String(MatchConfig.SKINS[idx]["name"]).to_lower()
+	var path := "res://assets/concept/%s/%s_%s.png" % [dino_id, dino_id, key]
+	return path if ResourceLoader.exists(path) else ""
 
 # Hand-curated copy. Stats for non-Ralph entries are DERIVED from MatchConfig
 # (see _stats_for) — only flavor text lives here so the in-game numbers stay
@@ -169,6 +170,7 @@ var skin_idx: int = 0
 var portrait: TextureRect
 var rarity_label: Label
 var skin_slots: Array = []
+var skin_status_label: Label
 
 
 func _ready() -> void:
@@ -591,29 +593,20 @@ func _refresh_profile(dino_id: String) -> void:
 	move_cooldown_label.text = "COOLDOWN: %s" % profile.get("move_cooldown", "—")
 	_clear_children(move_icon_holder)
 	_add_portrait(move_icon_holder, dino_id, Rect2(6, 6, 108, 92))
-	# Customization, skins, emotes — Ralph has them, the roster dinos show a
-	# friendly "coming soon" until their art lands.
-	skin_idx = 0
+	# Skins (every dino) + weapons; emotes are still a teaser.
+	skin_idx = MetaSave.get_skin(dino_id)
 	skin_slots.clear()
 	_clear_children(skins_panel)
 	_decorate_panel_title(skins_panel, "SKINS")
 	_clear_children(customization_panel)
-	_decorate_panel_title(customization_panel, "CUSTOMIZATION")
+	_decorate_panel_title(customization_panel, "WEAPONS")
+	_populate_weapons(customization_panel, dino_id)
 	_clear_children(emotes_panel)
 	_decorate_panel_title(emotes_panel, "EMOTES")
-	if profile.get("has_creator", false):
-		_populate_skins_ralph()
-		_populate_customization_ralph()
-		_populate_emotes_ralph()
-	else:
-		_populate_panel_placeholder(skins_panel, "SKINS COMING SOON")
-		# Roster dinos repurpose the customization slot to show their weapon loadout.
-		_clear_children(customization_panel)
-		_decorate_panel_title(customization_panel, "WEAPONS")
-		_populate_weapons(customization_panel, dino_id)
-		_populate_panel_placeholder(emotes_panel, "EMOTES COMING SOON")
-	# Rarity badge — Ralph swaps via skin cycle; other dinos show the profile rarity.
-	rarity_label.text = profile.get("rarity", "COMMON")
+	_populate_panel_placeholder(emotes_panel, "EMOTES COMING SOON")
+	_populate_skins(dino_id)
+	# Portrait + rarity badge reflect the equipped/previewed skin.
+	_refresh_skin_selection()
 
 
 # A one-line "playstyle" tag derived from whichever core stat (HP/ATK/DEF/SPD)
@@ -676,23 +669,28 @@ func _decorate_panel_title(panel: Panel, title: String) -> void:
 
 
 func _refresh_portrait_for_dino(dino_id: String) -> void:
-	# Replace the contents of the portrait TextureRect / fall back to the
-	# in-match sprite if the AI hero doesn't exist yet.
-	var profile: Dictionary = PROFILES.get(dino_id, {})
-	var hero: String = profile.get("hero", "")
-	if dino_id == "ralph":
-		# Ralph's portrait is driven by the skin carousel; default to the hero.
-		hero = RALPH_HERO
-	if hero != "" and ResourceLoader.exists(hero):
-		portrait.texture = load(hero)
+	# Big portrait reflects the previewed skin (skin_idx). Painterly skin/base art
+	# fills the stage when it exists; otherwise the base hero (or, last resort, the
+	# in-match sprite) is recoloured live by the skin shader.
+	var art: String = _skin_img(dino_id, skin_idx)
+	var base_hero: String = PROFILES.get(dino_id, {}).get("hero", "")
+	if art != "" and ResourceLoader.exists(art):
+		portrait.texture = load(art)
 		portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		portrait.material = null
 		portrait.flip_h = false
 		portrait.position = Vector2(12, 12)
 		portrait.size = Vector2(516, 516)
 		return
-	# Fallback: in-match pixel sprite. The source rects are 19–50px tall, so
-	# stretching to the full 516px panel turns them into a blocky mess. Pick a
-	# target portrait height that keeps them sprite-sized and centered.
+	if base_hero != "" and ResourceLoader.exists(base_hero):
+		portrait.texture = load(base_hero)
+		portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		portrait.material = MatchConfig.skin_material(skin_idx)
+		portrait.flip_h = false
+		portrait.position = Vector2(12, 12)
+		portrait.size = Vector2(516, 516)
+		return
+	# Last resort: the in-match pixel sprite, recoloured, kept sprite-sized.
 	var dino: Dictionary = MatchConfig.DINOS.get(dino_id, {})
 	var role: String = dino.get("sprite_role", dino_id)
 	var at := DinoScript.first_frame(role)
@@ -701,75 +699,56 @@ func _refresh_portrait_for_dino(dino_id: String) -> void:
 		return
 	portrait.texture = at
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	portrait.material = MatchConfig.skin_material(skin_idx)
 	portrait.flip_h = DinoScript.ANIM_LAYOUTS[role].get("faces_left", false)
 	var src: Vector2 = at.region.size
 	var target_h: float = 320.0
-	var box_h: float = target_h
 	var box_w: float = target_h * src.x / src.y
-	# Center inside the 516×516 stage that begins at (12, 12) inside the panel.
-	portrait.position = Vector2(12.0 + (516.0 - box_w) / 2.0, 12.0 + (516.0 - box_h) / 2.0)
-	portrait.size = Vector2(box_w, box_h)
+	portrait.position = Vector2(12.0 + (516.0 - box_w) / 2.0, 12.0 + (516.0 - target_h) / 2.0)
+	portrait.size = Vector2(box_w, target_h)
 
 
-func _populate_skins_ralph() -> void:
+# Skin carousel for ANY dino: each slot previews the skin by recolouring the
+# dino's own portrait. Works with zero per-skin art; painterly overrides slot in
+# automatically where they exist.
+func _populate_skins(dino_id: String) -> void:
 	var slot_w := 92.0
-	for i in RALPH_SKINS.size():
-		var skin: Dictionary = RALPH_SKINS[i]
+	for i in MatchConfig.SKINS.size():
+		var skin: Dictionary = MatchConfig.SKINS[i]
 		var x: float = 16.0 + i * (slot_w + 8)
 		var box := Panel.new()
 		box.add_theme_stylebox_override("panel", _sb(PANEL_IN, BORDER, 2, 8))
-		box.position = Vector2(x, 30)
-		box.size = Vector2(slot_w, 76)
+		box.position = Vector2(x, 24)
+		box.size = Vector2(slot_w, 66)
 		skins_panel.add_child(box)
-		var img: String = skin.get("img", "")
-		if img != "" and ResourceLoader.exists(img):
-			var t := TextureRect.new()
-			t.texture = load(img)
-			t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			t.position = Vector2(4, 4)
-			t.size = Vector2(slot_w - 8, 68)
-			box.add_child(t)
-		else:
-			_bg(box, slot_w / 2 - 22, 14, 44, 44, skin["tint"])
-		var l := _text(skins_panel, skin["name"], x, 108, 13, TEXT_DIM)
-		l.size = Vector2(slot_w, 18)
+		_fill_skin_thumb(box, dino_id, i, slot_w)
+		var l := _text(skins_panel, skin["name"], x, 92, 12, TEXT_DIM)
+		l.size = Vector2(slot_w, 16)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		skin_slots.append(box)
-	_refresh_skin_selection()
+	skin_status_label = _text(skins_panel, "", 16, 110, 15, GREEN)
+	skin_status_label.size = Vector2(688, 20)
+	skin_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
-func _populate_customization_ralph() -> void:
-	var slot_w := 104.0
-	for i in CUSTOM.size():
-		var x: float = 20.0 + i * (slot_w + 8)
-		var box := Panel.new()
-		box.add_theme_stylebox_override("panel", _sb(PANEL_IN, BORDER, 2, 8))
-		box.position = Vector2(x, 34)
-		box.size = Vector2(slot_w, 72)
-		customization_panel.add_child(box)
-		_bg(box, slot_w / 2 - 18, 14, 36, 36, Color("39435c"))
-		var l := _text(customization_panel, CUSTOM[i], x, 110, 16, TEXT_DIM)
-		l.size = Vector2(slot_w, 20)
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-
-func _populate_emotes_ralph() -> void:
-	var sw := 116.0
-	for i in EMOTES.size():
-		var col: int = i % 4
-		var rowi: int = i / 4
-		var x: float = 16.0 + col * (sw + 6)
-		var y: float = 26.0 + rowi * 54
-		var box := Panel.new()
-		box.add_theme_stylebox_override("panel", _sb(PANEL_IN, BORDER, 2, 6))
-		box.position = Vector2(x, y)
-		box.size = Vector2(sw, 48)
-		emotes_panel.add_child(box)
-		var l := _text(box, EMOTES[i], 0, 0, 15, TEXT_DIM)
-		l.size = Vector2(sw, 48)
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+# Fill one carousel slot with a recoloured thumbnail of the dino (skin `i`).
+func _fill_skin_thumb(box: Panel, dino_id: String, i: int, slot_w: float) -> void:
+	var art: String = _skin_img(dino_id, i)
+	var src_img: String = art if (art != "" and ResourceLoader.exists(art)) else PROFILES.get(dino_id, {}).get("hero", "")
+	if src_img == "" or not ResourceLoader.exists(src_img):
+		_bg(box, slot_w / 2 - 20, 12, 40, 40, MatchConfig.SKINS[i].get("swatch", BORDER))
+		return
+	var tr := TextureRect.new()
+	tr.texture = load(src_img)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	tr.position = Vector2(4, 4)
+	tr.size = Vector2(slot_w - 8, 58)
+	# Only recolour when this slot is showing the base hero (no bespoke skin art).
+	if art == "":
+		tr.material = MatchConfig.skin_material(i)
+	box.add_child(tr)
 
 
 func _populate_panel_placeholder(panel: Panel, msg: String) -> void:
@@ -779,23 +758,28 @@ func _populate_panel_placeholder(panel: Panel, msg: String) -> void:
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 
+# Cursor (gold) = previewed skin; green = currently equipped. Updates rarity,
+# the status line, and the big portrait.
 func _refresh_skin_selection() -> void:
+	var equipped: int = MetaSave.get_skin(current_dino)
 	for i in skin_slots.size():
-		var on: bool = i == skin_idx
-		skin_slots[i].add_theme_stylebox_override(
-			"panel", _sb(PANEL_IN, GOLD if on else BORDER, 4 if on else 2, 8))
-	if current_dino == "ralph":
-		var skin: Dictionary = RALPH_SKINS[skin_idx]
-		rarity_label.text = skin.get("rarity", "COMMON")
-		var img: String = skin.get("img", "")
-		if img != "" and ResourceLoader.exists(img):
-			portrait.texture = load(img)
-			portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			portrait.flip_h = false
-		elif ResourceLoader.exists(RALPH_HERO):
-			portrait.texture = load(RALPH_HERO)
-			portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			portrait.flip_h = false
+		var border: Color = BORDER
+		var bw: int = 2
+		if i == skin_idx:
+			border = GOLD
+			bw = 4
+		elif i == equipped:
+			border = GREEN
+			bw = 3
+		skin_slots[i].add_theme_stylebox_override("panel", _sb(PANEL_IN, border, bw, 8))
+	rarity_label.text = MatchConfig.SKINS[skin_idx].get("rarity", "COMMON")
+	if skin_status_label != null:
+		if skin_idx == equipped:
+			skin_status_label.text = "EQUIPPED:  %s" % MatchConfig.SKINS[equipped]["name"]
+		else:
+			skin_status_label.text = "A  EQUIP %s      (EQUIPPED: %s)" % [
+				MatchConfig.SKINS[skin_idx]["name"], MatchConfig.SKINS[equipped]["name"]]
+	_refresh_portrait_for_dino(current_dino)
 
 
 # ================================================================ view toggles ==
@@ -826,14 +810,19 @@ func _handle_profile_input() -> void:
 	if Input.is_action_just_pressed("p1_heavy"):
 		_show_grid()
 		return
-	# Skin cycle only matters when the current dino actually has multiple skins.
-	if current_dino == "ralph" and not skin_slots.is_empty():
-		if Input.is_action_just_pressed("p1_right"):
-			skin_idx = (skin_idx + 1) % RALPH_SKINS.size()
-			_refresh_skin_selection()
-		elif Input.is_action_just_pressed("p1_left"):
-			skin_idx = (skin_idx - 1 + RALPH_SKINS.size()) % RALPH_SKINS.size()
-			_refresh_skin_selection()
+	# ◀▶ previews skins (every dino), A equips the previewed one (persisted).
+	if skin_slots.is_empty():
+		return
+	var n: int = MatchConfig.SKINS.size()
+	if Input.is_action_just_pressed("p1_right"):
+		skin_idx = (skin_idx + 1) % n
+		_refresh_skin_selection()
+	elif Input.is_action_just_pressed("p1_left"):
+		skin_idx = (skin_idx - 1 + n) % n
+		_refresh_skin_selection()
+	elif Input.is_action_just_pressed("p1_confirm"):
+		MetaSave.set_skin(current_dino, skin_idx)
+		_refresh_skin_selection()
 
 
 # Offscreen screenshot for previews: godot <scene> -- --shot [view] [dino_id]
