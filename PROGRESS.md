@@ -1,5 +1,25 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-10 (solo stretch: living fighters)
+
+Charlie asked for "body parts that move" then left Claude to build autonomously.
+
+- **Bake-time articulation** in `gen_ralph_fighter.py`: each hero is sliced
+  into head / tail / front+back legs (per-dino boxes+pivots: pterry's slots
+  drive his WINGS, bronto's his NECK, anky's the CLUB) and parts rotate per
+  frame — legs scissor, tails wag, heads rear + chomp on the strike. Seam-safe
+  via 6px overlap margins + unrotated head backing. All six sheets rebaked
+  (cells *x168), `dino.gd` ANIM_LAYOUTS updated. Still baked sheets in-engine —
+  zero runtime changes.
+- **Facing bug fixed**: the old unconditional hero-flip had raptor/trike/pterry
+  facing LEFT in right-facing sheets — they walked backwards in-match. Flip is
+  now per-dino (`HERO_FACES_LEFT`); every sheet faces right.
+- **Painterly look preserved**: rebake initially went through the dither path;
+  re-baked `--smooth` per Charlie's painterly-in-match call (same geometry).
+- **Player tint softened**: full PLAYER_TINTS multiply crushed the painterly
+  fighters (P2 red-raptor → near-black); now blended 35% toward white.
+- Balance sim re-run on the 6-dino roster (results logged below when done).
+
 ## Session — 2026-06-10 (Ralph absorbs the T-Rex)
 
 Charlie's call while reviewing the juice experiments: his original Ralph design
