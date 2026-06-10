@@ -1088,10 +1088,19 @@ func _end_round(winner_pid: String) -> void:
 		p.set_process_input(true)
 		if p.has_method("respawn"):
 			p.respawn()
-	hud_win.text = "ROUND %d" % current_round
 	hud_win.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	# Announce the mode by name on the opening round of a standard versus match so
+	# the rule is clear before the fight (gauntlet/arcade keep their wave banners).
+	var is_special: bool = (MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet) \
+		or (MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade)
+	var intro_t := 0.8
+	if current_round == 1 and not is_special:
+		hud_win.text = MatchConfig.MODE_NAMES.get(game_mode, "BEST OF ROUNDS")
+		intro_t = 1.4
+	else:
+		hud_win.text = "ROUND %d" % current_round
 	round_active = true
-	await get_tree().create_timer(0.8, true, false, true).timeout
+	await get_tree().create_timer(intro_t, true, false, true).timeout
 	if not match_over:
 		hud_win.text = ""
 
