@@ -11,6 +11,7 @@ const SHEET_RALPH := "res://assets/sprites/ralph_fighter.png"
 const SHEET_TREX := "res://assets/sprites/trex_fighter.png"
 const SHEET_RAPTOR := "res://assets/sprites/raptor_fighter.png"
 const SHEET_TRIKE := "res://assets/sprites/trike_fighter.png"
+const SHEET_PTERRY := "res://assets/sprites/pterry_fighter.png"
 
 const ANIM_LAYOUTS := {
 	# Raptor as an in-match fighter — pixel sheet baked from the painterly hero
@@ -45,11 +46,13 @@ const ANIM_LAYOUTS := {
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(294, 0, 147, 160), Rect2(441, 0, 147, 160), Rect2(588, 0, 147, 160), Rect2(735, 0, 147, 160)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(882, 0, 147, 160), Rect2(1029, 0, 147, 160), Rect2(1176, 0, 147, 160)]},
 	},
+	# Pterry as an in-match fighter — pixel sheet baked from the painterly hero
+	# by scripts/tools/gen_ralph_fighter.py pterry (160x160 cells).
 	"pterry": {
-		"sheet": SHEET_ENEMY,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(2, 200, 36, 30), Rect2(48, 199, 36, 30)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(99, 200, 36, 30), Rect2(2, 240, 36, 30), Rect2(48, 239, 36, 30), Rect2(99, 242, 36, 30)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(99, 242, 36, 30)]},
+		"sheet": SHEET_PTERRY,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 160, 160), Rect2(160, 0, 160, 160)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(320, 0, 160, 160), Rect2(480, 0, 160, 160), Rect2(640, 0, 160, 160), Rect2(800, 0, 160, 160)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(960, 0, 160, 160), Rect2(1120, 0, 160, 160), Rect2(1280, 0, 160, 160)]},
 	},
 	"bronto": {  # Goober (long red) from rynosaurlandcharacters — drawn facing left
 		"sheet": SHEET_REF,
