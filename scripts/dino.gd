@@ -12,6 +12,7 @@ const SHEET_TREX := "res://assets/sprites/trex_fighter.png"
 const SHEET_RAPTOR := "res://assets/sprites/raptor_fighter.png"
 const SHEET_TRIKE := "res://assets/sprites/trike_fighter.png"
 const SHEET_PTERRY := "res://assets/sprites/pterry_fighter.png"
+const SHEET_BRONTO := "res://assets/sprites/bronto_fighter.png"
 
 const ANIM_LAYOUTS := {
 	# Raptor as an in-match fighter — pixel sheet baked from the painterly hero
@@ -54,12 +55,15 @@ const ANIM_LAYOUTS := {
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(320, 0, 160, 160), Rect2(480, 0, 160, 160), Rect2(640, 0, 160, 160), Rect2(800, 0, 160, 160)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(960, 0, 160, 160), Rect2(1120, 0, 160, 160), Rect2(1280, 0, 160, 160)]},
 	},
-	"bronto": {  # Goober (long red) from rynosaurlandcharacters — drawn facing left
-		"sheet": SHEET_REF,
-		"faces_left": true,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(2, 199, 34, 24), Rect2(49, 199, 34, 24)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(104, 199, 34, 24), Rect2(150, 199, 34, 24), Rect2(193, 199, 34, 24), Rect2(235, 199, 34, 24)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(235, 199, 34, 24)]},
+	# Bronto as an in-match fighter — pixel sheet baked from the painterly hero
+	# by scripts/tools/gen_ralph_fighter.py bronto (128x160 cells). New art faces
+	# right, so the old Goober faces_left flag is gone. Long neck eats the height
+	# budget by design — he reads tall and slender.
+	"bronto": {
+		"sheet": SHEET_BRONTO,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 128, 160), Rect2(128, 0, 128, 160)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(256, 0, 128, 160), Rect2(384, 0, 128, 160), Rect2(512, 0, 128, 160), Rect2(640, 0, 128, 160)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(768, 0, 128, 160), Rect2(896, 0, 128, 160), Rect2(1024, 0, 128, 160)]},
 	},
 	"anky": {  # Tortuka (turtle) from rynosaurlandcharacters
 		"sheet": SHEET_REF,
