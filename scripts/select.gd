@@ -514,7 +514,7 @@ func _update_mode_label() -> void:
 # --- Teams ---
 # Bomb Tag is inherently free-for-all (one bomb), so teams are offered only for
 # the other modes — and only with 3+ fighters.
-const TEAM_MODES := ["rounds", "stock", "koth", "sumo", "flood"]
+const TEAM_MODES := ["rounds", "koth", "sumo", "flood"]
 
 func _mode_allows_teams() -> bool:
 	return MatchConfig.game_mode in TEAM_MODES
