@@ -1040,6 +1040,49 @@ func _spawn_afterimage() -> void:
 	tween.tween_property(ghost, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(ghost.queue_free)
 
+# Impact burst at the contact point: a soft flash ring + a few bright shards
+# spraying along the hit. Cosmetic only (complements the painterly fighters);
+# scaled by damage, beefier on a KO. `dir` is the knockback heading (spray way).
+func _spawn_hit_burst(pos: Vector2, dir: Vector2, dmg: int, lethal: bool) -> void:
+	var root := get_tree().current_scene
+	if root == null:
+		return
+	var sc: float = clampf(0.6 + dmg * 0.02, 0.6, 1.8) * (1.7 if lethal else 1.0)
+	var col: Color = Color(1.0, 0.86, 0.4) if lethal else Color(1.0, 0.96, 0.72)
+	# Soft expanding flash ring.
+	var flash := Polygon2D.new()
+	var ring := PackedVector2Array()
+	for i in range(12):
+		var a: float = TAU * i / 12.0
+		ring.append(Vector2(cos(a), sin(a)) * 16.0)
+	flash.polygon = ring
+	flash.color = Color(col.r, col.g, col.b, 0.5)
+	flash.position = pos
+	flash.z_index = 40
+	flash.scale = Vector2.ONE * 0.3 * sc
+	root.add_child(flash)
+	var ft := flash.create_tween()
+	ft.tween_property(flash, "scale", Vector2.ONE * sc, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	ft.parallel().tween_property(flash, "modulate:a", 0.0, 0.18)
+	ft.tween_callback(flash.queue_free)
+	# Shards spraying along the hit.
+	for i in range(5 + (4 if lethal else 0)):
+		var shard := Polygon2D.new()
+		shard.polygon = PackedVector2Array([Vector2(-3, -2), Vector2(8, 0), Vector2(-3, 2)])
+		shard.color = col
+		shard.position = pos
+		shard.z_index = 41
+		var ang: float = dir.angle() + randf_range(-0.9, 0.9)
+		shard.rotation = ang
+		shard.scale = Vector2.ONE * sc
+		root.add_child(shard)
+		var dest: Vector2 = pos + Vector2(cos(ang), sin(ang)) * randf_range(24.0, 50.0) * sc
+		var st := shard.create_tween()
+		st.tween_property(shard, "position", dest, 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		st.parallel().tween_property(shard, "scale", Vector2.ZERO, 0.2)
+		st.parallel().tween_property(shard, "modulate:a", 0.0, 0.2)
+		st.tween_callback(shard.queue_free)
+
 func guard_break() -> void:
 	defense_state = DefenseState.GUARD_BROKEN
 	guard_break_timer = guard_break_duration
@@ -1123,6 +1166,9 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	velocity += knockback
 	knockback_active = true
 	notify_hit(amount)
+	# Impact burst at the contact point (cosmetic): spray along the knockback.
+	var kdir: Vector2 = knockback.normalized() if knockback.length() > 1.0 else facing
+	_spawn_hit_burst(global_position - kdir * 16.0 + Vector2(0, sprite_offset_y * 0.5), kdir, amount, hp <= 0 and not ringout_only)
 	invuln_timer = hitstun_invuln
 	update_hp_bar()
 	# SPIKED HIDE: punish the attacker with a fraction of the damage they dealt.
