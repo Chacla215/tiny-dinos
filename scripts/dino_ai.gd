@@ -18,6 +18,7 @@ var standoff_gap: float = 24.0   # buffer beyond attack reach it likes to hover 
 var throw_chance: float = 0.22   # P(hurl the weapon) on a clean mid-range opening
 var punish_chance: float = 0.55  # P(it capitalizes when you whiff / get guard-broken)
 var pressure: float = 0.5        # 0..1: how relentlessly it stays in your face after trading
+var edge_caution: float = 0.6    # 0..1: how hard it refuses to be pinned against a lethal edge
 
 const THROW_RANGE := 540.0       # max distance it will throw a weapon from
 const WEAPON_SEEK_RANGE := 440.0 # how far it'll detour to reclaim a dropped weapon
@@ -26,10 +27,13 @@ const EDGE_LOOK := 96.0          # how far ahead it probes for the island edge
 # Knob presets per difficulty (the select screen picks one for all CPUs). NORMAL
 # matches the original hand-tuned defaults above. EASY hangs back, reacts slowly,
 # and rarely defends; HARD closes hard, answers swings fast, and defends often.
+# BRUTAL sits above HARD: near-instant reads, all-but-guaranteed whiff-punishes,
+# reads heavy-vs-light to pick dodge-vs-block, and refuses to be edged out.
 const DIFFICULTY_PRESETS := {
-	"easy":   {"aggression": 0.50, "reaction_time": 0.30, "block_chance": 0.22, "dodge_chance": 0.10, "heavy_chance": 0.20, "special_chance": 0.18, "throw_chance": 0.12, "punish_chance": 0.20, "pressure": 0.15},
-	"normal": {"aggression": 0.70, "reaction_time": 0.16, "block_chance": 0.40, "dodge_chance": 0.22, "heavy_chance": 0.30, "special_chance": 0.30, "throw_chance": 0.22, "punish_chance": 0.55, "pressure": 0.5},
-	"hard":   {"aggression": 0.92, "reaction_time": 0.09, "block_chance": 0.55, "dodge_chance": 0.36, "heavy_chance": 0.34, "special_chance": 0.42, "throw_chance": 0.30, "punish_chance": 0.90, "pressure": 0.85},
+	"easy":   {"aggression": 0.50, "reaction_time": 0.30, "block_chance": 0.22, "dodge_chance": 0.10, "heavy_chance": 0.20, "special_chance": 0.18, "throw_chance": 0.12, "punish_chance": 0.20, "pressure": 0.15, "edge_caution": 0.30},
+	"normal": {"aggression": 0.70, "reaction_time": 0.16, "block_chance": 0.40, "dodge_chance": 0.22, "heavy_chance": 0.30, "special_chance": 0.30, "throw_chance": 0.22, "punish_chance": 0.55, "pressure": 0.5, "edge_caution": 0.60},
+	"hard":   {"aggression": 0.92, "reaction_time": 0.09, "block_chance": 0.55, "dodge_chance": 0.36, "heavy_chance": 0.34, "special_chance": 0.42, "throw_chance": 0.30, "punish_chance": 0.90, "pressure": 0.85, "edge_caution": 0.85},
+	"brutal": {"aggression": 0.98, "reaction_time": 0.045, "block_chance": 0.62, "dodge_chance": 0.40, "heavy_chance": 0.40, "special_chance": 0.55, "throw_chance": 0.34, "punish_chance": 1.0, "pressure": 0.95, "edge_caution": 1.0},
 }
 
 # Stamp one difficulty preset onto this brain's knobs. Called by the owning dino
@@ -45,6 +49,7 @@ func apply_difficulty(level: String) -> void:
 	throw_chance = p["throw_chance"]
 	punish_chance = p["punish_chance"]
 	pressure = p["pressure"]
+	edge_caution = p.get("edge_caution", 0.6)
 
 # --- Outputs read by the owning dino each frame ---
 var move_dir: Vector2 = Vector2.ZERO
@@ -132,6 +137,15 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	var skittish: float = clampf((owner.max_speed - 300.0) / 160.0, 0.0, 1.0)
 	var gap: float = standoff_gap + skittish * 50.0
 
+	# Closer instinct: when the target is nearly dead, stop playing patient neutral and
+	# press for the kill — even a skirmisher commits when one solid hit ends the round.
+	# Tightens its stand-off and feeds the attack/special path below (via `finisher`).
+	var target_low: bool = ("hp" in target) and ("max_hp" in target) and target.max_hp > 0 \
+		and float(target.hp) / float(target.max_hp) < 0.30
+	var finisher: bool = target_low and aggression > 0.6
+	if finisher:
+		gap = standoff_gap * 0.4  # crowd in for the finish instead of circling
+
 	# Ring-out hunting (arenas with a lethal edge). `ro` carries the push direction
 	# (arena centre -> target), whether the target is near the edge, and whether our
 	# current facing would shove it off-stage. Empty on confined arenas.
@@ -143,18 +157,50 @@ func think(owner: Node, target: Node, delta: float) -> void:
 		move_dir = _avoid(owner, -dir * 0.3)  # ease back a touch while guarding
 		return
 
-	# React to an incoming swing: dodge or raise guard.
+	# React to an incoming swing: dodge or raise guard. The choice is read, not a
+	# flat coin-flip — a glass cannon can't eat a heavy and a near-empty guard can't
+	# afford to block (a guard-break is a free KO), so we bias toward the survivable
+	# option for the situation.
 	if target.is_swinging() and dist < heavy_reach + 50.0 and _react_cd <= 0.0:
 		_react_cd = reaction_time + randf_range(0.0, 0.1)
+		var incoming_heavy: bool = ("current_is_heavy" in target) and target.current_is_heavy
+		# Block-bar health: when it's low, blocking risks a guard-break, so lean on
+		# dodging (or just bail) instead of turtling into a stun.
+		var block_frac: float = owner.block_durability / maxf(1.0, owner.max_block)
+		var low_guard: bool = block_frac < 0.34
+		# Would dodging shove us toward a lethal edge? If so, don't — block in place.
+		var dodge_to_edge: bool = not ro.is_empty() \
+			and _near_edge(owner.get_parent(), owner.global_position, -dir, _ai_center(owner.get_parent()))
+		var p_dodge: float = dodge_chance
+		var p_block: float = block_chance
+		if incoming_heavy and block_frac > 0.45:
+			# Heavies hit hard and chew guard — when we still have block to spend on the
+			# dodge, slip the i-frames rather than eat the chip + knockback (skirmishers
+			# especially must avoid it). If block's already thin we fall through to a
+			# normal read so we don't strip our own guard chasing perfect defense.
+			p_dodge = clampf(p_dodge + 0.22 + skittish * 0.18, 0.0, 0.92)
+		if low_guard:
+			# Almost out of guard: blocking is a trap, so dodge if we still can.
+			p_block *= 0.25
+			if owner.block_durability >= owner.dodge_block_cost:
+				p_dodge = clampf(p_dodge + 0.25, 0.0, 0.95)
+		if dodge_to_edge:
+			p_dodge = 0.0      # never i-frame ourselves off the stage
+			p_block = clampf(p_block + 0.30, 0.0, 0.95)
 		var roll := randf()
-		if roll < dodge_chance and owner.can_dodge():
-			move_dir = _avoid(owner, -dir)  # dodge away from the attacker
+		if roll < p_dodge and owner.can_dodge():
+			# Dodge away from the attacker, but bend inward when near the edge so the
+			# escape never doubles as a self-ring-out.
+			var esc: Vector2 = -dir
+			if not ro.is_empty() and ro["threatened"]:
+				esc = (-ro["self_out"] + (-dir) * 0.3).normalized()
+			move_dir = _avoid(owner, esc)
 			_dodge_q = true
 			return
-		elif roll < dodge_chance + block_chance and owner.can_start_block():
+		elif roll < p_dodge + p_block and owner.can_start_block():
 			_block_t = randf_range(0.25, 0.45)
 			block_held = true
-			move_dir = -dir * 0.3
+			move_dir = _avoid(owner, -dir * 0.3)
 			return
 
 	# --- Offense: punish an opening ---
@@ -171,9 +217,10 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	if _punish_t > 0.0:
 		# Close a big gap instantly by dodging through it — a deliberate gap-closer,
 		# not a panic. Gated on a cooldown and a healthy block bar so it never strips
-		# the defense it still needs.
+		# the defense it still needs, and never fired toward a lethal edge.
 		if dist > heavy_reach + 120.0 and _dash_cd <= 0.0 and owner.can_dodge() \
-				and owner.block_durability > owner.max_block * 0.6 and randf() < 0.5:
+				and owner.block_durability > owner.max_block * 0.6 and randf() < 0.5 \
+				and _dash_safe(owner, dir):
 			move_dir = _avoid(owner, dir)
 			_dodge_q = true
 			_dash_cd = randf_range(0.8, 1.4)
@@ -181,7 +228,11 @@ func think(owner: Node, target: Node, delta: float) -> void:
 		move_dir = _avoid(owner, dir)  # bee-line for the opening
 		if dist <= heavy_reach + 16.0 and owner.can_attack() and _attack_cd <= 0.0:
 			move_dir = dir
-			if owner.can_special() and randf() < 0.45:
+			# A guard-broken target is stunned for a long beat — the surest moment to
+			# cash the signature for max damage. A recovery whiff is a shorter window,
+			# so favour the heavy there and save the special for the guaranteed one.
+			var hard_open: bool = target.is_guard_broken()
+			if owner.can_special() and randf() < (0.75 if hard_open else 0.40):
 				_special_q = true  # biggest punish when the signature is up
 			elif dist <= heavy_reach + 8.0:
 				_heavy_q = true
@@ -218,6 +269,22 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	else:
 		move_dir = (perp * 0.6 + dir * 0.2).normalized()
 
+	# Edge-aware neutral: when we're loitering near a lethal edge (and NOT actively
+	# setting up a ring-out push), fold a pull toward arena centre into the heading so
+	# we fight with the stage at our back instead of the void. Keeps every dino off
+	# the shoreline during the circling/spacing phase, not just at the last step where
+	# _avoid takes over. Scaled by edge_caution so EASY still wanders.
+	if not ro.is_empty() and not (ro["near_edge"] or (ro.has("threatened") and ro["threatened"])):
+		var arena_c: Vector2 = _ai_center(owner.get_parent())
+		var self_out2: Vector2 = ro.get("self_out", Vector2.ZERO)
+		if self_out2 != Vector2.ZERO \
+				and _near_edge(owner.get_parent(), owner.global_position, self_out2, arena_c):
+			var inward: Vector2 = (arena_c - owner.global_position).normalized()
+			var w: float = 0.35 * edge_caution
+			move_dir = (move_dir * (1.0 - w) + inward * w)
+			if move_dir.length() > 0.05:
+				move_dir = move_dir.normalized()
+
 	# Stay glued through the target's hit-invulnerability so the next swing connects
 	# the instant their i-frames drop, instead of drifting out and resetting neutral.
 	if target.invuln_timer > 0.0 and pressure > 0.4 and dist < reach + standoff_gap + 60.0:
@@ -228,12 +295,13 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	# harmlessly inward. Strong pull once the target is near the edge — a short push
 	# finishes it; this is what breaks the open-arena circling stalemate.
 	if not ro.is_empty():
-		if ro["threatened"] and skittish > 0.3:
-			# Fragile + about to be shoved off: don't trade knockback we'll lose —
-			# use our speed to bail toward centre, and dodge inward to escape the
-			# pin. This is how a glass cannon survives (and earns) ring-out stages.
+		# Self-preservation now applies to EVERY dino, scaled by edge_caution — a tank
+		# that lets itself get pinned on the shoreline is the cheapest way for the AI
+		# to lose, so even heavies peel toward centre when lined up to be shoved off.
+		# Fragile dinos (skittish) bail harder and burn a dodge to break the pin.
+		if ro["threatened"] and randf() < edge_caution:
 			move_dir = (-ro["self_out"] + perp * 0.2).normalized()
-			if owner.can_dodge() and _dash_cd <= 0.0 and randf() < 0.4:
+			if skittish > 0.3 and owner.can_dodge() and _dash_cd <= 0.0 and randf() < 0.4:
 				move_dir = _avoid(owner, -ro["self_out"])
 				_dodge_q = true
 				_dash_cd = randf_range(0.6, 1.0)
@@ -271,10 +339,12 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	if dist <= reach + 16.0 and _attack_cd <= 0.0 and owner.can_attack():
 		if target.invuln_timer <= 0.0 or randf() < 0.25:
 			move_dir = dir  # face the target on the commit frame
-			if not ro.is_empty() and ro["near_edge"] and ro["aligned"]:
-				# Lined up at the edge: throw the hardest-hitting move available for
-				# the kill, not a light poke that barely nudges them.
-				if owner.can_special() and randf() < 0.5:
+			var edge_kill: bool = not ro.is_empty() and ro["near_edge"] and ro["aligned"]
+			if edge_kill or finisher:
+				# Lined up at the edge OR the target is one hit from death: throw the
+				# hardest-hitting move available, not a light poke that barely nudges
+				# them. This is what actually closes rounds instead of chip-stalling.
+				if owner.can_special() and randf() < (0.6 if finisher else 0.5):
 					_special_q = true
 				elif dist <= heavy_reach + 8.0:
 					_heavy_q = true
@@ -289,8 +359,8 @@ func think(owner: Node, target: Node, delta: float) -> void:
 				else:
 					_attack_q = true
 			_attack_cd = randf_range(0.4, 0.85) / clampf(aggression, 0.25, 1.0)
-			if skittish > 0.3:
-				_retreat_t = 0.35 + skittish * 0.25  # touch and go
+			if skittish > 0.3 and not finisher:
+				_retreat_t = 0.35 + skittish * 0.25  # touch and go (but never bail a kill)
 
 	# Objective modes: when not mid-exchange, drift toward the hill / nearest egg so
 	# a CPU actually contests King of the Hill and Egg Grab instead of only brawling.
@@ -444,6 +514,24 @@ func _polygon_center(poly: PackedVector2Array) -> Vector2:
 	for p in poly:
 		sum += p
 	return sum / poly.size()
+
+# True when an i-frame dodge along `dir` would still land on-stage. The dodge is a
+# fixed burst that ignores normal steering, so unlike walking it can punch the bot
+# clean off a ledge — gate gap-closer dodges on this so the AI never i-frames
+# itself into the lava/water chasing a punish. Confined arenas always pass.
+const DASH_REACH := 150.0
+func _dash_safe(owner: Node, dir: Vector2) -> bool:
+	var arena := owner.get_parent()
+	if arena == null:
+		return true
+	var landing: Vector2 = owner.global_position + dir.normalized() * DASH_REACH
+	if "safe_polygon" in arena and arena.safe_polygon.size() >= 3:
+		return Geometry2D.is_point_in_polygon(landing, arena.safe_polygon)
+	if "ledge_kill_enabled" in arena and arena.ledge_kill_enabled and "safe_rect" in arena:
+		return arena.safe_rect.has_point(landing)
+	if "drown_off_floes" in arena and arena.drown_off_floes:
+		return landing.distance_to(_ai_center(arena)) < 200.0
+	return true  # confined arena: no lethal edge to dash off
 
 # Nearest weapon resting on the ground (a thrown one that came to rest), or null.
 func _nearest_pickup(owner: Node) -> Node:
