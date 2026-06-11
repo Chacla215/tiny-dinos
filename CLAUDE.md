@@ -144,7 +144,7 @@ Godot binary: **`/opt/homebrew/bin/godot`** (4.6.3 stable).
 - **Atomic commits split by theme** — not one bundle. End every commit message
   with:
   ```
-  Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+  Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
   ```
 
 ## Key tools (`scripts/tools/`)
