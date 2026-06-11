@@ -85,6 +85,11 @@ Pick flow per fighter is now DINO → COLOR → READY.
       team scoring sane.
 - [ ] One ARCADE rung and one GAUNTLET wave — solo flow + draft screen intact.
 - [ ] Emotes (Select), pause overlay (Start), skins visible in-match.
+- [ ] **Audio (new, never heard by human ears)**: menu music on title/select/
+      creator, battle music in-match, crossfade between them; UI blips on every
+      cursor move/confirm/back; pickup/throw/drop-land/emote sounds. All
+      machine-synthesized — flag anything grating or too loud (Music bus is
+      -5 dB under SFX by default).
 
 ## Capture for each finding
 

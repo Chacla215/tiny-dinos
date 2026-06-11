@@ -1,5 +1,33 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-11 (the game gets a voice: music + full-coverage sound)
+
+Charlie said "start on audio." The game had 8 placeholder combat WAVs and
+otherwise total silence — no music, no menu sounds, no audio buses.
+
+- **Music exists now**: `gen_music.py` (pure-stdlib sibling of gen_sfx.py) is
+  a 4-channel chiptune tracker — square lead with vibrato + dotted-8th echo,
+  arp chords, triangle octave bass, kick/snare/hat. Two sample-exact loops:
+  **TITLE THEME** (sunny C-major I-V-vi-IV bounce, 126 BPM, 30s) on
+  title/select/creator, **BATTLE THEME** (driving A-minor Andalusian run,
+  152 BPM, 25s) in every arena. New **`Audio` autoload** crossfades between
+  declared tracks (screens just state their track in `_ready`); buses
+  (Master / Music −5dB / SFX) in `default_bus_layout.tres`. Music loads with
+  CACHE_MODE_IGNORE — the audio thread can hold a stream past tree teardown
+  and a cached ref tripped "resources still in use" on every quit.
+- **Menus aren't mute**: `Audio.ui("move"/"confirm"/"back")` blips wired at
+  the central input handlers of title, select (all cycles + the
+  DINO→COLOR→READY driver), creator (grid + skin carousel), pause overlay,
+  and the gauntlet draft.
+- **Events own their sounds**: PICKUP (weapon grabs + egg collects — was the
+  dodge blip / block clink), THROW (was swing), DROP_LAND (the weapon-drop
+  telegraph payoff — was the dodge blip), EMOTE (taunt bubbles were silent).
+  `_load_sfx` now builds players in code for sounds without baked $SFX scene
+  nodes (no .tscn churn) and routes all SFX to the SFX bus.
+- All synthesized placeholders, swappable in place. **Nobody has heard any
+  of it** — headless can't play audio — so playtest #4 gained a listen-check;
+  expect a tuning pass on mix levels (and possibly melodies) after real ears.
+
 ## Session — 2026-06-11 (drop-economy sim validation + the playtest #4 script)
 
 Consolidation day: validate the weapon-drop meta in sim, then package the

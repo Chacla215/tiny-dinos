@@ -56,6 +56,12 @@ Godot binary: **`/opt/homebrew/bin/godot`** (4.6.3 stable).
 - **`Pause`** = `scripts/pause_manager.gd` — global pause overlay
   (`PROCESS_MODE_ALWAYS`). Start button mid-match → RESUME / HOW TO PLAY / EXIT.
   HOW TO PLAY reuses `controls_diagram.gd`.
+- **`Audio`** = `scripts/audio_manager.gd` — music + UI sounds. Screens declare
+  their track in `_ready` (`Audio.play_music("menu"/"battle")`; re-calling the
+  current track is a no-op, changes crossfade). Menus call
+  `Audio.ui("move"/"confirm"/"back")`. Buses (Master/Music/SFX) live in
+  `default_bus_layout.tres`; tracks come from `scripts/tools/gen_music.py`,
+  SFX from `gen_sfx.py` (all placeholder-synthesized, swappable in place).
 
 ### The match
 - `scenes/main.tscn` + `scripts/main.gd`. The four fighters (`Player1`–`Player4`)
@@ -152,6 +158,8 @@ Godot binary: **`/opt/homebrew/bin/godot`** (4.6.3 stable).
 - `gen_ralph_fighter.py` — bake a hero PNG into an in-match fighter sheet (any
   dino: `python3 scripts/tools/gen_ralph_fighter.py <dino>`; sources from
   `assets/concept/<dino>/<dino>_hero.png`). Prints the `dino.gd` ANIM_LAYOUTS block.
+- `gen_music.py` — chiptune tracker synth for the music loops (pure stdlib;
+  rerun + `--import`, then keep `edit/loop_mode=1` in the music `.import`s).
 - `sim_ai.gd` — headless CPU-vs-CPU balance sim across matchups/arenas:
   `/opt/homebrew/bin/godot --headless -s scripts/tools/sim_ai.gd`. Throwaway tuning
   tool.
