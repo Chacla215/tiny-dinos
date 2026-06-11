@@ -24,6 +24,7 @@ config/features=PackedStringArray("4.6", "GL Compatibility")
 MatchConfig="*res://scripts/match_config.gd"
 MetaSave="*res://scripts/meta_save.gd"
 Pause="*res://scripts/pause_manager.gd"
+Audio="*res://scripts/audio_manager.gd"
 
 [display]
 
