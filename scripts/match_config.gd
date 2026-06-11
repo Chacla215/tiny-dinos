@@ -85,7 +85,7 @@ const WEAPONS := {
 
 const DINOS := {
 	"trike": {
-		"display_name": "TRIKE",
+		"display_name": "GUS",
 		"weapons": ["fists", "mace"],
 		"dino_color": Color(0.95, 0.85, 0.30, 1.0),
 		"sprite_role": "trike",
@@ -176,7 +176,7 @@ const DINOS := {
 		"special_cooldown": 6.0,
 	},
 	"raptor": {
-		"display_name": "RAPTOR",
+		"display_name": "JESSIE",
 		"weapons": ["fists", "dagger"],
 		"dino_color": Color(0.95, 0.45, 0.45, 1.0),
 		"sprite_role": "raptor",
@@ -222,7 +222,7 @@ const DINOS := {
 		"special_cooldown": 2.8,
 	},
 	"bronto": {
-		"display_name": "BRONTO",
+		"display_name": "STEVE",
 		"weapons": ["fists", "hammer"],
 		"dino_color": Color(0.45, 0.55, 0.85, 1.0),
 		"sprite_role": "bronto",
@@ -267,7 +267,7 @@ const DINOS := {
 		"special_cooldown": 5.0,
 	},
 	"anky": {
-		"display_name": "ANKY",
+		"display_name": "FRANK",
 		"weapons": ["fists", "axe"],
 		"dino_color": Color(0.55, 0.5, 0.4, 1.0),
 		"sprite_role": "anky",
