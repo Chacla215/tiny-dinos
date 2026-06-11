@@ -131,7 +131,7 @@ const DINOS := {
 		"special_cooldown": 5.0,
 	},
 	"pterry": {
-		"display_name": "PTERRY",
+		"display_name": "JESSIE",
 		"weapons": ["fists", "bow"],
 		"dino_color": Color(0.85, 0.45, 0.30, 1.0),
 		"sprite_role": "pterry",
@@ -176,7 +176,7 @@ const DINOS := {
 		"special_cooldown": 4.5,
 	},
 	"raptor": {
-		"display_name": "JESSIE",
+		"display_name": "MAX",
 		"weapons": ["fists", "dagger"],
 		"dino_color": Color(0.95, 0.45, 0.45, 1.0),
 		"sprite_role": "raptor",

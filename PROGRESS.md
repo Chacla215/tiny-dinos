@@ -5,10 +5,11 @@
 Charlie's call: "change the other dinos to match Ralph" — named characters,
 CHOMP-weight signature kits, balance to Ralph's level, art at Ralph's bar.
 
-- **The roster has names now**: Raptor → **JESSIE**, Trike → **GUS**,
-  Bronto → **STEVE**, Anky → **FRANK** (Pterry already was one; Jessie was
-  Charlie's pick, the rest neighbor-generic like Ralph). `display_name` in
-  MatchConfig drives select/HUD/banners; creator bios carry the species.
+- **The roster has names now**: Raptor → **MAX**, Trike → **GUS**,
+  Pterry → **JESSIE**, Bronto → **STEVE**, Anky → **FRANK** (Jessie was
+  Charlie's pick — he moved it to the pterodactyl; the rest neighbor-generic
+  like Ralph). `display_name` in MatchConfig drives select/HUD/banners;
+  creator bios carry the species.
 - **Every signature move has a mechanical hook** (was: only CHOMP + SCREECH):
   DASH CLAW refunds most of its cooldown on a clean hit; HEADBUTT CHARGE is
   armored (no shove mid-charge); NECK WHIP guard-crushes (2x block drain);
@@ -16,9 +17,10 @@ CHOMP-weight signature kits, balance to Ralph's level, art at Ralph's bar.
   screech) — no safe side. Creator move cards sell each hook.
 - **Balance, sim-validated** (sim now 30s/match; 18s was noise): pre-session
   Ralph trim + Trike buff committed first (Ralph 62.5% → cluster), then the
-  hooks shook the meta (Frank 73%, Jessie 13%) and round-2 numbers landed
-  everyone at **39–61%** with every matchup interactive. Jessie/Pterry sit
-  low, Ralph high — within sim noise; playtest #4 decides further tuning.
+  hooks shook the meta (anky 73%, raptor 13%) and round-2 numbers landed
+  everyone at **39–61%** with every matchup interactive. Max (raptor) and
+  Jessie (pterry) sit low, Ralph high — within sim noise; playtest #4
+  decides further tuning.
 - **Creator screen no longer lies**: Ralph profile stats + ALL move cooldowns
   derive live from MatchConfig (RALPH_STATS hardcode + stale "5s" gone).
 - **Art audit passed**: 6/6 painterly heroes verified via creator `--shot`
