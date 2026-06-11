@@ -103,7 +103,9 @@ const ANIM_LAYOUTS := {
 @export_group("Special")
 ## Signature move on the special button. Type drives the few unique behaviors;
 ## everything else is a normal melee swing with these numbers.
-## "none" | "chomp" (lifesteal) | "dash_claw" | "headbutt" | "screech"/"stomp" (AoE)
+## "none" | "chomp" (lifesteal) | "dash_claw" (cooldown refunds on hit)
+## | "headbutt" (armored charge) | "screech"/"stomp" (radial AoE + slow)
+## | "neck_whip" (guard crush) | "tail_smash" (radial shockwave)
 @export var special_type: String = "none"
 @export var special_damage: int = 25
 @export var special_knockback: float = 350.0
@@ -937,7 +939,9 @@ func update_attack(delta: float) -> void:
 			attack_phase = AttackPhase.ACTIVE
 			attack_timer = current_attack_active
 			if current_is_special and (special_type == "screech" or special_type == "stomp"):
-				_do_screech()  # Ralph's Tiny Meteor Stomp reuses the radial shockwave
+				_do_screech()
+			elif current_is_special and special_type == "tail_smash":
+				_do_tail_smash()  # FRANK: shockwave in every direction, no safe side
 			elif current_is_special and special_type == "spikes":
 				_spawn_spike_volley()
 			elif not current_is_special and wpn_projectile:
@@ -989,6 +993,9 @@ func try_hit(body: Node) -> void:
 	if lifesteal > 0.0:
 		hp = min(max_hp, hp + int(dmg * lifesteal))
 		update_hp_bar()
+	# DASH CLAW: landing the rake renews the hunt — most of the cooldown refunds.
+	if current_is_special and special_type == "dash_claw":
+		special_cooldown_timer = minf(special_cooldown_timer, special_cooldown * 0.35)
 
 # --- Defense actions ---
 
@@ -1270,9 +1277,15 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 		play_scene_sfx(sfx_name, 0.1)
 
 	if defense_state == DefenseState.BLOCKING:
-		var absorbed: float = min(block_durability, float(amount))
+		# NECK WHIP guard-crush: the whip chews through block durability, so
+		# turtling against Steve cracks the guard open fast.
+		var crush := 1.0
+		if source != null and "special_type" in source and "current_is_special" in source \
+				and source.current_is_special and source.special_type == "neck_whip":
+			crush = 2.5
+		var absorbed: float = min(block_durability, float(amount) * crush)
 		block_durability -= absorbed
-		var remaining: float = float(amount) - absorbed
+		var remaining: float = float(amount) - absorbed / crush
 		velocity += knockback * block_knockback_factor
 		knockback_active = true
 		update_block_bar()
@@ -1293,8 +1306,10 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 
 	if not ringout_only:
 		hp -= amount
-	velocity += knockback
-	knockback_active = true
+	# HEADBUTT armor: mid-charge Gus takes the damage but can't be shoved off course.
+	if not (current_is_special and special_type == "headbutt" and attack_phase != AttackPhase.IDLE):
+		velocity += knockback
+		knockback_active = true
 	notify_hit(amount)
 	# Impact burst at the contact point (cosmetic): spray along the knockback.
 	var kdir: Vector2 = knockback.normalized() if knockback.length() > 1.0 else facing
@@ -1384,6 +1399,16 @@ func _make_spike(dir: Vector2, dmg: int, kb: float) -> void:
 # Pterodactyl Paralyzing Screech: damage + shove + a timed slow (and dodge lock)
 # on every opponent within special_radius, plus an expanding ring for feedback.
 func _do_screech() -> void:
+	_do_radial_special(special_slow_duration, Color(0.75, 0.55, 1.0, 0.4))
+
+# FRANK's tail smash: a shockwave through the ground in every direction —
+# sneaking up behind him is exactly as dangerous as standing in front.
+func _do_tail_smash() -> void:
+	_do_radial_special(0.0, Color(0.82, 0.62, 0.35, 0.45))
+
+# Shared radial special: damage + outward knockback to every foe within
+# special_radius; slow_duration > 0 also screech-slows them.
+func _do_radial_special(slow_duration: float, ring_color: Color) -> void:
 	for other in get_parent().get_children():
 		if other == self or not (other is CharacterBody2D):
 			continue
@@ -1398,22 +1423,22 @@ func _do_screech() -> void:
 		var dir := to_other / d if d > 0.01 else Vector2.RIGHT
 		if other.has_method("take_damage"):
 			other.take_damage(special_damage, dir * special_knockback, self)
-		if other.has_method("apply_screech"):
-			other.apply_screech(special_slow_duration)
-	_spawn_screech_ring()
+		if slow_duration > 0.0 and other.has_method("apply_screech"):
+			other.apply_screech(slow_duration)
+	_spawn_radial_ring(ring_color)
 
 # Called on a dino caught in a screech: slows it + locks dodge for the duration.
 func apply_screech(duration: float) -> void:
 	timed_slow_timer = maxf(timed_slow_timer, duration)
 
-func _spawn_screech_ring() -> void:
+func _spawn_radial_ring(color: Color) -> void:
 	var ring := Polygon2D.new()
 	var pts := PackedVector2Array()
 	for i in range(28):
 		var a := TAU * i / 28.0
 		pts.append(Vector2(cos(a), sin(a)) * special_radius)
 	ring.polygon = pts
-	ring.color = Color(0.75, 0.55, 1.0, 0.4)
+	ring.color = color
 	ring.global_position = global_position
 	ring.scale = Vector2(0.15, 0.15)
 	ring.z_index = -1

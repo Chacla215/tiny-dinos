@@ -302,14 +302,13 @@ const DINOS := {
 		"dodge_distance": 120.0,
 		"dodge_block_cost": 36.0,
 		"special_type": "tail_smash",
-		"special_damage": 26,
-		"special_knockback": 640.0,
+		"special_damage": 22,
+		"special_knockback": 560.0,
 		"special_windup": 0.26,
 		"special_active": 0.16,
 		"special_recovery": 0.50,
-		"special_hitbox_size": Vector2(100, 80),
-		"special_hitbox_offset": 44.0,
-		"special_cooldown": 4.5,
+		"special_radius": 160.0,
+		"special_cooldown": 5.5,
 	},
 	# Ralph the mascot — a scrappy medium bruiser whose niche is the AoE signature
 	# "Tiny Meteor Stomp" (reuses the radial screech shockwave). Stats track the
