@@ -3,11 +3,12 @@ extends Control
 ## Built programmatically + data-driven so AI-generated hero/skin PNGs slot in
 ## as they land. Gamepad-only:
 ##   GRID:   D-pad navigates,  A opens profile,  B → title
-##   PROFILE: ◀▶ cycles skins (Ralph only for now),  B → grid
-## The grid features Ralph (mascot) + the 6 playable dinos. Ralph's profile is
-## hand-curated; the others derive stats from MatchConfig.DINOS and use their
-## in-match pixel sprite as the portrait until AI hero art lands at
-## assets/concept/<dino>/<dino>_hero.png. Prompts: scripts/tools/dino_art_prompts.md.
+##   PROFILE: ◀▶ cycles skins,  A equips,  B → grid
+## The grid features the 6 playable dinos (Ralph included). Flavor copy is
+## hand-curated in PROFILES; stats and cooldowns derive from MatchConfig.DINOS
+## so balance numbers stay the single source of truth. Portraits use the hero
+## art at assets/concept/<dino>/<dino>_hero.png, falling back to the in-match
+## pixel sprite. Prompts: scripts/tools/dino_art_prompts.md.
 ## File kept as ralph_creator.{gd,tscn} for minimum churn (was Ralph-only).
 
 const DinoScript := preload("res://scripts/dino.gd")
@@ -46,10 +47,10 @@ func _skin_img(dino_id: String, idx: int) -> String:
 	var path := "res://assets/concept/%s/%s_%s.png" % [dino_id, dino_id, key]
 	return path if ResourceLoader.exists(path) else ""
 
-# Hand-curated copy. Stats for non-Ralph entries are DERIVED from MatchConfig
-# (see _stats_for) — only flavor text lives here so the in-game numbers stay
-# the single source of truth. Each dino's hero path is checked for existence;
-# missing → fall back to the in-match pixel sprite.
+# Hand-curated copy. Stats and cooldowns are DERIVED from MatchConfig (see
+# _stats_for / _cooldown_text) — only flavor text lives here so the in-game
+# numbers stay the single source of truth. Each dino's hero path is checked
+# for existence; missing → fall back to the in-match pixel sprite.
 const PROFILES := {
 	"ralph": {
 		"display_name": "RALPH",
@@ -60,7 +61,6 @@ const PROFILES := {
 		"move_name": "CHOMP",
 		"move_desc": "Ralph lunges with jaws wide. Each bite heals him for part of the damage dealt — the more the tiny king feasts, the longer he reigns.",
 		"move_type": "PHYSICAL",
-		"move_cooldown": "5s",
 		"hero": RALPH_HERO,
 		"has_creator": true,
 	},
@@ -73,7 +73,6 @@ const PROFILES := {
 		"move_name": "DASH CLAW",
 		"move_desc": "Jessie rockets forward with sickle claws raised, slicing anyone caught on the path.",
 		"move_type": "PHYSICAL",
-		"move_cooldown": "3.5s",
 		"hero": "res://assets/concept/raptor/raptor_hero.png",
 		"has_creator": false,
 	},
@@ -86,7 +85,6 @@ const PROFILES := {
 		"move_name": "HEADBUTT CHARGE",
 		"move_desc": "Gus lowers his horns and barrels forward, knocking enemies clear off the island.",
 		"move_type": "PHYSICAL",
-		"move_cooldown": "5s",
 		"hero": "res://assets/concept/trike/trike_hero.png",
 		"has_creator": false,
 	},
@@ -99,7 +97,6 @@ const PROFILES := {
 		"move_name": "SCREECH",
 		"move_desc": "A piercing wail that slows every enemy caught in range. Pterry's favorite icebreaker.",
 		"move_type": "SONIC",
-		"move_cooldown": "6s",
 		"hero": "res://assets/concept/pterry/pterry_hero.png",
 		"has_creator": false,
 	},
@@ -112,7 +109,6 @@ const PROFILES := {
 		"move_name": "NECK WHIP",
 		"move_desc": "Steve sweeps his long neck in a wide arc, scooping every enemy along the way.",
 		"move_type": "PHYSICAL",
-		"move_cooldown": "5s",
 		"hero": "res://assets/concept/bronto/bronto_hero.png",
 		"has_creator": false,
 	},
@@ -125,20 +121,10 @@ const PROFILES := {
 		"move_name": "TAIL SMASH",
 		"move_desc": "Frank brings his club tail crashing down, sending a shockwave through the ground.",
 		"move_type": "PHYSICAL",
-		"move_cooldown": "4.5s",
 		"hero": "res://assets/concept/anky/anky_hero.png",
 		"has_creator": false,
 	},
 }
-
-# Ralph's flavor stats — held separately because Ralph isn't in MatchConfig.
-const RALPH_STATS := [
-	["HP", "120", Color("e0564f")],
-	["ATK", "28", Color("e89a3c")],
-	["DEF", "20", Color("5aa0e0")],
-	["SPD", "18", Color("d2a878")],
-	["CRT", "10%", Color("e6c878")],
-]
 
 # ---- runtime state ----
 var grid_root: Control
@@ -254,12 +240,10 @@ func _add_portrait(parent: Control, dino_id: String, rect: Rect2, fallback_scale
 	return t
 
 
-## Stats for the SIGNATURE panel. Ralph is hardcoded (not in MatchConfig); the
-## roster dinos derive HP/ATK/DEF/SPD/SPC from MatchConfig so balance numbers
-## stay the single source of truth.
+## Stats for the SIGNATURE panel. Every dino (Ralph included) derives
+## HP/ATK/DEF/SPD/SPC from MatchConfig so balance numbers stay the single
+## source of truth.
 func _stats_for(dino_id: String) -> Array:
-	if dino_id == "ralph":
-		return RALPH_STATS
 	var d: Dictionary = MatchConfig.DINOS.get(dino_id, {})
 	if d.is_empty():
 		return []
@@ -276,15 +260,25 @@ func _stats_for(dino_id: String) -> Array:
 		["SPC", str(spc), Color("e6c878")],
 	]
 
-# Largest value seen for each stat across the whole cast (Ralph + roster), so the
-# profile bars are relative — the fastest dino's SPD bar is full, and a glass
-# cannon's HP bar reads short. Cached after the first build.
+# Signature-move cooldown straight from MatchConfig, e.g. "6s" / "4.5s".
+func _cooldown_text(dino_id: String) -> String:
+	var cd: float = float(MatchConfig.DINOS.get(dino_id, {}).get("special_cooldown", 0.0))
+	if cd <= 0.0:
+		return "—"
+	var s := "%.1f" % cd
+	if s.ends_with(".0"):
+		s = s.substr(0, s.length() - 2)
+	return s + "s"
+
+# Largest value seen for each stat across the whole cast, so the profile bars
+# are relative — the fastest dino's SPD bar is full, and a glass cannon's HP
+# bar reads short. Cached after the first build.
 var _stat_max_cache: Array = []
 func _stat_maxes() -> Array:
 	if not _stat_max_cache.is_empty():
 		return _stat_max_cache
 	var maxes := [1, 1, 1, 1, 1]
-	for id in (["ralph"] + MatchConfig.ROSTER_ORDER):
+	for id in MatchConfig.ROSTER_ORDER:
 		var rows: Array = _stats_for(id)
 		for i in range(min(rows.size(), maxes.size())):
 			maxes[i] = max(maxes[i], int(rows[i][1]))
@@ -575,7 +569,7 @@ func _refresh_profile(dino_id: String) -> void:
 	move_name_label.text = profile.get("move_name", "")
 	move_desc_label.text = profile.get("move_desc", "")
 	move_type_label.text = "TYPE: %s" % profile.get("move_type", "PHYSICAL")
-	move_cooldown_label.text = "COOLDOWN: %s" % profile.get("move_cooldown", "—")
+	move_cooldown_label.text = "COOLDOWN: %s" % _cooldown_text(dino_id)
 	_clear_children(move_icon_holder)
 	_add_portrait(move_icon_holder, dino_id, Rect2(6, 6, 108, 92))
 	# Skins (every dino) + weapons; emotes are still a teaser.
