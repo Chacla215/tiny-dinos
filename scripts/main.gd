@@ -149,6 +149,7 @@ var sfx: Dictionary = {}
 func _ready() -> void:
 	# Safety net: a scene change mid hit-pause can leave time_scale stuck low.
 	Engine.time_scale = 1.0
+	Audio.play_music("battle")
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	for child in ice_patches.get_children():
 		if child is Area2D:
@@ -1529,12 +1530,15 @@ func _refresh_draft() -> void:
 
 func _draft_input() -> void:
 	if Input.is_action_just_pressed("p1_left"):
+		Audio.ui("move")
 		draft_index = (draft_index - 1 + draft_options.size()) % draft_options.size()
 		_refresh_draft()
 	elif Input.is_action_just_pressed("p1_right"):
+		Audio.ui("move")
 		draft_index = (draft_index + 1) % draft_options.size()
 		_refresh_draft()
 	elif Input.is_action_just_pressed("p1_confirm"):
+		Audio.ui("confirm")
 		MatchConfig.gauntlet_add_upgrade(draft_options[draft_index])
 		gauntlet_drafting = false
 		_clear_draft_cards()

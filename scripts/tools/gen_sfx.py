@@ -141,6 +141,41 @@ def gen_win():
     return out
 
 
+# --- UI move: tiny dry tick, quiet enough to spam ---
+def gen_ui_move():
+    out = []
+    total = n(0.035)
+    for i in range(total):
+        t = i / total
+        sq = 0.6 if sine(880, i) >= 0 else -0.6
+        out.append(sq * math.exp(-22.0 * t))
+    return out
+
+
+# --- UI confirm: bright two-note up-chirp ---
+def gen_ui_confirm():
+    out = []
+    for f in (660, 990):
+        dur = n(0.05)
+        for i in range(dur):
+            t = i / dur
+            sq = 0.5 if sine(f, i) >= 0 else -0.5
+            out.append((sq + sine(f, i) * 0.25) * math.exp(-8.0 * t))
+    return out
+
+
+# --- UI back: soft two-note down-chirp (confirm's mirror) ---
+def gen_ui_back():
+    out = []
+    for f in (660, 440):
+        dur = n(0.045)
+        for i in range(dur):
+            t = i / dur
+            sq = 0.45 if sine(f, i) >= 0 else -0.45
+            out.append(sq * math.exp(-9.0 * t))
+    return out
+
+
 write_wav("swing", gen_swing(), gain=0.55)
 write_wav("dodge", gen_dodge(), gain=0.6)
 write_wav("hit_chomp", gen_hit_chomp(), gain=0.95)
@@ -149,4 +184,7 @@ write_wav("block", gen_block(), gain=0.7)
 write_wav("guard_break", gen_guard_break(), gain=0.85)
 write_wav("ko", gen_ko(), gain=1.0)
 write_wav("win", gen_win(), gain=0.7)
+write_wav("ui_move", gen_ui_move(), gain=0.4)
+write_wav("ui_confirm", gen_ui_confirm(), gain=0.55)
+write_wav("ui_back", gen_ui_back(), gain=0.5)
 print("done")

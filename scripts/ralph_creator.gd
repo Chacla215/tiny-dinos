@@ -145,6 +145,7 @@ var skin_status_label: Label
 
 
 func _ready() -> void:
+	Audio.play_music("menu")
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	_bg(self, 0, 0, 1280, 720, BG)
 	_build_grid_view()
@@ -373,17 +374,21 @@ func _handle_grid_nav() -> void:
 	elif Input.is_action_just_pressed("p1_up"):
 		dy = -1
 	if dx != 0:
+		Audio.ui("move")
 		var row_len: int = GRID_ROWS[grid_row].size()
 		grid_col = (grid_col + dx + row_len) % row_len
 		_refresh_grid_selection()
 	elif dy != 0:
+		Audio.ui("move")
 		grid_row = (grid_row + dy + GRID_ROWS.size()) % GRID_ROWS.size()
 		_clamp_grid_col()
 		_refresh_grid_selection()
 	if Input.is_action_just_pressed("p1_confirm"):
+		Audio.ui("confirm")
 		current_dino = GRID_ROWS[grid_row][grid_col]
 		_show_profile(current_dino)
 	elif Input.is_action_just_pressed("p1_heavy"):
+		Audio.ui("back")
 		get_tree().change_scene_to_file(TITLE_SCENE)
 
 
@@ -810,6 +815,7 @@ func _process(_delta: float) -> void:
 
 func _handle_profile_input() -> void:
 	if Input.is_action_just_pressed("p1_heavy"):
+		Audio.ui("back")
 		_show_grid()
 		return
 	# ◀▶ previews skins (every dino), A equips the previewed one (persisted).
@@ -817,12 +823,15 @@ func _handle_profile_input() -> void:
 		return
 	var n: int = MatchConfig.SKINS.size()
 	if Input.is_action_just_pressed("p1_right"):
+		Audio.ui("move")
 		skin_idx = (skin_idx + 1) % n
 		_refresh_skin_selection()
 	elif Input.is_action_just_pressed("p1_left"):
+		Audio.ui("move")
 		skin_idx = (skin_idx - 1 + n) % n
 		_refresh_skin_selection()
 	elif Input.is_action_just_pressed("p1_confirm"):
+		Audio.ui("confirm")
 		MetaSave.set_skin(current_dino, skin_idx)
 		_refresh_skin_selection()
 

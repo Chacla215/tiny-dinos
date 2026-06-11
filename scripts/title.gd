@@ -51,6 +51,7 @@ var shake_left: float = 0.0       # seconds of screen-shake remaining
 func _ready() -> void:
 	# Defensive: returning here from a hit-paused match can leave time_scale low.
 	Engine.time_scale = 1.0
+	Audio.play_music("menu")
 	logo_base_y = logo.position.y
 	_setup_backdrop()
 	_setup_dino(left_graphic, LEFT_DINO, true)
@@ -139,6 +140,7 @@ func _handle_nav(_delta: float) -> void:
 		return
 	nav_prev_dir = dir
 	if dir != 0:
+		Audio.ui("move")
 		selected = (selected + dir + menu_items.size()) % menu_items.size()
 		_refresh_menu()
 
@@ -165,6 +167,7 @@ func _refresh_menu() -> void:
 			l.add_theme_color_override("font_color", DIM_TEXT)
 
 func _activate(action: String) -> void:
+	Audio.ui("confirm")
 	match action:
 		"play":
 			MatchConfig.arcade_setup = false

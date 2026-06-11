@@ -67,6 +67,7 @@ var start_timer: float = 0.0
 var launch_armed: bool = false
 
 func _ready() -> void:
+	Audio.play_music("menu")
 	var controller_count: int = Input.get_connected_joypads().size()
 	var initial_count: int = clamp(controller_count, 2, 4)
 	if controller_count < 2:
@@ -138,6 +139,7 @@ func _update_solo_island_label() -> void:
 	mode_label.text = "START ISLAND:  %s   (P1 UP / DOWN)" % island_name
 
 func _cycle_solo_island(step: int) -> void:
+	Audio.ui("move")
 	var n: int = MatchConfig.ISLAND_ORDER.size()
 	island_idx = (island_idx + step + n) % n
 	_set_island_bg(MatchConfig.ISLAND_ORDER[island_idx])
@@ -172,6 +174,7 @@ func _apply_active_count(n: int) -> void:
 # Host adds a computer opponent (cycles 2 -> 3 -> 4 -> 2 players). Newly added
 # opponent slots default to CPU, so a solo player can fight 1-v-2 or 1-v-3.
 func _cycle_opponent_count() -> void:
+	Audio.ui("move")
 	var prev: int = MatchConfig.player_count
 	var n: int = prev + 1 if prev < 4 else 2
 	_apply_active_count(n)
@@ -194,6 +197,7 @@ func _process(delta: float) -> void:
 			_cycle_solo_island(1)
 		# Arcade only: X toggles the co-op partner.
 		if arcade and Input.is_action_just_pressed("p1_attack"):
+			Audio.ui("move")
 			solo_duo = not solo_duo
 			_update_solo_duo_label()
 	if _all_ready():
@@ -250,6 +254,7 @@ func _process_launch(delta: float) -> void:
 	var keys: Array = ["A", "B"] if on_pad else ["F", "H"]
 	countdown_label.text = "EVERYONE READY?    %s  START      %s  BACK" % keys
 	if Input.is_action_just_pressed("p1_confirm"):
+		Audio.ui("confirm")
 		launch_armed = true
 		start_timer = START_DELAY
 		return
@@ -259,6 +264,7 @@ func _process_launch(delta: float) -> void:
 		return
 	for pid in active_players:
 		if pid != "p1" and not cpu_states[pid] and Input.is_action_just_pressed("%s_heavy" % pid):
+			Audio.ui("back")
 			stages[pid] = "skin"
 			_set_ready(pid, false)
 			return
@@ -269,6 +275,7 @@ func _reopen_last_host_pick() -> void:
 	var q: Array = _host_queue()
 	if q.is_empty():
 		return
+	Audio.ui("back")
 	var pid: String = q[q.size() - 1]
 	stages[pid] = "skin"
 	_set_ready(pid, false)
@@ -307,6 +314,12 @@ func _drive_slot(pid: String, src: String, host_edit: bool) -> void:
 	# Back is B (heavy) -- matches the title screen's back button. (RB now flips
 	# an opponent human/CPU, so B is free here.)
 	var back := Input.is_action_just_pressed("%s_heavy" % src)
+	if left or right:
+		Audio.ui("move")
+	if confirm:
+		Audio.ui("confirm")
+	elif back:
+		Audio.ui("back")
 
 	match stages[pid]:
 		"dino":
@@ -456,6 +469,7 @@ func _any_cpu() -> bool:
 	return false
 
 func _cycle_difficulty() -> void:
+	Audio.ui("move")
 	var order: Array = MatchConfig.CPU_DIFFICULTY_ORDER
 	var i: int = order.find(MatchConfig.cpu_difficulty)
 	MatchConfig.cpu_difficulty = order[(i + 1) % order.size()]
@@ -495,6 +509,7 @@ func _mode_available(mode: String) -> bool:
 	return true
 
 func _cycle_mode() -> void:
+	Audio.ui("move")
 	var order: Array = MatchConfig.MODE_ORDER
 	# Advance to the next AVAILABLE mode (skips THE BEAST at <3 players).
 	for _i in order.size():
@@ -552,6 +567,7 @@ func _team_presets() -> Array:
 	return presets
 
 func _cycle_teams() -> void:
+	Audio.ui("move")
 	var presets: Array = _team_presets()
 	if presets.size() <= 1:
 		return  # no split available for this count/mode

@@ -114,6 +114,7 @@ func _close_howto() -> void:
 	_menu_root.visible = true
 
 func _activate(action: String) -> void:
+	Audio.ui("confirm")
 	match action:
 		"resume":
 			_resume()
@@ -133,6 +134,7 @@ func _handle_nav() -> void:
 		return
 	_nav_prev_dir = dir
 	if dir != 0:
+		Audio.ui("move")
 		_selected = (_selected + dir + ITEMS.size()) % ITEMS.size()
 		_refresh_menu()
 
