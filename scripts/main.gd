@@ -9,6 +9,10 @@ const SFX_PATHS := {
 	"dodge": "res://assets/sfx/dodge.wav",
 	"ko": "res://assets/sfx/ko.wav",
 	"win": "res://assets/sfx/win.wav",
+	"pickup": "res://assets/sfx/pickup.wav",
+	"throw": "res://assets/sfx/throw.wav",
+	"drop_land": "res://assets/sfx/drop_land.wav",
+	"emote": "res://assets/sfx/emote.wav",
 }
 
 @export var safe_rect: Rect2 = Rect2(160, 100, 960, 520)
@@ -505,7 +509,7 @@ func _collect_egg(p: Node, egg: Node2D, i: int) -> void:
 	var side: String = _side(pid)
 	mode_score[side] = mode_score.get(side, 0.0) + 1.0
 	dp[pid] = dp.get(pid, 0) + 60
-	play_sfx("dodge", 0.12)  # light pickup blip (reuses an existing sound)
+	play_sfx("pickup", 0.12)
 	if is_instance_valid(egg):
 		egg.queue_free()
 	eggs.remove_at(i)
@@ -753,6 +757,12 @@ func _load_sfx() -> void:
 	}
 	for key in SFX_PATHS:
 		var path: String = SFX_PATHS[key]
+		if not sfx.has(key):
+			# Newer sounds have no baked $SFX node in the arena scenes; build one.
+			var p := AudioStreamPlayer.new()
+			$SFX.add_child(p)
+			sfx[key] = p
+		sfx[key].bus = "SFX"
 		if ResourceLoader.exists(path):
 			sfx[key].stream = load(path)
 
@@ -826,7 +836,7 @@ func _spawn_dropped_weapon(wid: String, pt: Vector2) -> void:
 	item.spawn_drop = true
 	item.position = pt
 	add_child(item)
-	play_sfx("dodge", 0.10)  # soft landing thump (reuses an existing sound)
+	play_sfx("drop_land", 0.08)
 
 # --- [experiment] Map power-ups ---
 func _update_powerups(delta: float) -> void:

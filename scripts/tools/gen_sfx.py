@@ -184,7 +184,61 @@ write_wav("block", gen_block(), gain=0.7)
 write_wav("guard_break", gen_guard_break(), gain=0.85)
 write_wav("ko", gen_ko(), gain=1.0)
 write_wav("win", gen_win(), gain=0.7)
+# --- weapon pickup: bright snatch-pluck, "got it!" ---
+def gen_pickup():
+    out = []
+    for f in (1047, 1319):                    # C6 -> E6
+        dur = n(0.045)
+        for i in range(dur):
+            t = i / dur
+            sq = 0.5 if sine(f, i) >= 0 else -0.5
+            out.append((sq + sine(f * 0.5, i) * 0.3) * math.exp(-10.0 * t))
+    return out
+
+
+# --- weapon throw: harsher rising whoosh, heavier than dodge ---
+def gen_throw():
+    out = []
+    prev = 0.0
+    total = n(0.16)
+    for i in range(total):
+        t = i / total
+        ns = random.uniform(-1, 1)
+        k = 0.25 + 0.6 * t                    # opens up as it leaves the hand
+        prev = prev * (1.0 - k) + ns * k
+        body = sine(220 * (1 + 1.5 * t), i) * 0.25
+        out.append((prev * 0.8 + body) * math.sin(math.pi * t))
+    return out
+
+
+# --- weapon drop landing: soft ground thud + dusty scuff ---
+def gen_drop_land():
+    out = []
+    total = n(0.13)
+    for i in range(total):
+        t = i / total
+        thud = sine(105 * (1 - 0.45 * t), i) * 0.8
+        scuff = random.uniform(-1, 1) * 0.35 if t < 0.35 else 0.0
+        out.append((thud + scuff) * math.exp(-9.0 * t))
+    return out
+
+
+# --- emote: cartoon pop-chirp for the taunt bubble ---
+def gen_emote():
+    out = []
+    total = n(0.09)
+    for i in range(total):
+        t = i / total
+        f = 420 + 660 * t                     # quick upward boing
+        out.append((sine(f, i) * 0.6 + sine(f * 2, i) * 0.2) * math.sin(math.pi * t))
+    return out
+
+
 write_wav("ui_move", gen_ui_move(), gain=0.4)
 write_wav("ui_confirm", gen_ui_confirm(), gain=0.55)
 write_wav("ui_back", gen_ui_back(), gain=0.5)
+write_wav("pickup", gen_pickup(), gain=0.6)
+write_wav("throw", gen_throw(), gain=0.6)
+write_wav("drop_land", gen_drop_land(), gain=0.75)
+write_wav("emote", gen_emote(), gain=0.55)
 print("done")

@@ -567,6 +567,7 @@ func play_emote() -> void:
 		_emote_bubble.queue_free()
 	_emote_bubble = _build_emote_bubble(String(emote.get("text", "!")))
 	add_child(_emote_bubble)
+	play_scene_sfx("emote", 0.12)
 
 func _build_emote_bubble(txt: String) -> Node2D:
 	var root := Node2D.new()
@@ -873,7 +874,7 @@ func throw_weapon() -> void:
 	_spawn_thrown_weapon(id, dmg, kb)
 	weapons[active_weapon] = "fists"
 	_refresh_weapon()
-	play_scene_sfx("swing", 0.05)
+	play_scene_sfx("throw", 0.06)
 
 func _spawn_thrown_weapon(id: String, dmg: int, kb: float) -> void:
 	var item := Area2D.new()
@@ -906,7 +907,7 @@ func try_pickup() -> void:
 	active_weapon = slot
 	best.consume()
 	_refresh_weapon()
-	play_scene_sfx("block", 0.1)  # quick clink as it's grabbed
+	play_scene_sfx("pickup", 0.08)
 
 # Prefer dropping a pickup into an empty (fists) slot; otherwise the active one.
 func _pickup_slot() -> int:
