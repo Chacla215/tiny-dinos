@@ -70,8 +70,9 @@ const PLAYER_TINTS := {
 # "projectile" is RANGED: dino.gd fires a shot in the facing direction (reusing
 # the spike-projectile path) instead of swinging — its standout trait is reach,
 # paid for with modest damage. "range" still nudges the (unused) melee offset but
-# the shot itself flies via the dino's projectile_speed/lifetime exports. Each
-# dino has a 2-weapon loadout (DINOS.weapons).
+# the shot itself flies via the dino's projectile_speed/lifetime exports.
+# Nobody starts armed: weapons drop onto the island mid-round (main.gd) and are
+# picked up with LT. DINOS.weapons is creator-screen "favorite weapons" flavor.
 const WEAPONS := {
 	"fists":     {"display_name": "FISTS",     "dmg": 1.0,  "kb": 1.0,  "range": 0,   "windup": 1.0, "recovery": 1.0},
 	"sword":     {"display_name": "SWORD",      "dmg": 1.2,  "kb": 1.1,  "range": 16,  "windup": 1.0, "recovery": 1.0},
@@ -455,9 +456,6 @@ var island: String = "laughing_lava"
 var player_count: int = 2
 ## Which slots are CPU-controlled this match. Set on the select screen.
 var cpu_players: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false}
-## pid -> chosen weapon id; the in-match loadout becomes ["fists", choice].
-## Absent (e.g. CPU slots) -> the dino's default loadout from DINOS.weapons.
-var weapon_choices: Dictionary = {}
 ## pid -> SKINS index picked on the select screen for this match.
 ## -1 = no pick: the dino spawns with its creator-equipped MetaSave skin.
 var skin_choices: Dictionary = {"p1": -1, "p2": -1, "p3": -1, "p4": -1}
@@ -493,18 +491,16 @@ var arcade: bool = false
 var arcade_rung: int = 0
 var arcade_ladder: Array = []        # [{foes: [dino,...], difficulty, island}]
 var arcade_player_dino: String = "ralph"
-var arcade_player_weapon: String = "hammer"
 var arcade_duo: bool = false         # co-op: P1 + a CPU ally climb as a 2-fighter team
 var arcade_ally_dino: String = "raptor"
 const ARCADE_DIFFS := ["easy", "easy", "normal", "normal", "hard"]
 
-func start_arcade(player_dino: String, player_weapon: String, start_island: String = "", duo: bool = false) -> void:
+func start_arcade(player_dino: String, start_island: String = "", duo: bool = false) -> void:
 	arcade = true
 	arcade_duo = duo
 	teams_enabled = duo
 	arcade_rung = 0
 	arcade_player_dino = player_dino
-	arcade_player_weapon = player_weapon
 	if duo:
 		# A partner different from the player, fixed for the whole run.
 		var pool: Array = ROSTER_ORDER.filter(func(d): return d != player_dino)
@@ -545,7 +541,6 @@ func arcade_is_final_rung() -> bool:
 func _apply_arcade_rung() -> void:
 	var rung: Dictionary = arcade_ladder[arcade_rung]
 	var foes: Array = rung["foes"]
-	weapon_choices = {"p1": arcade_player_weapon}
 	cpu_difficulty = rung["difficulty"]
 	island = rung["island"]
 	game_mode = "rounds"
@@ -588,7 +583,6 @@ var gauntlet: bool = false
 var gauntlet_wave: int = 0           # 0-indexed; displayed as wave+1
 var gauntlet_upgrades: Array = []    # upgrade ids picked this run (may repeat)
 var gauntlet_player_dino: String = "ralph"
-var gauntlet_player_weapon: String = "hammer"
 var gauntlet_player_hp: int = -1     # HP carried into the next wave; -1 = spawn at full
 var gauntlet_start_island: String = ""  # solo-setup pick for wave 1; "" = random
 # Persistent meta perks snapshotted from MetaSave at run start (see meta_save.gd).
@@ -624,13 +618,12 @@ const UPGRADES := {
 # attrition stings without dooming a low-HP survivor. SECOND WIND adds on top.
 const GAUNTLET_WAVE_HEAL := 0.20
 
-func start_gauntlet(player_dino: String, player_weapon: String, start_island: String = "") -> void:
+func start_gauntlet(player_dino: String, start_island: String = "") -> void:
 	gauntlet = true
 	teams_enabled = false  # solo run is always 1-v-1
 	gauntlet_wave = 0
 	gauntlet_upgrades = []
 	gauntlet_player_dino = player_dino
-	gauntlet_player_weapon = player_weapon
 	gauntlet_player_hp = -1
 	gauntlet_start_island = start_island
 	# Snapshot the cross-run meta perks unlocked so far.
@@ -649,7 +642,6 @@ func _apply_gauntlet_wave() -> void:
 	cpu_players = {"p1": false, "p2": true, "p3": false, "p4": false}
 	dino_choices["p1"] = gauntlet_player_dino
 	dino_choices["p2"] = ROSTER_ORDER[randi() % ROSTER_ORDER.size()]
-	weapon_choices = {"p1": gauntlet_player_weapon}
 	if gauntlet_wave < 2:
 		cpu_difficulty = "easy"
 	elif gauntlet_wave < 5:
@@ -812,6 +804,14 @@ func _register_player_actions(prefix: String, device: int) -> void:
 # Held-weapon silhouettes (point along +X). The dino rotates these to its facing
 # while held; weapon_item.gd reuses them for the thrown/dropped weapon so a sword
 # on the ground reads as the same sword you were carrying. Empty poly = fists.
+# Baked painterly weapon sprite (blade toward +X, see bake_weapon_sprites.py),
+# or null for fists/unknown ids — callers fall back to weapon_shape polygons.
+func weapon_texture(id: String) -> Texture2D:
+	var path := "res://assets/sprites/weapons/%s.png" % id
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path)
+
 func weapon_shape(id: String) -> Dictionary:
 	match id:
 		"sword":

@@ -25,24 +25,71 @@ var knockback_force: float = 0.0
 var source: Node = null      ## thrower; immune while the weapon is in flight
 var flight_timer: float = FLIGHT_TIME
 var has_hit: bool = false
+## True for island weapon drops (main.gd): starts GROUNDED as a pickup with a
+## little fall-in, instead of flying from a thrower's hand.
+var spawn_drop: bool = false
+var _shadow: Polygon2D = null
 
 func _ready() -> void:
 	_build_visual()
 	body_entered.connect(_on_body_entered)
 	add_to_group("weapon_items")  # cleared between rounds by main.gd
+	if spawn_drop:
+		mode = Mode.GROUNDED
+		has_hit = true
+		add_to_group("weapon_pickups")
+		_show_grounded()
+		_play_drop_in()
 
 func _build_visual() -> void:
-	var shape_data: Dictionary = MatchConfig.weapon_shape(weapon_id)
-	var visual := Polygon2D.new()
-	visual.polygon = shape_data.get("poly", PackedVector2Array())
-	visual.color = shape_data.get("color", Color.WHITE)
-	visual.z_index = 1
-	add_child(visual)
+	# Soft contact shadow so a resting weapon sits IN the island instead of
+	# floating over it. Hidden while flying.
+	_shadow = Polygon2D.new()
+	var pts := PackedVector2Array()
+	for i in range(16):
+		var a := TAU * i / 16.0
+		pts.append(Vector2(cos(a) * 20.0, sin(a) * 7.0))
+	_shadow.polygon = pts
+	_shadow.color = Color(0.0, 0.0, 0.0, 0.22)
+	_shadow.position = Vector2(0, 9)
+	_shadow.z_index = 0
+	_shadow.visible = false
+	add_child(_shadow)
+	# Painterly baked sprite (blade toward +X); polygon silhouette only as a
+	# fallback for ids without baked art.
+	var tex: Texture2D = MatchConfig.weapon_texture(weapon_id)
+	if tex != null:
+		var sprite := Sprite2D.new()
+		sprite.texture = tex
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		sprite.z_index = 1
+		add_child(sprite)
+	else:
+		var shape_data: Dictionary = MatchConfig.weapon_shape(weapon_id)
+		var visual := Polygon2D.new()
+		visual.polygon = shape_data.get("poly", PackedVector2Array())
+		visual.color = shape_data.get("color", Color.WHITE)
+		visual.z_index = 1
+		add_child(visual)
 	var col := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
 	rect.size = Vector2(36, 20)
 	col.shape = rect
 	add_child(col)
+
+func _show_grounded() -> void:
+	if _shadow != null:
+		_shadow.visible = true
+
+# Fresh island drop: fall in from above and settle with the landing squash.
+func _play_drop_in() -> void:
+	var rest := position
+	position = rest + Vector2(0, -110)
+	modulate.a = 0.0
+	var tw := create_tween()
+	tw.tween_property(self, "position", rest, 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(self, "modulate:a", 1.0, 0.18)
+	tw.chain().tween_property(self, "scale", Vector2.ONE, LAND_BOUNCE).from(Vector2.ONE * 1.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _physics_process(delta: float) -> void:
 	if mode != Mode.FLYING:
@@ -80,6 +127,7 @@ func _land() -> void:
 	rotation = 0.0
 	has_hit = true
 	add_to_group("weapon_pickups")
+	_show_grounded()
 	var rest := scale
 	scale = rest * 1.35
 	var tw := create_tween()

@@ -60,7 +60,6 @@ func _next_match() -> void:
 	_mc.cpu_players = {"p1": true, "p2": true, "p3": false, "p4": false}
 	_mc.cpu_difficulty = _difficulty
 	_mc.dino_choices = {"p1": m[0], "p2": m[1], "p3": "trike", "p4": "pterry"}
-	_mc.weapon_choices = {}
 	var packed: PackedScene = load(ARENAS[_arena_keys[_arena_i]])
 	_arena = packed.instantiate()
 	if "kos_to_win" in _arena:

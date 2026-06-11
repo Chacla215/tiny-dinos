@@ -230,7 +230,7 @@ var special_cooldown_timer: float = 0.0
 var timed_slow_timer: float = 0.0  # screech-applied slow on this dino
 
 var active_weapon: int = 0
-var weapon_visual: Polygon2D = null  # held-weapon shape, oriented to facing
+var weapon_visual: Node2D = null     # held weapon (baked sprite, or polygon fallback), oriented to facing
 var initial_weapons: Array = []      # loadout to restore on respawn
 var wpn_dmg: float = 1.0
 var wpn_kb: float = 1.0
@@ -379,9 +379,10 @@ func _apply_config_preset() -> void:
 	for key in preset:
 		if key in self:
 			set(key, preset[key])
-	# Player's chosen weapon overrides the default loadout (fists + their pick).
-	if MatchConfig.weapon_choices.has(player_id):
-		weapons = ["fists", MatchConfig.weapon_choices[player_id]]
+	# Nobody spawns armed: weapons drop onto the island mid-round (main.gd) and
+	# are fought over via LT pickup. Two slots so a fighter can carry a backup.
+	# (DINOS.weapons remains as creator-screen "favorite weapons" flavor.)
+	weapons = ["fists", "fists"]
 
 	var shape := RectangleShape2D.new()
 	shape.size = attack_hitbox_size
@@ -500,6 +501,10 @@ func _physics_process(delta: float) -> void:
 	if weapon_visual and weapon_visual.visible:
 		weapon_visual.rotation = facing.angle()
 		weapon_visual.position = facing * 18.0 + Vector2(0, -6)
+		# Facing left rotates the sprite past 90°; un-mirror it so the blade's
+		# top edge stays up.
+		if weapon_visual is Sprite2D:
+			weapon_visual.flip_v = facing.x < 0.0
 
 func _action(name: String) -> String:
 	return "%s_%s" % [player_id, name]
@@ -818,15 +823,30 @@ func _refresh_weapon() -> void:
 	wpn_windup = w.get("windup", 1.0)
 	wpn_recovery = w.get("recovery", 1.0)
 	wpn_projectile = w.get("projectile", false)
-	if weapon_visual == null:
-		weapon_visual = Polygon2D.new()
+	# Rebuild the held visual: baked painterly sprite when one exists, the old
+	# polygon silhouette otherwise. Fists = nothing in hand.
+	if weapon_visual != null:
+		weapon_visual.queue_free()
+		weapon_visual = null
+	var tex: Texture2D = MatchConfig.weapon_texture(id) if MatchConfig else null
+	if tex != null:
+		var sprite := Sprite2D.new()
+		sprite.texture = tex
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		# Shift along +X so the grip end sits at the hand, not the midpoint.
+		sprite.offset = Vector2(tex.get_width() * 0.5 - 8.0, 0)
+		weapon_visual = sprite
+	else:
+		var shape: Dictionary = MatchConfig.weapon_shape(id) if MatchConfig else {}
+		var poly: PackedVector2Array = shape.get("poly", PackedVector2Array())
+		if poly.size() > 0:
+			var visual := Polygon2D.new()
+			visual.polygon = poly
+			visual.color = shape.get("color", Color.WHITE)
+			weapon_visual = visual
+	if weapon_visual != null:
 		weapon_visual.z_index = 1
 		add_child(weapon_visual)
-	var shape: Dictionary = MatchConfig.weapon_shape(id) if MatchConfig else {}
-	var poly: PackedVector2Array = shape.get("poly", PackedVector2Array())
-	weapon_visual.polygon = poly
-	weapon_visual.color = shape.get("color", Color.WHITE)
-	weapon_visual.visible = poly.size() > 0
 
 func _active_weapon_id() -> String:
 	return weapons[active_weapon] if active_weapon < weapons.size() else "fists"

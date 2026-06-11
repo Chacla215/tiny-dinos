@@ -126,6 +126,15 @@ var powerups_enabled: bool = false
 var powerup_spawn_timer: float = 0.0
 var active_powerups: Array = []
 
+# Weapon drops: nobody spawns armed — weapons fall onto the island during the
+# round (telegraphed by a growing landing shadow) and are fought over. The
+# whole arsenal except fists is in the pool; cleared with _clear_world_weapons.
+const WEAPON_DROP_FIRST := 3.5   ## seconds into a round before the first drop
+const WEAPON_DROP_EVERY := 9.0   ## cadence after that
+const WEAPON_DROP_MAX := 3       ## grounded pickups allowed on the field at once
+const WEAPON_DROP_TELEGRAPH := 0.8
+var weapon_drop_timer: float = WEAPON_DROP_FIRST
+
 var _pause_until_ms: int = 0
 var _pause_active: bool = false
 
@@ -759,6 +768,7 @@ func _process(delta: float) -> void:
 		camera.offset = Vector2.ZERO
 	_update_hud_bars()
 	_update_powerups(delta)
+	_update_weapon_drops(delta)
 	if match_over:
 		if gauntlet_drafting:
 			_draft_input()
@@ -770,6 +780,52 @@ func _process(delta: float) -> void:
 				_arcade_continue()
 			else:
 				get_tree().change_scene_to_file("res://scenes/select.tscn")
+
+# --- Weapon drops ---
+func _update_weapon_drops(delta: float) -> void:
+	if match_over or not round_active:
+		return
+	weapon_drop_timer -= delta
+	if weapon_drop_timer > 0.0:
+		return
+	weapon_drop_timer = WEAPON_DROP_EVERY
+	var grounded := 0
+	for item in get_tree().get_nodes_in_group("weapon_pickups"):
+		if is_instance_valid(item):
+			grounded += 1
+	if grounded >= WEAPON_DROP_MAX:
+		return
+	var pool: Array = MatchConfig.WEAPONS.keys().filter(func(w): return w != "fists")
+	_telegraph_weapon_drop(pool[randi() % pool.size()], _random_safe_point())
+
+# A landing shadow fades in where the weapon will hit, then the pickup drops.
+func _telegraph_weapon_drop(wid: String, pt: Vector2) -> void:
+	var shadow := Polygon2D.new()
+	var pts := PackedVector2Array()
+	for i in range(16):
+		var a := TAU * i / 16.0
+		pts.append(Vector2(cos(a) * 24.0, sin(a) * 9.0))
+	shadow.polygon = pts
+	shadow.color = Color(0, 0, 0, 0.0)
+	shadow.position = pt
+	shadow.scale = Vector2(0.3, 0.3)
+	add_child(shadow)
+	var tw := shadow.create_tween()
+	tw.tween_property(shadow, "scale", Vector2.ONE, WEAPON_DROP_TELEGRAPH).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(shadow, "color:a", 0.30, WEAPON_DROP_TELEGRAPH)
+	tw.chain().tween_callback(_spawn_dropped_weapon.bind(wid, pt))
+	tw.chain().tween_callback(shadow.queue_free)
+
+func _spawn_dropped_weapon(wid: String, pt: Vector2) -> void:
+	if match_over or not round_active:
+		return  # the round ended while the telegraph played
+	var item := Area2D.new()
+	item.set_script(preload("res://scripts/weapon_item.gd"))
+	item.weapon_id = wid
+	item.spawn_drop = true
+	item.position = pt
+	add_child(item)
+	play_sfx("dodge", 0.10)  # soft landing thump (reuses an existing sound)
 
 # --- [experiment] Map power-ups ---
 func _update_powerups(delta: float) -> void:
@@ -1247,11 +1303,13 @@ func _end_round(winner_pid: String) -> void:
 	if not match_over:
 		hud_win.text = ""
 
-# Wipe any thrown/dropped weapons so each round starts on a clean platform.
+# Wipe any thrown/dropped weapons so each round starts on a clean platform,
+# and rewind the drop clock so every round opens with the same scramble.
 func _clear_world_weapons() -> void:
 	for item in get_tree().get_nodes_in_group("weapon_items"):
 		if is_instance_valid(item):
 			item.queue_free()
+	weapon_drop_timer = WEAPON_DROP_FIRST
 
 func _grade(points: int) -> String:
 	if points >= 480: return "A+"

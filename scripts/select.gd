@@ -1,8 +1,8 @@
 extends Node2D
 
 const START_DELAY := 0.8
-# Weapons you can pick (fists is always the other half of the loadout).
-const WEAPON_PICKS := ["sword", "dagger", "axe", "mace", "hammer", "nunchucks"]
+# Weapons are not picked here — everyone starts unarmed and fights over the
+# drops that fall onto the island mid-round (see main.gd weapon drops).
 
 # The picker shows the SAME art the match uses, so pick == play. Dinos render
 # from dino.gd's ANIM_LAYOUTS; islands use each arena's actual gameplay
@@ -53,7 +53,6 @@ func _solo() -> bool:
 	return arcade or gauntlet
 
 var indexes: Dictionary = {"p1": 0, "p2": 1, "p3": 2, "p4": 3}
-var weapon_idx: Dictionary = {"p1": 0, "p2": 0, "p3": 0, "p4": 0}
 # Per-slot skin (color) pick, seeded from the dino's creator-equipped skin
 # whenever the dino changes. Committed to MatchConfig.skin_choices at launch.
 var skin_sel: Dictionary = {"p1": 0, "p2": 0, "p3": 0, "p4": 0}
@@ -224,7 +223,7 @@ func _process(delta: float) -> void:
 		if Input.is_action_just_pressed("p1_attack"):
 			_cycle_teams()
 	# P1 (the host) configures their own fighter first, then every CPU's dino
-	# AND weapon, all on the LEFT stick. Human opponents pick on their own pads.
+	# AND color, all on the LEFT stick. Human opponents pick on their own pads.
 	var target: String = _host_focus()
 	if target == "":
 		# All host slots locked; let BACK still un-ready the most recent pick.
@@ -237,7 +236,7 @@ func _process(delta: float) -> void:
 		if pid != "p1" and not cpu_states[pid]:
 			_drive_slot(pid, pid, false)
 
-# Every fighter has locked a dino + weapon. Hold on a Ready/START gate so the
+# Every fighter has locked a dino + color. Hold on a Ready/START gate so the
 # host can eyeball the whole line-up -- nobody drops into the match until the
 # Ready button (confirm) is pressed. Back reopens a pick so it can be changed.
 func _process_launch(delta: float) -> void:
@@ -260,18 +259,18 @@ func _process_launch(delta: float) -> void:
 		return
 	for pid in active_players:
 		if pid != "p1" and not cpu_states[pid] and Input.is_action_just_pressed("%s_heavy" % pid):
-			stages[pid] = "weapon"
+			stages[pid] = "skin"
 			_set_ready(pid, false)
 			return
 
-# Step the last host-controlled fighter (P1, or the last CPU) back to its weapon
+# Step the last host-controlled fighter (P1, or the last CPU) back to its color
 # pick so the host can change it; this drops us out of the Ready gate.
 func _reopen_last_host_pick() -> void:
 	var q: Array = _host_queue()
 	if q.is_empty():
 		return
 	var pid: String = q[q.size() - 1]
-	stages[pid] = "weapon"
+	stages[pid] = "skin"
 	_set_ready(pid, false)
 
 # The slots P1 configures, in order: P1's own fighter, then each CPU opponent.
@@ -298,7 +297,7 @@ func _all_ready() -> bool:
 			return false
 	return true
 
-# Run one slot's dino -> weapon -> ready picker from the `src` controller's
+# Run one slot's dino -> color -> ready picker from the `src` controller's
 # inputs. `host_edit` is true when P1 is configuring a CPU: BACK on its dino
 # stage steps focus back to the previous fighter in the queue.
 func _drive_slot(pid: String, src: String, host_edit: bool) -> void:
@@ -327,23 +326,14 @@ func _drive_slot(pid: String, src: String, host_edit: bool) -> void:
 			if left: _cycle_skin(pid, -1)
 			elif right: _cycle_skin(pid, 1)
 			if confirm:
-				stages[pid] = "weapon"
-				_refresh_displays()
-			elif back:
-				stages[pid] = "dino"
-				_refresh_displays()
-		"weapon":
-			if left: _cycle_weapon(pid, -1)
-			elif right: _cycle_weapon(pid, 1)
-			if confirm:
 				stages[pid] = "ready"
 				_set_ready(pid, true)
 			elif back:
-				stages[pid] = "skin"
+				stages[pid] = "dino"
 				_refresh_displays()
 		"ready":
 			if back:
-				stages[pid] = "weapon"
+				stages[pid] = "skin"
 				_set_ready(pid, false)
 
 # P1 pressed BACK while picking a CPU's dino: re-open the previous fighter in
@@ -354,7 +344,7 @@ func _host_back_to_prev(pid: String) -> void:
 	if i <= 0:
 		return
 	var prev: String = q[i - 1]
-	stages[prev] = "weapon"
+	stages[prev] = "skin"
 	_set_ready(prev, false)
 
 func _cycle_dino(pid: String, step: int) -> void:
@@ -367,11 +357,6 @@ func _cycle_dino(pid: String, step: int) -> void:
 func _cycle_skin(pid: String, step: int) -> void:
 	var n: int = MatchConfig.SKINS.size()
 	skin_sel[pid] = (skin_sel[pid] + step + n) % n
-	_update_display(pid)
-
-func _cycle_weapon(pid: String, step: int) -> void:
-	var n: int = WEAPON_PICKS.size()
-	weapon_idx[pid] = (weapon_idx[pid] + step + n) % n
 	_update_display(pid)
 
 func _set_ready(pid: String, ready_state: bool) -> void:
@@ -388,10 +373,6 @@ func _refresh_start() -> void:
 	# gate in _process does. Any change before launch disarms a pending start.
 	if not _all_ready():
 		launch_armed = false
-
-func _weapon_label(pid: String) -> String:
-	var wid: String = WEAPON_PICKS[weapon_idx[pid]]
-	return MatchConfig.WEAPONS.get(wid, {}).get("display_name", wid.to_upper())
 
 func _update_display(pid: String) -> void:
 	var idx: int = indexes[pid]
@@ -449,11 +430,8 @@ func _update_display(pid: String) -> void:
 			var skin: Dictionary = MatchConfig.SKINS[skin_sel[pid]]
 			status_label.text = "%sCOLOR:  %s" % [prefix, skin["name"]]
 			status_label.add_theme_color_override("font_color", skin["swatch"])
-		"weapon":
-			status_label.text = "%s%s" % [prefix, _weapon_label(pid)]
-			status_label.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0, 1))
 		"ready":
-			status_label.text = "%sREADY  -  %s" % [prefix, _weapon_label(pid)]
+			status_label.text = "%sREADY" % prefix
 			status_label.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5, 1))
 
 func _apply_player_color_to_panel(pid: String) -> void:
@@ -701,23 +679,19 @@ func _start_match() -> void:
 		MatchConfig.skin_choices[pid] = skin_sel[pid] if picked else -1
 	if _solo():
 		var pd: String = MatchConfig.ROSTER_ORDER[indexes["p1"]]
-		var pw: String = WEAPON_PICKS[weapon_idx["p1"]]
 		var pi: String = MatchConfig.ISLAND_ORDER[island_idx]
 		if gauntlet:
 			MatchConfig.gauntlet_setup = false
-			MatchConfig.start_gauntlet(pd, pw, pi)
+			MatchConfig.start_gauntlet(pd, "fists", pi)
 			get_tree().change_scene_to_file(MatchConfig.gauntlet_scene())
 		else:
 			MatchConfig.arcade_setup = false
-			MatchConfig.start_arcade(pd, pw, pi, solo_duo)
+			MatchConfig.start_arcade(pd, "fists", pi, solo_duo)
 			get_tree().change_scene_to_file(MatchConfig.arcade_scene())
 		return
-	MatchConfig.weapon_choices = {}
 	for pid in MatchConfig.PLAYER_IDS:
 		MatchConfig.cpu_players[pid] = cpu_states.get(pid, false)
 	for pid in active_players:
 		MatchConfig.dino_choices[pid] = MatchConfig.ROSTER_ORDER[indexes[pid]]
-		# Every fighter -- human or CPU -- now carries a weapon the host picked.
-		MatchConfig.weapon_choices[pid] = WEAPON_PICKS[weapon_idx[pid]]
 	var scene_path: String = MatchConfig.ISLAND_SCENES.get(MatchConfig.island, "res://scenes/main.tscn")
 	get_tree().change_scene_to_file(scene_path)

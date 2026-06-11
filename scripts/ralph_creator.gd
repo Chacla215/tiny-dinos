@@ -578,7 +578,8 @@ func _refresh_profile(dino_id: String) -> void:
 	_clear_children(skins_panel)
 	_decorate_panel_title(skins_panel, "SKINS")
 	_clear_children(customization_panel)
-	_decorate_panel_title(customization_panel, "WEAPONS")
+	# Loadouts are gone (weapons drop in-match); this panel is flavor now.
+	_decorate_panel_title(customization_panel, "FAVORITE WEAPONS")
 	_populate_weapons(customization_panel, dino_id)
 	_clear_children(emotes_panel)
 	_decorate_panel_title(emotes_panel, "EMOTES")
