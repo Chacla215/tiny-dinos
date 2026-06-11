@@ -1,5 +1,33 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-10 (weapons become found objects + pre-match colors)
+
+Charlie's calls: colors picked before the match, and weapons earned
+mid-round instead of granted at spawn ("they have to pick them up").
+
+- **COLOR stage on the select screen**: pick flow per fighter is now
+  DINO → COLOR → READY. ◀▶ cycles MatchConfig.SKINS with a live recolor
+  preview on the select sprite (pick == play), seeded from the dino's
+  creator-equipped skin; committed per-slot via `MatchConfig.skin_choices`
+  (-1 = MetaSave fallback, used by inactive slots + solo CPU rungs).
+- **Nobody starts armed**: the weapon pick stage is GONE. main.gd drops a
+  weapon every ~9s (first 3.5s into each round, ≤3 grounded at once) at a
+  random safe point, telegraphed by a growing landing shadow; rounds reset
+  the clock so each opens with the same scramble. Fighters spawn
+  ["fists","fists"]; LT grabs, RB swaps, RT throws (unchanged paths).
+  Dead loadout plumbing (weapon_choices, *_player_weapon) stripped.
+- **Weapons LOOK like objects now**: bake_weapon_sprites.py turns the
+  concept weapon art into in-match sprites (alpha-keyed, blade-toward-+X,
+  hand-sized) used in-world AND in-hand, with a soft contact shadow on the
+  ground. Polygon silhouettes remain only as a fallback.
+- **CPUs contest drops**: dino_ai's scavenge logic now seeks weapons at 720px
+  (was 440 — tuned for reclaiming throws); since everyone starts unarmed,
+  racing the player to a fresh drop is the round's opening move.
+- Verified live: telegraph → landing → CPU grab on Laughing Lava (hard CPUs
+  on Beauty Beach KO each other before the first drop lands — fast rounds
+  may end weaponless, by design for now). Balance sim re-run pending below.
+- Creator's loadout panel retitled FAVORITE WEAPONS (flavor only).
+
 ## Session — 2026-06-10 (the Ralph treatment: names, kits, balance)
 
 Charlie's call: "change the other dinos to match Ralph" — named characters,
