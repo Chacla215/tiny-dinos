@@ -1,5 +1,30 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-10 (the Ralph treatment: names, kits, balance)
+
+Charlie's call: "change the other dinos to match Ralph" — named characters,
+CHOMP-weight signature kits, balance to Ralph's level, art at Ralph's bar.
+
+- **The roster has names now**: Raptor → **JESSIE**, Trike → **GUS**,
+  Bronto → **STEVE**, Anky → **FRANK** (Pterry already was one; Jessie was
+  Charlie's pick, the rest neighbor-generic like Ralph). `display_name` in
+  MatchConfig drives select/HUD/banners; creator bios carry the species.
+- **Every signature move has a mechanical hook** (was: only CHOMP + SCREECH):
+  DASH CLAW refunds most of its cooldown on a clean hit; HEADBUTT CHARGE is
+  armored (no shove mid-charge); NECK WHIP guard-crushes (2x block drain);
+  TAIL SMASH is a true radial shockwave (`_do_radial_special` shared with
+  screech) — no safe side. Creator move cards sell each hook.
+- **Balance, sim-validated** (sim now 30s/match; 18s was noise): pre-session
+  Ralph trim + Trike buff committed first (Ralph 62.5% → cluster), then the
+  hooks shook the meta (Frank 73%, Jessie 13%) and round-2 numbers landed
+  everyone at **39–61%** with every matchup interactive. Jessie/Pterry sit
+  low, Ralph high — within sim noise; playtest #4 decides further tuning.
+- **Creator screen no longer lies**: Ralph profile stats + ALL move cooldowns
+  derive live from MatchConfig (RALPH_STATS hardcode + stale "5s" gone).
+- **Art audit passed**: 6/6 painterly heroes verified via creator `--shot`
+  per dino; 6/6 fighter sheets articulated+smooth (same-day bakes); orphaned
+  T-Rex art deleted (recoverable from history).
+
 ## Session — 2026-06-10 (solo stretch: living fighters)
 
 Charlie asked for "body parts that move" then left Claude to build autonomously.
