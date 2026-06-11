@@ -98,7 +98,7 @@ const DINOS := {
 		"ice_accel": 500.0,
 		"ice_friction": 150.0,
 		"max_hp": 138,
-		"attack_damage": 19,
+		"attack_damage": 21,
 		"attack_knockback": 350.0,
 		"attack_windup": 0.16,
 		"attack_active": 0.12,
@@ -113,7 +113,7 @@ const DINOS := {
 		"heavy_hitbox_size": Vector2(88, 72),
 		"heavy_hitbox_offset": 56.0,
 		"heavy_self_dash": 0.0,
-		"max_block": 95.0,
+		"max_block": 105.0,
 		"block_regen": 28.0,
 		"dodge_duration": 0.20,
 		"dodge_cooldown": 0.6,
@@ -361,8 +361,8 @@ const DINOS := {
 		"special_hitbox_size": Vector2(72, 64),
 		"special_hitbox_offset": 58.0,
 		"special_self_dash": 700.0,
-		"special_cooldown": 5.0,
-		"special_lifesteal": 0.28,
+		"special_cooldown": 6.0,
+		"special_lifesteal": 0.20,
 	},
 }
 
