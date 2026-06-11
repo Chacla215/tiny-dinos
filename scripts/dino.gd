@@ -1282,7 +1282,7 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 		var crush := 1.0
 		if source != null and "special_type" in source and "current_is_special" in source \
 				and source.current_is_special and source.special_type == "neck_whip":
-			crush = 2.5
+			crush = 2.0
 		var absorbed: float = min(block_durability, float(amount) * crush)
 		block_durability -= absorbed
 		var remaining: float = float(amount) - absorbed / crush
