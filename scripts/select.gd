@@ -54,6 +54,9 @@ func _solo() -> bool:
 
 var indexes: Dictionary = {"p1": 0, "p2": 1, "p3": 2, "p4": 3}
 var weapon_idx: Dictionary = {"p1": 0, "p2": 0, "p3": 0, "p4": 0}
+# Per-slot skin (color) pick, seeded from the dino's creator-equipped skin
+# whenever the dino changes. Committed to MatchConfig.skin_choices at launch.
+var skin_sel: Dictionary = {"p1": 0, "p2": 0, "p3": 0, "p4": 0}
 var stages: Dictionary = {"p1": "dino", "p2": "dino", "p3": "dino", "p4": "dino"}
 var island_idx: int = 0
 var ready_states: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false}
@@ -71,6 +74,7 @@ func _ready() -> void:
 		initial_count = 2
 	for pid in MatchConfig.PLAYER_IDS:
 		indexes[pid] = clamp(indexes[pid], 0, MatchConfig.ROSTER_ORDER.size() - 1)
+		skin_sel[pid] = MetaSave.get_skin(MatchConfig.ROSTER_ORDER[indexes[pid]])
 		_apply_player_color_to_panel(pid)
 	# Each opponent is HUMAN only if its own controller is plugged in, else CPU.
 	_refresh_cpu_assignment()
@@ -310,7 +314,7 @@ func _drive_slot(pid: String, src: String, host_edit: bool) -> void:
 			if left: _cycle_dino(pid, -1)
 			elif right: _cycle_dino(pid, 1)
 			if confirm:
-				stages[pid] = "weapon"
+				stages[pid] = "skin"
 				_refresh_displays()
 			elif back:
 				if host_edit:
@@ -319,6 +323,15 @@ func _drive_slot(pid: String, src: String, host_edit: bool) -> void:
 					# Host is at the very first pick with nothing left to undo,
 					# so backing out leaves the select screen for the title.
 					_return_to_title()
+		"skin":
+			if left: _cycle_skin(pid, -1)
+			elif right: _cycle_skin(pid, 1)
+			if confirm:
+				stages[pid] = "weapon"
+				_refresh_displays()
+			elif back:
+				stages[pid] = "dino"
+				_refresh_displays()
 		"weapon":
 			if left: _cycle_weapon(pid, -1)
 			elif right: _cycle_weapon(pid, 1)
@@ -326,7 +339,7 @@ func _drive_slot(pid: String, src: String, host_edit: bool) -> void:
 				stages[pid] = "ready"
 				_set_ready(pid, true)
 			elif back:
-				stages[pid] = "dino"
+				stages[pid] = "skin"
 				_refresh_displays()
 		"ready":
 			if back:
@@ -347,6 +360,13 @@ func _host_back_to_prev(pid: String) -> void:
 func _cycle_dino(pid: String, step: int) -> void:
 	var n: int = MatchConfig.ROSTER_ORDER.size()
 	indexes[pid] = (indexes[pid] + step + n) % n
+	# New dino: re-seed the color pick from its creator-equipped skin.
+	skin_sel[pid] = MetaSave.get_skin(MatchConfig.ROSTER_ORDER[indexes[pid]])
+	_update_display(pid)
+
+func _cycle_skin(pid: String, step: int) -> void:
+	var n: int = MatchConfig.SKINS.size()
+	skin_sel[pid] = (skin_sel[pid] + step + n) % n
 	_update_display(pid)
 
 func _cycle_weapon(pid: String, step: int) -> void:
@@ -398,6 +418,8 @@ func _update_display(pid: String) -> void:
 	name_label.text = dino.display_name
 	name_label.add_theme_color_override("font_color", dino.dino_color)
 	_set_graphic(graphic, dino_id)
+	# Live color preview: the same recolor shader the match uses (pick == play).
+	graphic.material = MatchConfig.skin_material(skin_sel[pid])
 
 	var is_cpu: bool = cpu_states[pid]
 	header_label.text = "PLAYER %s  (CPU)" % pid.substr(1) if is_cpu else "PLAYER %s" % pid.substr(1)
@@ -423,6 +445,10 @@ func _update_display(pid: String) -> void:
 		"dino":
 			status_label.text = "%sPICK DINO" % prefix
 			status_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85, 1))
+		"skin":
+			var skin: Dictionary = MatchConfig.SKINS[skin_sel[pid]]
+			status_label.text = "%sCOLOR:  %s" % [prefix, skin["name"]]
+			status_label.add_theme_color_override("font_color", skin["swatch"])
 		"weapon":
 			status_label.text = "%s%s" % [prefix, _weapon_label(pid)]
 			status_label.add_theme_color_override("font_color", Color(0.5, 0.85, 1.0, 1))
@@ -668,6 +694,11 @@ func _return_to_title() -> void:
 	get_tree().change_scene_to_file(TITLE_SCENE)
 
 func _start_match() -> void:
+	# Color picks: configured slots override; everyone else (inactive slots,
+	# solo CPU rungs) falls back to their creator-equipped MetaSave skin via -1.
+	for pid in MatchConfig.PLAYER_IDS:
+		var picked: bool = pid in active_players and not (_solo() and pid != "p1")
+		MatchConfig.skin_choices[pid] = skin_sel[pid] if picked else -1
 	if _solo():
 		var pd: String = MatchConfig.ROSTER_ORDER[indexes["p1"]]
 		var pw: String = WEAPON_PICKS[weapon_idx["p1"]]

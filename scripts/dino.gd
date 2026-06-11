@@ -469,9 +469,13 @@ func _setup_sprite() -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	sprite.scale = Vector2(sprite_scale, sprite_scale)
 	sprite.position.y = sprite_offset_y
-	# Cosmetic skin: recolor the fighter to the player's chosen skin for this dino
-	# (null material = DEFAULT, unchanged). Display-only, no gameplay effect.
-	sprite.material = MatchConfig.skin_material(MetaSave.get_skin(sprite_role))
+	# Cosmetic skin: the select-screen pick for this slot wins; -1 falls back to
+	# the dino's creator-equipped MetaSave skin (null material = DEFAULT,
+	# unchanged). Display-only, no gameplay effect.
+	var skin_idx: int = int(MatchConfig.skin_choices.get(player_id, -1))
+	if skin_idx < 0:
+		skin_idx = MetaSave.get_skin(sprite_role)
+	sprite.material = MatchConfig.skin_material(skin_idx)
 	sprite.play("idle")
 	polygon.visible = false
 

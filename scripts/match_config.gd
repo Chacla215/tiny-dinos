@@ -458,6 +458,9 @@ var cpu_players: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": fals
 ## pid -> chosen weapon id; the in-match loadout becomes ["fists", choice].
 ## Absent (e.g. CPU slots) -> the dino's default loadout from DINOS.weapons.
 var weapon_choices: Dictionary = {}
+## pid -> SKINS index picked on the select screen for this match.
+## -1 = no pick: the dino spawns with its creator-equipped MetaSave skin.
+var skin_choices: Dictionary = {"p1": -1, "p2": -1, "p3": -1, "p4": -1}
 
 # --- Teams ---
 # When enabled, scoring/win conditions aggregate by side and friendly fire is off.
