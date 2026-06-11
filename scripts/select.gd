@@ -682,11 +682,11 @@ func _start_match() -> void:
 		var pi: String = MatchConfig.ISLAND_ORDER[island_idx]
 		if gauntlet:
 			MatchConfig.gauntlet_setup = false
-			MatchConfig.start_gauntlet(pd, "fists", pi)
+			MatchConfig.start_gauntlet(pd, pi)
 			get_tree().change_scene_to_file(MatchConfig.gauntlet_scene())
 		else:
 			MatchConfig.arcade_setup = false
-			MatchConfig.start_arcade(pd, "fists", pi, solo_duo)
+			MatchConfig.start_arcade(pd, pi, solo_duo)
 			get_tree().change_scene_to_file(MatchConfig.arcade_scene())
 		return
 	for pid in MatchConfig.PLAYER_IDS:
