@@ -21,7 +21,7 @@ var pressure: float = 0.5        # 0..1: how relentlessly it stays in your face 
 var edge_caution: float = 0.6    # 0..1: how hard it refuses to be pinned against a lethal edge
 
 const THROW_RANGE := 540.0       # max distance it will throw a weapon from
-const WEAPON_SEEK_RANGE := 440.0 # how far it'll detour to reclaim a dropped weapon
+const WEAPON_SEEK_RANGE := 720.0 # how far it'll detour for a weapon — drops are the only source now
 const EDGE_LOOK := 96.0          # how far ahead it probes for the island edge
 
 # Knob presets per difficulty (the select screen picks one for all CPUs). NORMAL
@@ -341,7 +341,8 @@ func think(owner: Node, target: Node, delta: float) -> void:
 					move_dir = move_dir.normalized()
 
 	# Weapon scavenging: snatch a dropped weapon underfoot, and when disarmed go
-	# fetch the nearest one rather than fist-fighting for the rest of the round.
+	# fetch the nearest one. Everyone starts unarmed now — island drops are the
+	# only weapon source — so racing the player to a fresh drop IS the opening.
 	var disarmed: bool = owner._active_weapon_id() == "fists"
 	var loot: Node = _nearest_pickup(owner)
 	if loot != null:
