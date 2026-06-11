@@ -1,5 +1,37 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-11 (drop-economy sim validation + the playtest #4 script)
+
+Consolidation day: validate the weapon-drop meta in sim, then package the
+build for playtest #4. **No game code changed** — the sim said none was needed.
+
+- **Balance sim re-run under the drop economy** (the item left pending on
+  2026-06-10). A first 30s/match pass looked alarming (tanks at 70–75%) but
+  was sample noise — the scramble slows kills, so 30s matches produced ~4x
+  fewer KOs than pre-drop runs. Bumped `sim_ai.gd` to **60s/match**; the
+  confirmed matrix: **everyone 36.7–62.8%**, Ralph high (62.8), Max low
+  (36.7), rest clustered 41–60. That's the *same shape and band* as the
+  pre-drop meta — **the drop economy preserved the balance**, so no stat
+  changes; Ralph-high/Max-low stays a playtest-#4 call per the prior session.
+  (Lesson re-learned twice now: short sim windows lie. 60s is the new floor.)
+- **Watch item, not tuned**: Gus vs Frank went **0–7** across both arenas —
+  armored HEADBUTT CHARGE feeds the no-safe-side TAIL SMASH. On the playtest
+  sheet; if humans confirm, Gus likely needs an out (or Frank's radial a
+  blind spot).
+- **Kept `WEAPON_DROP_FIRST` at 3.5s** — the "round ends before any weapon
+  lands" wrinkle only appeared in hard-CPU blitzes; whether it bothers humans
+  is now a checklist item rather than a pre-emptive change.
+- **PLAYTEST.md rewritten as the playtest #4 script** (was the stale #3:
+  keyboard fallbacks, pre-mode-era checks). Focus: the weapon scramble
+  (race-vs-coin-flip, the fist-fight opening), the six signature kits read,
+  DINO→COLOR→READY flow, the sim's balance questions, and a quick regression
+  sweep (modes/teams/solo/emotes). Tuning-knob list updated to the real
+  constants (`WEAPON_DROP_*`, `WEAPONS` dict, select-screen difficulty).
+
+> Resume hint: the build is playtest-#4-ready. Next session starts from
+> Charlie's playtest findings; the queued fallback is audio (SFX are still
+> synthesized placeholders, no music).
+
 ## Session — 2026-06-10 (weapons become found objects + pre-match colors)
 
 Charlie's calls: colors picked before the match, and weapons earned
