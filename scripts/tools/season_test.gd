@@ -100,20 +100,42 @@ func _ready() -> void:
 	_check("championship tallied in its division", MetaSave.season_titles_by_division[0] == 1)
 	_check("winning a division promotes you", MetaSave.best_division == 1)
 
-	# --- main.gd matchday end flow + perk application on a real arena ---
+	# --- Phase 3: persistent squad + fatigue ---
+	MetaSave.best_division = 0
+	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, 0)
+	_check("squad = fielded + 1 reserve", MatchConfig.season_squad.size() == 3)
+	_check("starters fielded for matchday 1", MatchConfig.season_field == [0, 1])
+	_check("reserve isn't a starter", not (MatchConfig.season_squad[2]["dino"] in ["ralph", "raptor"]))
+	_check("everyone fresh at kickoff", MatchConfig.season_field_fatigue["p1"] == 0)
+	MatchConfig.season_advance()
+	_check("fielded fighter tires after a matchday", int(MatchConfig.season_squad[0]["fatigue"]) == 1)
+	_check("benched reserve stays rested", int(MatchConfig.season_squad[2]["fatigue"]) == 0)
+	_check("matchday 2 seats the new fatigue", MatchConfig.season_field_fatigue["p1"] == 1)
+	MatchConfig.season_set_field([2, 1])   # rest the tired starter, field the reserve
+	MatchConfig.season_advance()
+	_check("rotation lets the rested starter recover", int(MatchConfig.season_squad[0]["fatigue"]) == 0)
+	_check("fatigue speed penalty is mild", MatchConfig.season_fatigue_speed_mult(1) > 0.9 and MatchConfig.season_fatigue_speed_mult(1) < 1.0)
+	_check("fatigue penalty is floored", MatchConfig.season_fatigue_speed_mult(99) >= 0.70)
+
+	# --- main.gd matchday end flow + perk application + fatigue on a real arena ---
 	MetaSave.seasons_won = saved_seasons   # restore before the in-engine bit
 	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, 0)
 	MatchConfig.season_perks = ["sharp_claws"]   # +25% attack dmg — your side only
+	MatchConfig.season_field_fatigue["p1"] = 3   # field p1 tired to verify the in-arena dip
 	var arena: Node = load("res://scenes/arena_beach.tscn").instantiate()
 	get_tree().root.add_child.call_deferred(arena)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	get_tree().current_scene = arena
 	var p1: Node = arena.get_node("Player1")
+	var p2: Node = arena.get_node("Player2")
 	var p3: Node = arena.get_node("Player3")
 	var ralph_base: int = int(MatchConfig.DINOS["ralph"]["attack_damage"])
+	var raptor_base_speed: float = float(MatchConfig.DINOS["raptor"]["max_speed"])
 	_check("team perk boosts your side", p1.attack_damage > ralph_base)
 	_check("team perk skips foes", p3.attack_damage == ralph_base)
+	_check("a fatigued fielded fighter is slower", p1.max_speed < float(MatchConfig.DINOS["ralph"]["max_speed"]))
+	_check("a rested ally is unslowed", is_equal_approx(p2.max_speed, raptor_base_speed))
 	arena.end_match(p1, "P1")
 	_check("matchday win -> advance state", arena.season_end == "advance")
 

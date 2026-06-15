@@ -380,6 +380,15 @@ func _apply_run_upgrades() -> void:
 	if "season" in MatchConfig and MatchConfig.season:
 		if MatchConfig.same_side(player_id, "p1"):
 			_apply_upgrade_list(MatchConfig.season_perks)
+			# FATIGUE: a fielded fighter that played prior matchdays is a touch slower
+			# and weaker (mild, capped). Resting it on the bench sheds the penalty.
+			var f: int = int(MatchConfig.season_field_fatigue.get(player_id, 0))
+			if f > 0:
+				_scale_stat("max_speed", MatchConfig.season_fatigue_speed_mult(f))
+				var dm: float = MatchConfig.season_fatigue_dmg_mult(f)
+				_scale_stat("attack_damage", dm)
+				_scale_stat("heavy_damage", dm)
+				_scale_stat("special_damage", dm)
 		return
 	if not ("gauntlet" in MatchConfig) or not MatchConfig.gauntlet:
 		return

@@ -519,6 +519,20 @@ var season_size: int = 2             # fighters PER SIDE (1 = 1v1, 2 = 2v2; engi
 var season_team: Array = []          # your side: [{dino: String, human: bool}], len == season_size
 var season_perks: Array = []         # TEAM PERK ids drafted between matchdays (stack, your side only)
 var season_division: int = 0         # 0 ROOKIE / 1 PRO / 2 LEGEND — set by start_season (Phase 3)
+# SQUAD + FATIGUE (Phase 3): your squad is the fielded fighters plus one reserve.
+# Fielded fighters tire each matchday; benched ones recover. Fatigue is a mild capped
+# stat dip applied at spawn (dino.gd), so resting your ace before the finale matters.
+var season_squad: Array = []         # [{dino, human, fatigue}], len == season_size + 1
+var season_field: Array = []         # indices into season_squad fielded this matchday (len season_size)
+var season_field_fatigue: Dictionary = {}  # fielded pid -> that fighter's fatigue (dino.gd reads at spawn)
+const SEASON_BENCH := 1              # reserves beyond the fielded count
+const FATIGUE_MAX := 4               # fatigue caps here
+const FATIGUE_SPEED_PEN := 0.06      # -6% move speed per fatigue point (floored)
+const FATIGUE_DMG_PEN := 0.05        # -5% damage per fatigue point (floored)
+func season_fatigue_speed_mult(f: int) -> float:
+	return maxf(0.70, 1.0 - FATIGUE_SPEED_PEN * f)
+func season_fatigue_dmg_mult(f: int) -> float:
+	return maxf(0.70, 1.0 - FATIGUE_DMG_PEN * f)
 # Coin rewards (Phase 3 economy). Each matchday win pays out; the championship adds
 # a bonus. Both scale with the division so climbing pays better.
 const MATCHDAY_COIN := 15
@@ -552,16 +566,41 @@ func _bump_difficulty(diff: String, steps: int) -> String:
 		i = 1
 	return DIFF_LADDER[clampi(i + steps, 0, DIFF_LADDER.size() - 1)]
 
-func start_season(team: Array, size: int, division: int = 0) -> void:
+func start_season(team: Array, size: int, division: int = 0, reserve: String = "") -> void:
 	season = true
 	season_size = clampi(size, 1, 2)
 	season_team = team
 	season_matchday = 0
 	season_perks = []
 	season_division = clampi(division, 0, MetaSave.unlocked_division())
+	season_squad = _build_squad(team, reserve)
+	season_field = []
+	for i in range(season_size):
+		season_field.append(i)   # your starters are fielded for matchday 1
 	teams_enabled = season_size == 2
 	season_schedule = _build_season()
 	_apply_season_matchday()
+
+# Your squad: the starters (with their human flags) + one reserve. The reserve is a
+# chosen dino, else auto-picked as the first roster dino not already a starter. The
+# reserve is CPU-piloted when fielded (you only ever hold one pad as p1 / field[0]).
+func _build_squad(team: Array, reserve: String) -> Array:
+	var sq: Array = []
+	for t in team:
+		sq.append({"dino": t["dino"], "human": bool(t.get("human", false)), "fatigue": 0})
+	var rdino: String = reserve
+	if rdino == "":
+		var used: Array = []
+		for t in team:
+			used.append(t["dino"])
+		for d in ROSTER_ORDER:
+			if not (d in used):
+				rdino = d
+				break
+		if rdino == "":
+			rdino = ROSTER_ORDER[0]
+	sq.append({"dino": rdino, "human": false, "fatigue": 0})
+	return sq
 
 # One matchday per RIVAL TEAM: a named foe team on its home island, a cycling mode,
 # and a ramping difficulty (shifted up by the division) — fixed escalating fixtures.
@@ -593,30 +632,55 @@ func _apply_season_matchday() -> void:
 	cpu_difficulty = md["difficulty"]
 	island = md["island"]
 	game_mode = md["mode"]
+	# The fighters fielded this matchday, drawn from the squad via season_field.
+	var fielded: Array = []
+	for idx in season_field:
+		fielded.append(season_squad[idx])
+	season_field_fatigue = {}
 	if season_size == 2:
 		player_count = 4
 		teams_enabled = true
 		teams = {"p1": "a", "p2": "a", "p3": "b", "p4": "b"}
 		# p1 is always you; p2 is your ally (human if a 2nd player joined, else a CPU).
-		cpu_players = {"p1": false, "p2": not bool(season_team[1].get("human", false)), "p3": true, "p4": true}
-		dino_choices["p1"] = season_team[0]["dino"]
-		dino_choices["p2"] = season_team[1]["dino"]
+		cpu_players = {"p1": false, "p2": not bool(fielded[1].get("human", false)), "p3": true, "p4": true}
+		dino_choices["p1"] = fielded[0]["dino"]
+		dino_choices["p2"] = fielded[1]["dino"]
 		dino_choices["p3"] = foes[0]
 		dino_choices["p4"] = foes[1] if foes.size() > 1 else foes[0]
+		season_field_fatigue["p1"] = int(fielded[0]["fatigue"])
+		season_field_fatigue["p2"] = int(fielded[1]["fatigue"])
 	else:
 		player_count = 2
 		teams_enabled = false
 		cpu_players = {"p1": false, "p2": true, "p3": false, "p4": false}
-		dino_choices["p1"] = season_team[0]["dino"]
+		dino_choices["p1"] = fielded[0]["dino"]
 		dino_choices["p2"] = foes[0]
+		season_field_fatigue["p1"] = int(fielded[0]["fatigue"])
 
 # Advance to the next matchday. Returns false when the season is cleared (champion).
+# Ages the squad first: the fighters that just played tire, the bench recovers.
 func season_advance() -> bool:
+	_age_squad()
 	season_matchday += 1
 	if season_matchday >= season_schedule.size():
 		return false
 	_apply_season_matchday()
 	return true
+
+# Fielded fighters gain a fatigue point (capped); benched fighters shed one (floored).
+func _age_squad() -> void:
+	for i in range(season_squad.size()):
+		var fat: int = int(season_squad[i]["fatigue"])
+		if i in season_field:
+			season_squad[i]["fatigue"] = mini(FATIGUE_MAX, fat + 1)
+		else:
+			season_squad[i]["fatigue"] = maxi(0, fat - 1)
+
+# Set the fielded lineup (indices into season_squad). Used by the between-matchday
+# rotation screen; ignores invalid sizes so a bad call can't desync seating.
+func season_set_field(indices: Array) -> void:
+	if indices.size() == season_size:
+		season_field = indices.duplicate()
 
 func season_scene() -> String:
 	return ISLAND_SCENES.get(island, "res://scenes/main.tscn")
