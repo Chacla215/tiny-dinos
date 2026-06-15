@@ -184,6 +184,8 @@ var ai: RefCounted = null
 @export var sprite_role: String = "raptor"
 @export var sprite_scale: float = 2.5
 @export var sprite_offset_y: float = -10.0
+# Global visual-scale multiplier on every fighter (readability on the busy arenas).
+const FIGHTER_SCALE_BOOST := 1.25
 ## True when the source sprite art faces left by default (e.g. bronto/Goober).
 ## Flips the flip_h logic so the dino visually faces its movement direction.
 var sprite_faces_left: bool = false
@@ -423,6 +425,12 @@ func _apply_config_preset() -> void:
 	for key in preset:
 		if key in self:
 			set(key, preset[key])
+	# READABILITY: fighters read too small on the busy painterly arenas (4-player
+	# couch legibility is the priority). Bump the VISUAL scale a notch — look-only,
+	# the Hitbox/CharacterBody2D use their own exports, so balance is untouched. Feet
+	# stay planted via the project's footing convention (offset_y = 7.6 - 66*scale).
+	sprite_scale *= FIGHTER_SCALE_BOOST
+	sprite_offset_y = 7.6 - 66.0 * sprite_scale
 	# Nobody spawns armed: weapons drop onto the island mid-round (main.gd) and
 	# are fought over via LT pickup. Two slots so a fighter can carry a backup.
 	# (DINOS.weapons remains as creator-screen "favorite weapons" flavor.)
@@ -536,6 +544,31 @@ func _setup_sprite() -> void:
 		sprite.visible = false
 	else:
 		r.free()
+	_add_separation_halo()
+
+# READABILITY: a soft dark radial that rides BEHIND the fighter so it separates from
+# busy/low-contrast arena grounds (e.g. green dino on Sunny Springs' green field)
+# regardless of island. Look-only; cheaper + seam-safe vs outlining a multi-part rig.
+# Drawn as the first child so the sprite/rig render on top of it.
+func _add_separation_halo() -> void:
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0.0, 0.0, 0.0, 0.32))   # center
+	grad.set_color(1, Color(0.0, 0.0, 0.0, 0.0))     # fades out at the rim
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = 128
+	tex.height = 128
+	var halo := Sprite2D.new()
+	halo.texture = tex
+	halo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	halo.position.y = sprite_offset_y * 0.55          # over the body mass, not the feet
+	var s: float = sprite_scale * 1.5
+	halo.scale = Vector2(s, s * 0.82)                 # slightly squashed oval
+	add_child(halo)
+	move_child(halo, 0)
 
 func _physics_process(delta: float) -> void:
 	if is_falling:
