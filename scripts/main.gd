@@ -193,6 +193,7 @@ func _ready() -> void:
 	_load_sfx()
 	_build_debug_boundary()  # red ring-out outline when debug_draw_safe_zone is on
 	_spawn_ambient()  # [experiment] per-island atmosphere particles
+	_build_play_calm()  # dim the busy play surface so fighters read (readability pass)
 	# [experiment] Power-ups in standard versus only (not the balance-tuned solo
 	# ladders, and not the modes that already revolve around their own pickups).
 	var special: bool = (MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet) \
@@ -392,6 +393,43 @@ func _insert_under_players(node: Node) -> void:
 	var first := get_node_or_null("Player1")
 	if first:
 		move_child(node, first.get_index())
+
+# READABILITY: the painterly arenas are gorgeous but busy, so the central play
+# surface competes with the fighters. Lay a soft dark radial over the play area
+# (under the fighters, over the bg) so the detail recedes and dinos pop — strength
+# per island, since the audit found Springs/Purple worst and Lava/Ice already clean.
+# Look-only, on top of the existing art (no art regen).
+const PLAY_CALM := {
+	"sunny_springs": 1.0, "purple_fields": 1.0,
+	"beauty_beach": 0.55, "white_water_falls": 0.6,
+	"laughing_lava": 0.4, "iciest_age": 0.45,
+}
+
+func _build_play_calm() -> void:
+	var island_id: String = MatchConfig.island if MatchConfig and "island" in MatchConfig else ""
+	var strength: float = PLAY_CALM.get(island_id, 0.6)
+	if strength <= 0.0:
+		return
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0.0, 0.0, 0.0, 0.34))   # dim core
+	grad.set_color(1, Color(0.0, 0.0, 0.0, 0.0))     # fades out before the frame edge
+	grad.add_point(0.62, Color(0.0, 0.0, 0.0, 0.30)) # hold the dim across the play area
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = 256
+	tex.height = 256
+	var calm := Sprite2D.new()
+	calm.name = "PlayCalm"
+	calm.texture = tex
+	calm.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	calm.position = _safe_center()
+	calm.scale = Vector2(5.0, 3.1)   # wide oval over the play surface
+	calm.modulate = Color(1.0, 1.0, 1.0, strength)
+	add_child(calm)
+	_insert_under_players(calm)
 
 func _build_hill() -> void:
 	hill_visual = Node2D.new()
