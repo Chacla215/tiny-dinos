@@ -56,9 +56,11 @@ const PLAYER_COLORS := {
 	"p2": Color(0.30, 0.80, 1.00, 1.0),
 	"p3": Color(0.95, 0.45, 0.85, 1.0),
 	"p4": Color(0.45, 0.95, 0.45, 1.0),
+	"p5": Color(1.00, 0.55, 0.30, 1.0),   # orange (3v3)
+	"p6": Color(0.65, 0.55, 1.00, 1.0),   # violet (3v3)
 }
 
-const PLAYER_IDS := ["p1", "p2", "p3", "p4"]
+const PLAYER_IDS := ["p1", "p2", "p3", "p4", "p5", "p6"]
 const ACTION_NAMES := ["up", "down", "left", "right", "attack", "heavy", "special", "swap", "block", "dodge", "pickup", "throw", "confirm", "emote"]
 
 # Quick taunt emotes. Tapping Select in a match pops the next one over your dino.
@@ -79,6 +81,8 @@ const PLAYER_TINTS := {
 	"p2": Color(0.50, 1.10, 1.30),
 	"p3": Color(1.30, 0.60, 1.20),
 	"p4": Color(0.60, 1.20, 0.60),
+	"p5": Color(1.30, 0.85, 0.55),
+	"p6": Color(0.90, 0.80, 1.30),
 }
 
 # Weapons modify light + heavy attacks (not the signature special). RB swaps the
@@ -467,14 +471,14 @@ func mode_blurb(mode: String) -> String:
 		"beast": int(BEAST_TARGET),
 	})
 
-var dino_choices: Dictionary = {"p1": "ralph", "p2": "raptor", "p3": "trike", "p4": "pterry"}
+var dino_choices: Dictionary = {"p1": "ralph", "p2": "raptor", "p3": "trike", "p4": "pterry", "p5": "bronto", "p6": "anky"}
 var island: String = "laughing_lava"
 var player_count: int = 2
 ## Which slots are CPU-controlled this match. Set on the select screen.
-var cpu_players: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false}
+var cpu_players: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false, "p5": false, "p6": false}
 ## pid -> SKINS index picked on the select screen for this match.
 ## -1 = no pick: the dino spawns with its creator-equipped MetaSave skin.
-var skin_choices: Dictionary = {"p1": -1, "p2": -1, "p3": -1, "p4": -1}
+var skin_choices: Dictionary = {"p1": -1, "p2": -1, "p3": -1, "p4": -1, "p5": -1, "p6": -1}
 
 # --- Teams ---
 # When enabled, scoring/win conditions aggregate by side and friendly fire is off.
@@ -874,6 +878,8 @@ func _setup_input_actions() -> void:
 	_register_player_actions("p2", 1)
 	_register_player_actions("p3", 2)
 	_register_player_actions("p4", 3)
+	_register_player_actions("p5", 4)   # 3v3: 5th/6th pads (or CPU-driven)
+	_register_player_actions("p6", 5)
 	_register_restart_action()
 	_register_pause_action()
 

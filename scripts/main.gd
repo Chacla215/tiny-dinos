@@ -70,6 +70,8 @@ const PIP_READY := Color(1.0, 0.85, 0.3, 1.0)      # bright gold when ready
 @onready var hud_win: Label = $HUD/WinMessage
 @onready var hud_hint: Label = $HUD/RestartHint
 
+# The four fighters are baked into every arena scene; Player5/Player6 are cloned in
+# at runtime only when a 3v3 needs them (see _ensure_extra_players).
 @onready var all_players: Array[CharacterBody2D] = [
 	$Player1, $Player2, $Player3, $Player4,
 ]
@@ -186,7 +188,9 @@ func _ready() -> void:
 		kos_to_win = 2  # snappy matchdays
 	if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
 		kos_to_win = MatchConfig.gauntlet_kos_to_win()  # best-of-2 early, single-KO later
+	_ensure_extra_players()   # 3v3+: clone Player5/Player6 into the scene if needed
 	_setup_active_players()
+	_layout_spawns()          # 3v3+: arrange six fighters in two team rows
 	_apply_match_colors()
 	_style_hud()
 	_build_special_pips()
@@ -269,6 +273,45 @@ func _setup_active_players() -> void:
 			p.set_process(false)
 			_hide_hud_for(p.player_id)
 
+# 3v3+: the scenes bake only four fighters, so clone Player4 (with its dino.gd +
+# child hitbox/marker structure) into Player5/Player6 when the match needs them.
+# Each clone gets its pid/name BEFORE entering the tree so dino._ready configures
+# the right slot; _layout_spawns fixes positions (and spawn_point) afterward.
+func _ensure_extra_players() -> void:
+	var need: int = MatchConfig.player_count
+	var template: CharacterBody2D = $Player4
+	var idx: int = all_players.size()
+	while all_players.size() < need:
+		idx += 1
+		var clone: CharacterBody2D = template.duplicate()
+		clone.name = "Player%d" % idx
+		clone.player_id = "p%d" % idx
+		add_child(clone)   # always active (only created up to player_count), so stays visible
+		all_players.append(clone)
+
+# 3v3+: with six fighters the four baked corner spawns don't seat two trios, so lay
+# them out in two rows inside the safe zone — side A (p1..p3) up top, side B (p4..p6)
+# along the bottom (matches the first-half/second-half team split). Sets each dino's
+# spawn_point too, since the baked nodes captured theirs before this runs. Counts of
+# four or fewer keep their tuned baked positions.
+func _layout_spawns() -> void:
+	if active_players.size() <= 4:
+		return
+	var r: Rect2 = _polygon_bounds(safe_polygon) if safe_polygon.size() >= 3 else safe_rect
+	r = r.grow(-90.0)
+	var n: int = active_players.size()
+	var half: int = int(ceil(n / 2.0))
+	for i in range(n):
+		var p: CharacterBody2D = active_players[i]
+		var top: bool = i < half
+		var row_n: int = half if top else (n - half)
+		var col: int = i if top else (i - half)
+		var fx: float = (col + 1.0) / (row_n + 1.0)
+		var fy: float = 0.24 if top else 0.76
+		var pos := Vector2(r.position.x + fx * r.size.x, r.position.y + fy * r.size.y)
+		p.global_position = pos
+		p.spawn_point = pos
+
 func _hide_hud_for(pid: String) -> void:
 	var key := pid.to_upper()
 	for suffix in ["Score", "HPBack", "HPFill", "BlockBack", "BlockFill"]:
@@ -324,6 +367,8 @@ func _build_special_pips() -> void:
 		if not ("special_type" in p) or p.special_type == "none":
 			continue
 		var pid: String = p.player_id
+		if not PIP_POS.has(pid):
+			continue   # no HUD corner for this slot yet (e.g. p5/p6 before the 6-HUD)
 		var pos: Vector2 = PIP_POS.get(pid, Vector2.ZERO)
 		var quad := PackedVector2Array([
 			Vector2(0, 0), Vector2(PIP_SIZE, 0),
