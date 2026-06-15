@@ -95,18 +95,30 @@ func _ready() -> void:
 		{"label": $Menu/HowToItem, "base": "HOW TO PLAY", "action": "howto"},
 		{"label": $Menu/QuitItem, "base": "QUIT", "action": "quit"},
 	]
-	var top0: float = $Menu/PlayItem.offset_top
-	var h0: float = $Menu/PlayItem.offset_bottom - $Menu/PlayItem.offset_top
-	# Shrink the row spacing so the (now six) items still clear the bottom edge.
-	var spacing: float = min(48.0, (704.0 - top0) / float(menu_items.size()))
+	# Re-stack the menu to fit ALL items in the band beneath the subtitle, sizing
+	# the rows + font to the count so nothing overlaps (8 items as of Phase 3:
+	# 36px no longer fits, so the font scales with the row spacing). Rows tile flush
+	# at the spacing height so centered text can't crowd its neighbour.
+	var menu_top: float = 452.0
+	var band_bottom: float = 716.0
+	var prompt_h: float = 26.0
+	var spacing: float = minf(48.0, (band_bottom - prompt_h - menu_top) / float(menu_items.size()))
+	var font_px: int = clampi(int(spacing * 0.82), 20, 36)
+	var outline_px: int = clampi(roundi(font_px * 0.2), 4, 8)
 	for i in range(menu_items.size()):
 		var ml: Label = menu_items[i]["label"]
-		ml.offset_top = top0 + i * spacing
-		ml.offset_bottom = ml.offset_top + h0
+		ml.offset_top = menu_top + i * spacing
+		ml.offset_bottom = ml.offset_top + spacing
+		ml.add_theme_font_size_override("font_size", font_px)
+		ml.add_theme_constant_override("outline_size", outline_px)
 	# Scale the selected item from its own center, not its top-left corner.
 	for item in menu_items:
 		var l: Label = item.label
 		l.pivot_offset = Vector2(640.0, (l.offset_bottom - l.offset_top) / 2.0)
+	# Park the controls prompt directly under the last row so it never collides.
+	var last_item: Label = menu_items[menu_items.size() - 1]["label"]
+	prompt.offset_top = last_item.offset_bottom + 2.0
+	prompt.offset_bottom = prompt.offset_top + prompt_h
 	howto_panel.visible = false
 	_refresh_menu()
 	prompt.text = "UP / DOWN  SELECT      A  CONFIRM"
