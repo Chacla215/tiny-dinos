@@ -1,5 +1,56 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-15 (SEASON MODE Phase 3 — IN PROGRESS on `feat/season-phase3`)
+
+Charlie greenlit ALL of Phase 3 ("we will be making all of it") and told Claude to
+build it autonomously, making the embedded design calls. Branch `feat/season-phase3`
+(off master after #11), NOT pushed. **3 of 5 features done + committed; 2 remain.**
+Tracked via the session task list. Resume by reading this entry + `git log`.
+
+**DONE (committed, validated headless + snapshots):**
+- **1 — MetaSave foundation + TROPHY CABINET.** New persisted fields: `coins`,
+  `owned_skins` (bought EPIC skins), `continue_tokens`, `best_division`,
+  `matchdays_won`, `season_titles_by_division[3]`. All additive ConfigFile keys.
+  `scenes/trophies.tscn` + `trophies.gd` = read-only cabinet (titles, highest
+  division, matchdays, best wave, coins, per-division championship breakdown). New
+  TROPHIES title entry.
+- **2 — COIN ECONOMY + SHOP.** Earn coins per matchday + championship bonus (both
+  scale with division). `scenes/shop.tscn` + `shop.gd`: buy coin-priced EPIC skins
+  (VOID 120 / GOLDEN 200; `skin_unlocked` now checks `MetaSave.owns_skin` for any
+  SKINS entry with a `cost`) + CONTINUE TOKENS (80). A season gameover offers
+  "A USE CONTINUE TOKEN — REVIVE" to replay the failed matchday. New SHOP title entry
+  (shows coins). Title menu now 8 items (re-stacks, tight but clean).
+- **3 — DIVISIONS (ROOKIE/PRO/LEGEND).** `start_season(team, size, division)` (the
+  dead start_island arg is gone). Division shifts the whole schedule's difficulty
+  floor up `DIFF_LADDER` (PRO +1, LEGEND +2, clamp BRUTAL) + scales coin payouts.
+  Winning the finale promotes (`record_season` bumps `best_division`); replay any
+  unlocked division. Select screen: freed UP/DOWN picks DIVISION (mode label +
+  hint). Banners/standings name the division. `season_test` 23/23.
+
+**DESIGN CALLS made (so a cold resume keeps them):** coins are cosmetic + soft-safety
+only, never pay-to-win (sinks = EPIC skins + continue tokens). Divisions reuse the 5
+RIVAL_TEAMS; the challenge comes from the difficulty-floor shift, not new fixtures.
+
+**TODO — Feature 4: PERSISTENT SQUAD + FATIGUE.** Plan: pre-season pick a SQUAD with
+a BENCH (more than `season_size`, e.g. up to 4); each matchday field `season_size`
+of them. Fielded fighters gain FATIGUE per matchday (mild stat dip — scale down a
+couple of `dino.gd` stats like speed/damage, applied at spawn like a perk); benched
+ones recover. Between matchdays (alongside the perk draft) rotate who plays. Bites
+mainly in 2v2 (you have a bench to rotate); 1v1 = swap your one starter with a bench
+dino. Touches: MatchConfig squad state (`[{dino, fatigue}]` + fielded set), select.gd
+squad-builder UI (multi-pick), a between-matchday rotation step, dino.gd fatigue
+application, main.gd hook. Keep gentle/opt-in-feeling.
+
+**TODO — Feature 5: 3v3+ (engine lift).** Only 4 fighter nodes are baked per scene.
+Each `scenes/arena_*.tscn` (beach/falls/floes/lava/purple/springs) + `main.tscn` has
+Player1–4; need Player5/Player6. Then `main.gd`: `active_players` (line ~74 `$Player1
+..$Player4`), `SPAWN_POINTS` (p5/p6), HUD corner rects (~294–297), win/seating logic;
+`MatchConfig.PLAYER_IDS` + team maps; season seating for 3v3. Heaviest piece — its
+own focused pass. Consider scripting the node injection vs hand-editing 7 .tscn files.
+
+**When Phase 3 is fully landed:** PR the branch; then per the standing TODO delete the
+last throwaway probes (`season_test`, `season_shot`).
+
 ## Session — 2026-06-15 (merge backlog + balance re-check + probe cleanup)
 
 Shipped the branch backlog, re-validated solo balance under default-floppy, and
