@@ -1,5 +1,36 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-15 (merge backlog + balance re-check + probe cleanup)
+
+Shipped the branch backlog, re-validated solo balance under default-floppy, and
+retired the throwaway probes now that floppy + the rig are locked.
+
+- **Merged the backlog.** PR #6 (Season Phase 2 — rival teams / standings / perk
+  draft) → master. Then rebased `feat/arena-readability` onto post-#6 master
+  (PROGRESS conflict resolved; code auto-merged), validated (headless clean +
+  grab_test 20/20, diff readability-only), and merged it as PR #7.
+- **Solo balance re-validated under default-floppy** (the open "sim-tuned balance
+  needs re-checking" item). Re-ran `sim_gauntlet` on master: **no regression** — the
+  gauntlet resolves at every wave. Confined (HP) arenas bite mid-run (foe peaks ~44%
+  at wave 8); ring-out arenas stay flat-ish because floppy kills by throwing foes off
+  the edge (bypasses HP scaling) — the *expected* floppy shape, not a bug. Wave-16
+  dips are single-sample noise (the tool's own caveat). The real "is it fun" check
+  still needs a controller.
+- **Deleted the throwaway probes** (two chore PRs, headless-clean after each):
+  - #8 — floppy feel/balance probes: `floppy_walk_probe`, `floppy_feel_probe`,
+    `floppy_cadence_probe`, `floppy_ko_probe`, `sim_gauntlet` (script + scene each).
+  - #9 — rig probes: `rig_test`, `rig_dynamics_probe` (script + scene), `montage_rig.py`;
+    fixed the stale `rig_test` mention in the chibi-restyle prompt kit.
+  - **Kept** `grab_test` (functional regression guard for the grab/throw chain),
+    `sim_ai` (general balance matrix), `season_test`/`season_shot` (Season Phase 3
+    still open), `arena_shot`/`ui_shot`, and all the `gen_*`/`bake_*` art-pipeline tools.
+
+> Resume hint: master is clean, no open PRs. Open work (all need Charlie):
+> (1) **chibi restyle** — blocked on Charlie generating the 5 `<dino>_hero.png`;
+> drop one in `assets/concept/<dino>/` → Claude bakes (`gen_ralph_fighter.py <dino>`
+> +`--parts`) + wires ANIM_LAYOUTS; (2) **human-played season** + **floppy feel pass**
+> — controller-only feel calls, not probe-able.
+
 ## Session — 2026-06-15 (arena readability + art-consistency direction)
 
 Readability follow-ups + an art-direction decision, then branch cleanup.
