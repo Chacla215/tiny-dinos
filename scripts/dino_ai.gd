@@ -19,6 +19,7 @@ var throw_chance: float = 0.22   # P(hurl the weapon) on a clean mid-range openi
 var punish_chance: float = 0.55  # P(it capitalizes when you whiff / get guard-broken)
 var pressure: float = 0.5        # 0..1: how relentlessly it stays in your face after trading
 var edge_caution: float = 0.6    # 0..1: how hard it refuses to be pinned against a lethal edge
+var grab_chance: float = 0.22    # FLOPPY: P(grab a foe in reach) — way higher near an edge (throw-off)
 
 const THROW_RANGE := 540.0       # max distance it will throw a weapon from
 const WEAPON_SEEK_RANGE := 720.0 # how far it'll detour for a weapon — drops are the only source now
@@ -30,10 +31,10 @@ const EDGE_LOOK := 96.0          # how far ahead it probes for the island edge
 # BRUTAL sits above HARD: near-instant reads, all-but-guaranteed whiff-punishes,
 # reads heavy-vs-light to pick dodge-vs-block, and refuses to be edged out.
 const DIFFICULTY_PRESETS := {
-	"easy":   {"aggression": 0.50, "reaction_time": 0.30, "block_chance": 0.22, "dodge_chance": 0.10, "heavy_chance": 0.20, "special_chance": 0.18, "throw_chance": 0.12, "punish_chance": 0.20, "pressure": 0.15, "edge_caution": 0.30},
-	"normal": {"aggression": 0.70, "reaction_time": 0.16, "block_chance": 0.40, "dodge_chance": 0.22, "heavy_chance": 0.30, "special_chance": 0.30, "throw_chance": 0.22, "punish_chance": 0.55, "pressure": 0.5, "edge_caution": 0.60},
-	"hard":   {"aggression": 0.92, "reaction_time": 0.09, "block_chance": 0.55, "dodge_chance": 0.36, "heavy_chance": 0.34, "special_chance": 0.42, "throw_chance": 0.30, "punish_chance": 0.90, "pressure": 0.85, "edge_caution": 0.85},
-	"brutal": {"aggression": 0.98, "reaction_time": 0.045, "block_chance": 0.62, "dodge_chance": 0.40, "heavy_chance": 0.40, "special_chance": 0.55, "throw_chance": 0.34, "punish_chance": 1.0, "pressure": 0.95, "edge_caution": 1.0},
+	"easy":   {"aggression": 0.50, "reaction_time": 0.30, "block_chance": 0.22, "dodge_chance": 0.10, "heavy_chance": 0.20, "special_chance": 0.18, "throw_chance": 0.12, "punish_chance": 0.20, "pressure": 0.15, "edge_caution": 0.30, "grab_chance": 0.10},
+	"normal": {"aggression": 0.70, "reaction_time": 0.16, "block_chance": 0.40, "dodge_chance": 0.22, "heavy_chance": 0.30, "special_chance": 0.30, "throw_chance": 0.22, "punish_chance": 0.55, "pressure": 0.5, "edge_caution": 0.60, "grab_chance": 0.22},
+	"hard":   {"aggression": 0.92, "reaction_time": 0.09, "block_chance": 0.55, "dodge_chance": 0.36, "heavy_chance": 0.34, "special_chance": 0.42, "throw_chance": 0.30, "punish_chance": 0.90, "pressure": 0.85, "edge_caution": 0.85, "grab_chance": 0.34},
+	"brutal": {"aggression": 0.98, "reaction_time": 0.045, "block_chance": 0.62, "dodge_chance": 0.40, "heavy_chance": 0.40, "special_chance": 0.55, "throw_chance": 0.34, "punish_chance": 1.0, "pressure": 0.95, "edge_caution": 1.0, "grab_chance": 0.44},
 }
 
 # Stamp one difficulty preset onto this brain's knobs. Called by the owning dino
@@ -50,6 +51,7 @@ func apply_difficulty(level: String) -> void:
 	punish_chance = p["punish_chance"]
 	pressure = p["pressure"]
 	edge_caution = p.get("edge_caution", 0.6)
+	grab_chance = p.get("grab_chance", 0.22)
 
 # --- Outputs read by the owning dino each frame ---
 var move_dir: Vector2 = Vector2.ZERO
@@ -61,6 +63,8 @@ var _special_q: bool = false
 var _dodge_q: bool = false
 var _throw_q: bool = false
 var _pickup_q: bool = false
+var _grab_q: bool = false        # FLOPPY: reach out and grab a foe
+var _throw_grab_q: bool = false  # FLOPPY: hurl the foe we're holding
 
 # --- internal timers / decisions ---
 var _decide_t: float = 0.0
@@ -74,6 +78,8 @@ var _punish_t: float = 0.0   # >0 while committed to rushing an opening
 var _was_vuln: bool = false  # target was punishable last frame (rising-edge latch)
 var _dash_cd: float = 0.0    # gate on the gap-closer dodge so it doesn't burn block
 var _retreat_t: float = 0.0  # >0 = a skirmisher peeling off after a hit (hit-and-run)
+var _grab_cd: float = 0.0    # FLOPPY: gate so it doesn't spam grab attempts
+var _holding_t: float = 0.0  # FLOPPY: how long we've held the current foe (aim then throw)
 
 func consume_attack() -> bool:
 	var v := _attack_q
@@ -105,6 +111,16 @@ func consume_pickup() -> bool:
 	_pickup_q = false
 	return v
 
+func consume_grab() -> bool:
+	var v := _grab_q
+	_grab_q = false
+	return v
+
+func consume_throw_grabbed() -> bool:
+	var v := _throw_grab_q
+	_throw_grab_q = false
+	return v
+
 func think(owner: Node, target: Node, delta: float) -> void:
 	move_dir = Vector2.ZERO
 	block_held = false
@@ -115,14 +131,35 @@ func think(owner: Node, target: Node, delta: float) -> void:
 	_punish_t = maxf(0.0, _punish_t - delta)
 	_dash_cd = maxf(0.0, _dash_cd - delta)
 	_retreat_t = maxf(0.0, _retreat_t - delta)
+	_grab_cd = maxf(0.0, _grab_cd - delta)
 	_decide_t -= delta
+
+	# FLOPPY: holding a foe — turn to face the nearest edge, then HURL them off it
+	# (a thrown foe topples + skids; on a ring-out arena that's a free KO). Takes
+	# over the whole brain while we've got someone.
+	if "grabbing" in owner and owner.grabbing != null:
+		_holding_t += delta
+		var out: Vector2 = owner.global_position - _ai_center(owner.get_parent())
+		out = out.normalized() if out.length() > 1.0 else owner.facing
+		move_dir = out  # drag them toward the edge and face that way
+		var aimed: bool = owner.facing.normalized().dot(out) > 0.85
+		if (aimed and _holding_t > 0.18) or _holding_t > 0.7:
+			_throw_grab_q = true
+			_holding_t = 0.0
+		return
+	_holding_t = 0.0
 
 	if target == null:
 		return
 	if owner.is_guard_broken():
 		return  # stunned: inputs are ignored anyway
 
-	var to_t: Vector2 = target.global_position - owner.global_position
+	# FLOPPY: a foe carries momentum and slides, so aim where they're HEADING, not
+	# where they are — keeps the bot from chasing a sliding target's tail.
+	var aim_pos: Vector2 = target.global_position
+	if MatchConfig.floppy_mode and "velocity" in target:
+		aim_pos += target.velocity * 0.16
+	var to_t: Vector2 = aim_pos - owner.global_position
 	var dist: float = to_t.length()
 	var dir: Vector2 = (to_t / dist) if dist > 0.001 else Vector2.RIGHT
 
@@ -214,6 +251,20 @@ func think(owner: Node, target: Node, delta: float) -> void:
 			_block_t = randf_range(0.25, 0.45)
 			block_held = true
 			move_dir = _avoid(owner, -dir * 0.3)
+			return
+
+	# --- FLOPPY: grab as a close-range option ---
+	# In reach and able to grab, sometimes latch on instead of swinging — and lean
+	# into it hard when a ring-out is set up, since grab->throw-off-the-edge is a
+	# free KO the plain shove can't guarantee. Face the foe so the grab connects.
+	if MatchConfig.floppy_mode and _grab_cd <= 0.0 and owner.can_grab() \
+			and dist <= owner.GRAB_RANGE - 8.0:
+		var ringout_setup: bool = not ro.is_empty() and ro.get("near_edge", false)
+		var p_grab: float = grab_chance + (0.5 if ringout_setup else 0.0)
+		if randf() < p_grab:
+			move_dir = dir            # step into them so we're facing for the grab
+			_grab_q = true
+			_grab_cd = randf_range(0.7, 1.3)
 			return
 
 	# --- Offense: punish an opening ---
