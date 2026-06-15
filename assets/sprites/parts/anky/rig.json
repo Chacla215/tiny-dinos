@@ -1,0 +1,66 @@
+{
+  "core_size": [
+    233,
+    132
+  ],
+  "order": [
+    "body",
+    "back_leg",
+    "tail",
+    "front_leg",
+    "head"
+  ],
+  "parts": {
+    "body": {
+      "tex": "res://assets/sprites/parts/anky/body.png",
+      "center": [
+        0.0,
+        0.0
+      ]
+    },
+    "back_leg": {
+      "tex": "res://assets/sprites/parts/anky/back_leg.png",
+      "center": [
+        -20.0,
+        42.0
+      ],
+      "pivot": [
+        -23.3,
+        36.96
+      ]
+    },
+    "tail": {
+      "tex": "res://assets/sprites/parts/anky/tail.png",
+      "center": [
+        -83.0,
+        23.5
+      ],
+      "pivot": [
+        -60.58,
+        29.04
+      ]
+    },
+    "front_leg": {
+      "tex": "res://assets/sprites/parts/anky/front_leg.png",
+      "center": [
+        40.5,
+        42.0
+      ],
+      "pivot": [
+        34.95,
+        36.96
+      ]
+    },
+    "head": {
+      "tex": "res://assets/sprites/parts/anky/head.png",
+      "center": [
+        85.5,
+        13.0
+      ],
+      "pivot": [
+        69.9,
+        6.6
+      ]
+    }
+  }
+}

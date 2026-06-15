@@ -1,0 +1,66 @@
+{
+  "core_size": [
+    137,
+    132
+  ],
+  "order": [
+    "body",
+    "back_leg",
+    "tail",
+    "front_leg",
+    "head"
+  ],
+  "parts": {
+    "body": {
+      "tex": "res://assets/sprites/parts/raptor/body.png",
+      "center": [
+        0.0,
+        0.0
+      ]
+    },
+    "back_leg": {
+      "tex": "res://assets/sprites/parts/raptor/back_leg.png",
+      "center": [
+        -16.0,
+        31.0
+      ],
+      "pivot": [
+        -13.7,
+        13.2
+      ]
+    },
+    "tail": {
+      "tex": "res://assets/sprites/parts/raptor/tail.png",
+      "center": [
+        -37.0,
+        -5.5
+      ],
+      "pivot": [
+        -16.44,
+        -19.8
+      ]
+    },
+    "front_leg": {
+      "tex": "res://assets/sprites/parts/raptor/front_leg.png",
+      "center": [
+        25.0,
+        31.0
+      ],
+      "pivot": [
+        27.4,
+        13.2
+      ]
+    },
+    "head": {
+      "tex": "res://assets/sprites/parts/raptor/head.png",
+      "center": [
+        34.5,
+        -26.0
+      ],
+      "pivot": [
+        16.44,
+        -2.64
+      ]
+    }
+  }
+}

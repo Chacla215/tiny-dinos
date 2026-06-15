@@ -1,0 +1,66 @@
+{
+  "core_size": [
+    90,
+    132
+  ],
+  "order": [
+    "body",
+    "back_leg",
+    "tail",
+    "front_leg",
+    "head"
+  ],
+  "parts": {
+    "body": {
+      "tex": "res://assets/sprites/parts/ralph/body.png",
+      "center": [
+        0.0,
+        0.0
+      ]
+    },
+    "back_leg": {
+      "tex": "res://assets/sprites/parts/ralph/back_leg.png",
+      "center": [
+        -19.0,
+        38.0
+      ],
+      "pivot": [
+        -18.0,
+        26.4
+      ]
+    },
+    "tail": {
+      "tex": "res://assets/sprites/parts/ralph/tail.png",
+      "center": [
+        -27.0,
+        -2.5
+      ],
+      "pivot": [
+        -19.8,
+        0.0
+      ]
+    },
+    "front_leg": {
+      "tex": "res://assets/sprites/parts/ralph/front_leg.png",
+      "center": [
+        13.5,
+        38.0
+      ],
+      "pivot": [
+        10.8,
+        26.4
+      ]
+    },
+    "head": {
+      "tex": "res://assets/sprites/parts/ralph/head.png",
+      "center": [
+        18.0,
+        -31.5
+      ],
+      "pivot": [
+        7.2,
+        -10.56
+      ]
+    }
+  }
+}
