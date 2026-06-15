@@ -60,6 +60,8 @@ const PIP_POS := {
 	"p2": Vector2(970.0, 87.0),
 	"p3": Vector2(292.0, 665.0),
 	"p4": Vector2(970.0, 665.0),
+	"p5": Vector2(292.0, 389.0),   # 3v3: left + right mid-edge corners (built in code)
+	"p6": Vector2(970.0, 389.0),
 }
 const PIP_BG := Color(0.1, 0.1, 0.1, 0.75)
 const PIP_CHARGING := Color(0.85, 0.72, 0.35, 1.0)  # muted gold while recharging
@@ -191,6 +193,7 @@ func _ready() -> void:
 	_ensure_extra_players()   # 3v3+: clone Player5/Player6 into the scene if needed
 	_setup_active_players()
 	_layout_spawns()          # 3v3+: arrange six fighters in two team rows
+	_build_extra_huds()       # 3v3+: code-built mid-edge HUD corners for p5/p6
 	_apply_match_colors()
 	_style_hud()
 	_build_special_pips()
@@ -312,6 +315,54 @@ func _layout_spawns() -> void:
 		p.global_position = pos
 		p.spawn_point = pos
 
+# 3v3+: the scenes bake HUD corners only for p1..p4. Build matching mid-edge corners
+# for p5 (left) / p6 (right) in code, named so _update_hud_bars / _apply_match_colors
+# find them by node name exactly like the baked ones. Left bars grow from x=24; right
+# bars anchor at x=1256 and grow left (so scale.x depletes toward the screen edge).
+func _build_extra_huds() -> void:
+	var specs := {
+		"p5": {"left": true,  "x": 24.0,   "score_l": 24.0,  "score_r": 440.0},
+		"p6": {"left": false, "x": 1256.0, "score_l": 840.0, "score_r": 1256.0},
+	}
+	for pid in specs:
+		if not (pid in PIP_POS):
+			continue
+		var has_slot: bool = false
+		for p in active_players:
+			if p.player_id == pid:
+				has_slot = true
+		if not has_slot or get_node_or_null("HUD/%sScore" % pid.to_upper()) != null:
+			continue
+		var s: Dictionary = specs[pid]
+		var key: String = pid.to_upper()
+		var col: Color = MatchConfig.PLAYER_COLORS.get(pid, Color.WHITE)
+		var score := Label.new()
+		score.name = "%sScore" % key
+		score.offset_left = s["score_l"]
+		score.offset_top = 316.0
+		score.offset_right = s["score_r"]
+		score.offset_bottom = 348.0
+		score.add_theme_font_size_override("font_size", 24)
+		score.add_theme_color_override("font_color", col)
+		$HUD.add_child(score)
+		_make_bar("%sHPBack" % key, s["x"], 370.0, 260.0, 16.0, Color(0.1, 0.1, 0.1, 0.75), s["left"])
+		_make_bar("%sHPFill" % key, s["x"], 370.0, 260.0, 16.0, col, s["left"])
+		_make_bar("%sBlockBack" % key, s["x"], 392.0, 260.0, 8.0, Color(0.1, 0.1, 0.1, 0.75), s["left"])
+		_make_bar("%sBlockFill" % key, s["x"], 392.0, 260.0, 8.0, Color(0.45, 0.7, 1.0, 1.0), s["left"])
+
+# One HUD bar polygon, added under $HUD. left-anchored bars run 0..w (deplete toward
+# the left edge); right-anchored run -w..0 from the x anchor (deplete toward the right).
+func _make_bar(node_name: String, x: float, y: float, w: float, h: float, col: Color, left: bool) -> void:
+	var bar := Polygon2D.new()
+	bar.name = node_name
+	bar.position = Vector2(x, y)
+	bar.color = col
+	if left:
+		bar.polygon = PackedVector2Array([Vector2(0, 0), Vector2(w, 0), Vector2(w, h), Vector2(0, h)])
+	else:
+		bar.polygon = PackedVector2Array([Vector2(-w, 0), Vector2(0, 0), Vector2(0, h), Vector2(-w, h)])
+	$HUD.add_child(bar)
+
 func _hide_hud_for(pid: String) -> void:
 	var key := pid.to_upper()
 	for suffix in ["Score", "HPBack", "HPFill", "BlockBack", "BlockFill"]:
@@ -340,6 +391,8 @@ func _style_hud() -> void:
 		"p2": Rect2(968, 8, 300, 98),
 		"p3": Rect2(12, 604, 300, 80),
 		"p4": Rect2(968, 604, 300, 80),
+		"p5": Rect2(12, 308, 300, 92),     # 3v3 mid-edge corners
+		"p6": Rect2(968, 308, 300, 92),
 	}
 	for p in active_players:
 		var pid: String = p.player_id
