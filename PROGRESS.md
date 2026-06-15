@@ -47,20 +47,30 @@ Charlie shared six `thinkgpt_ai` prompt frameworks (Sun Tzu / Munger) and said
 - **Floppy feel pass — verb cadence (measured, inconclusive).** `floppy_cadence_probe`
   (two HARD CPUs, 40s, per-arena): knockdowns 3–7.5/min, grabs/throws 0–4.5/min —
   the verbs FIRE but the rate is very noisy across 40s samples, so it's not
-  tune-able data. KO *resolution* went unmeasured (probe doesn't detect KOs).
-  Deliberately did NOT twiddle `DOWN_*`/`GRAB_*`/`grab_chance` off noisy data —
-  those + the exact glide target remain genuine hands-feel calls.
+  tune-able data. Deliberately did NOT twiddle `DOWN_*`/`GRAB_*`/`grab_chance` off
+  noisy data — those + the exact glide target remain genuine hands-feel calls.
+- **Floppy feel pass — KO resolution (measured, ANSWERED).** `floppy_ko_probe` runs
+  two HARD CPUs to a real match end (`round_wins`/`match_over`), floppy vs precise,
+  ring-out arena + HP arena. **Floppy resolves fine — faster than precise in every
+  case:** beach floppy ends 13.7s vs precise 21.0s; lava floppy 21.6s vs precise
+  **UNRESOLVED at 60s** (2 KOs/min). Floppy's knockdown-slides + throw-offs are a
+  *decisive* mechanic, the opposite of the "does it even end?" worry. (That worry
+  came from the cadence probe never detecting KOs — a probe bug: `dino.die()` reports
+  via `get_tree().current_scene.report_ko`, so the probe must set `current_scene` to
+  the arena or every match falsely reads UNRESOLVED. Caught + fixed before trusting.)
 
 > Resume hint (2026-06-15): floppy is the DEFAULT, AI self-braking + locomotion
 > friction-scaling landed & probe-validated; today's earlier work (THINKING.md, AI
 > brake, default-flip) already committed + pushed; the locomotion fix + two new
 > probes are NOT yet committed. Next: (1) commit the locomotion fix + feel probes;
 > (2) genuine hands-feel pass on `DOWN_*`/`GRAB_*`/`dino_rig` PROFILES + the exact
-> glide target — needs a controller, not a probe; (3) build a KO-resolution probe
-> (does a floppy brawl actually end?) — the one cadence question left open;
-> (4) re-validate solo arcade/gauntlet balance under floppy; (5) delete throwaway
+> glide target — needs a controller, not a probe; (3) KO-resolution ANSWERED (floppy
+> resolves faster than precise) via `floppy_ko_probe`; (4) re-validate solo
+> arcade/gauntlet balance under floppy — note lava-PRECISE was UNRESOLVED in 60s,
+> so precise pacing on HP arenas may itself be a separate issue; (5) delete throwaway
 > probes (`floppy_walk_probe`, `floppy_feel_probe`, `floppy_cadence_probe`,
-> `rig_test`, `montage_rig`, `grab_test`, `ui_shot`) when feel is locked.
+> `floppy_ko_probe`, `rig_test`, `montage_rig`, `grab_test`, `ui_shot`) when feel is
+> locked.
 
 ## Session — 2026-06-14 (fighters come alive: runtime limb rig)
 
