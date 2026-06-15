@@ -1378,6 +1378,11 @@ func award_ko(killer: Node, victim: Node) -> void:
 			_award_ko_stock(killer, victim)
 		"koth", "eggs", "flood":
 			dp[killer.player_id] = dp.get(killer.player_id, 0) + 40  # KO bounty; no round
+		"bombtag":
+			# Only the bomb costs lives — a shove-off-the-edge is neutral (the victim
+			# just respawns). Without this case it fell through to the ROUNDS win path,
+			# so a ring-out wrongly ended the match ("RALPH WINS").
+			dp[killer.player_id] = dp.get(killer.player_id, 0) + 40
 		"sumo":
 			_award_ko_sumo(killer)
 		"beast":
