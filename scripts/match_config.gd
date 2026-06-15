@@ -17,7 +17,19 @@ const SKINS := [
 	{"name": "SPRING",  "rarity": "RARE",   "swatch": Color("a9d98c"), "hue": 0.27, "sat": 0.85, "val": 1.06},
 	{"name": "VOID",    "rarity": "EPIC",   "swatch": Color("8a5cc8"), "hue": 0.75, "sat": 0.85, "val": 0.90},
 	{"name": "GOLDEN",  "rarity": "EPIC",   "swatch": Color("e6c860"), "hue": 0.12, "sat": 1.00, "val": 1.12},
+	# Earned by winning a SEASON (MetaSave.champion_skin_unlocked). Gated via skin_unlocked().
+	{"name": "CHAMPION", "rarity": "LEGENDARY", "swatch": Color("ffd84a"), "hue": 0.13, "sat": 1.15, "val": 1.28, "unlock": "champion"},
 ]
+
+# Whether skin `idx` is available to equip. All skins are open except unlock-gated
+# ones (the CHAMPION skin needs a season win). Cosmetic-only gate; never affects play.
+func skin_unlocked(idx: int) -> bool:
+	if idx < 0 or idx >= SKINS.size():
+		return false
+	var req: String = SKINS[idx].get("unlock", "")
+	if req == "champion":
+		return MetaSave.champion_skin_unlocked()
+	return true
 
 # A ShaderMaterial configured for skin `idx`, or null for DEFAULT / out-of-range
 # (so callers can do `node.material = MatchConfig.skin_material(idx)` uniformly).
@@ -489,97 +501,90 @@ var cpu_difficulty: String = "normal"
 # screen (Select button) for the precise/balance-tuned model.
 var floppy_mode: bool = true
 
-# --- Arcade ladder (solo spine) ---
-# A single-player gauntlet: P1 fights a rising sequence of CPU foes, each on its
-# own island, ending on a HARD final boss. The commercial hook — something a lone
-# player can pick up, stream, and demo. main.gd drives the between-rung flow;
-# this just holds the ladder and reconfigures the match for each rung.
-var arcade_setup: bool = false       # title -> select handoff: configure a solo ladder
-var arcade: bool = false
-var arcade_rung: int = 0
-var arcade_ladder: Array = []        # [{foes: [dino,...], difficulty, island}]
-var arcade_player_dino: String = "ralph"
-var arcade_duo: bool = false         # co-op: P1 + a CPU ally climb as a 2-fighter team
-var arcade_ally_dino: String = "raptor"
-const ARCADE_DIFFS := ["easy", "easy", "normal", "normal", "hard"]
+# --- SEASON MODE (couch campaign) ---
+# You build a team (1 or 2 fighters: humans + CPUs), pick team size, and climb a
+# fixed run of MATCHDAYS — each a DIFFERENT game mode on a different island, foes
+# escalating to a BRUTAL final. Your side (A) = your fighters; foe side (B) = CPUs.
+# Win all matchdays => SEASON CHAMPION (records to MetaSave, unlocks CHAMPION skin).
+# main.gd drives the between-matchday flow; this holds the schedule + reconfigures.
+var season_setup: bool = false       # title -> select handoff: configure a season
+var season: bool = false
+var season_matchday: int = 0
+var season_schedule: Array = []      # [{foes:[dino,...], mode, difficulty, island}]
+var season_size: int = 2             # fighters PER SIDE (1 = 1v1, 2 = 2v2; engine caps at 4)
+var season_team: Array = []          # your side: [{dino: String, human: bool}], len == season_size
+# Matchdays cycle the TEAM-COMPATIBLE modes (Beast + Bomb Tag are FFA, excluded), so
+# a season tours the game. Difficulty ramps to a BRUTAL finale.
+const SEASON_MODES := ["rounds", "koth", "eggs", "sumo", "flood"]
+const SEASON_DIFFS := ["easy", "normal", "normal", "hard", "brutal"]
 
-func start_arcade(player_dino: String, start_island: String = "", duo: bool = false) -> void:
-	arcade = true
-	arcade_duo = duo
-	teams_enabled = duo
-	arcade_rung = 0
-	arcade_player_dino = player_dino
-	if duo:
-		# A partner different from the player, fixed for the whole run.
-		var pool: Array = ROSTER_ORDER.filter(func(d): return d != player_dino)
-		pool.shuffle()
-		arcade_ally_dino = pool[0] if not pool.is_empty() else player_dino
-	arcade_ladder = _build_ladder(player_dino, start_island)
-	_apply_arcade_rung()
+func start_season(team: Array, size: int, start_island: String = "") -> void:
+	season = true
+	season_size = clampi(size, 1, 2)
+	season_team = team
+	season_matchday = 0
+	teams_enabled = season_size == 2
+	season_schedule = _build_season(start_island)
+	_apply_season_matchday()
 
-# The ladder is every OTHER dino, difficulty ramping easy->hard, each on a
-# different island for variety. The last rung is always the toughest on HARD.
-# start_island rotates the island sequence so rung 1 opens on the chosen island.
-# In duo each rung fields TWO foes (you + ally vs two), drawn from the pool.
-func _build_ladder(player_dino: String, start_island: String = "") -> Array:
-	var foes: Array = []
-	for d in ROSTER_ORDER:
-		if d != player_dino and (not arcade_duo or d != arcade_ally_dino):
-			foes.append(d)
+# One matchday per mode: mode + ramping difficulty + rotating island + escalating
+# foe dinos (two foes when 2v2). start_island opens the rotation.
+func _build_season(start_island: String = "") -> Array:
 	var offset: int = max(0, ISLAND_ORDER.find(start_island))
-	var ladder: Array = []
-	var n: int = foes.size()
-	for i in range(n):
-		var rung_foes: Array = [foes[i]]
-		if arcade_duo:
-			rung_foes.append(foes[(i + 1) % n])  # a second foe so it's a 2-v-2
-		ladder.append({
-			"foes": rung_foes,
-			"difficulty": ARCADE_DIFFS[min(i, ARCADE_DIFFS.size() - 1)],
+	var sched: Array = []
+	var n: int = ROSTER_ORDER.size()
+	for i in range(SEASON_MODES.size()):
+		var foes: Array = [ROSTER_ORDER[i % n]]
+		if season_size == 2:
+			foes.append(ROSTER_ORDER[(i + 1) % n])
+		sched.append({
+			"foes": foes,
+			"mode": SEASON_MODES[i],
+			"difficulty": SEASON_DIFFS[min(i, SEASON_DIFFS.size() - 1)],
 			"island": ISLAND_ORDER[(offset + i) % ISLAND_ORDER.size()],
 		})
-	if not ladder.is_empty():
-		ladder[ladder.size() - 1]["difficulty"] = "brutal"  # final boss: the BRUTAL capstone
-	return ladder
+	return sched
 
-# True when the player is on the last rung of the arcade ladder (the final boss).
-func arcade_is_final_rung() -> bool:
-	return arcade and not arcade_ladder.is_empty() and arcade_rung == arcade_ladder.size() - 1
-
-func _apply_arcade_rung() -> void:
-	var rung: Dictionary = arcade_ladder[arcade_rung]
-	var foes: Array = rung["foes"]
-	cpu_difficulty = rung["difficulty"]
-	island = rung["island"]
-	game_mode = "rounds"
-	dino_choices["p1"] = arcade_player_dino
-	if arcade_duo:
+# Seat your team on side A (P1 + optional P2), foes on side B; apply the matchday's
+# mode/island/difficulty. Win is side-based (main.gd same_side), so co-op + solo
+# both resolve through the team rules.
+func _apply_season_matchday() -> void:
+	var md: Dictionary = season_schedule[season_matchday]
+	var foes: Array = md["foes"]
+	cpu_difficulty = md["difficulty"]
+	island = md["island"]
+	game_mode = md["mode"]
+	if season_size == 2:
 		player_count = 4
 		teams_enabled = true
-		teams = {"p1": "a", "p3": "a", "p2": "b", "p4": "b"}
-		cpu_players = {"p1": false, "p3": true, "p2": true, "p4": true}
-		dino_choices["p3"] = arcade_ally_dino
-		dino_choices["p2"] = foes[0]
+		teams = {"p1": "a", "p2": "a", "p3": "b", "p4": "b"}
+		# p1 is always you; p2 is your ally (human if a 2nd player joined, else a CPU).
+		cpu_players = {"p1": false, "p2": not bool(season_team[1].get("human", false)), "p3": true, "p4": true}
+		dino_choices["p1"] = season_team[0]["dino"]
+		dino_choices["p2"] = season_team[1]["dino"]
+		dino_choices["p3"] = foes[0]
 		dino_choices["p4"] = foes[1] if foes.size() > 1 else foes[0]
 	else:
 		player_count = 2
 		teams_enabled = false
 		cpu_players = {"p1": false, "p2": true, "p3": false, "p4": false}
+		dino_choices["p1"] = season_team[0]["dino"]
 		dino_choices["p2"] = foes[0]
 
-# Advance to the next rung. Returns false when the ladder is cleared (champion).
-func arcade_advance() -> bool:
-	arcade_rung += 1
-	if arcade_rung >= arcade_ladder.size():
+# Advance to the next matchday. Returns false when the season is cleared (champion).
+func season_advance() -> bool:
+	season_matchday += 1
+	if season_matchday >= season_schedule.size():
 		return false
-	_apply_arcade_rung()
+	_apply_season_matchday()
 	return true
 
-func arcade_scene() -> String:
+func season_scene() -> String:
 	return ISLAND_SCENES.get(island, "res://scenes/main.tscn")
 
-func arcade_is_final() -> bool:
-	return arcade_rung >= arcade_ladder.size() - 1
+# True on the final matchday (the BRUTAL finale) — for the "CHAMPIONSHIP" banner.
+func season_is_final() -> bool:
+	return not season_schedule.is_empty() and season_matchday >= season_schedule.size() - 1
 
 # --- Roguelike gauntlet (solo spine v2) ---
 # An endless, escalating run: win a wave, draft one of three upgrades that stack

@@ -1,5 +1,39 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-15 (SEASON MODE — Arcade reborn as a couch campaign)
+
+Charlie: "arcade and versus seem the same no?" — they were. Arcade was a thin solo
+CPU ladder barely distinct from Versus-vs-CPU. We reframed it into **SEASON MODE**
+(Phase 1), a couch campaign. Planned + approved via plan mode, built behind
+`feat/season-mode`.
+
+- **Arcade → Season.** Replaced the arcade ladder wholesale (`arcade_*` symbols
+  gone; co-op duo folded into season team setup). Three modes now read as three
+  distinct experiences: **Versus** (configure one fight), **Season** (build a team,
+  climb), **Gauntlet** (solo roguelike).
+- **Build a team + pick size.** Pre-season: **TEAM SIZE 1v1 / 2v2** (engine caps at
+  2v2 — only 4 fighter nodes). Your side is humans + CPUs; a 2nd pad auto-joins as a
+  human ally (slot human/CPU is by controller presence), else a CPU teammate the host
+  picks. Foes are season-driven + hidden in setup.
+- **Mode-cycling matchdays.** 5 matchdays tour the team-compatible modes
+  (`rounds → koth → eggs → sumo → flood`; Beast + Bomb Tag are FFA, excluded),
+  rotating islands, difficulty ramping to a BRUTAL finale. Each matchday banners its
+  mode. Your team seats side A, CPU foes side B — existing team win logic resolves
+  solo AND co-op.
+- **Climb + unlock.** Win the season → SEASON CHAMPION → `MetaSave.seasons_won`++ →
+  unlocks an **additive CHAMPION skin** (shader recolor, no art, no gating of existing
+  content; creator/select carousels skip it until earned). Title shows a trophy line.
+- **Validated:** `season_test` 24/24 (schedule/mode-cycle/seating for 1v1+2v2,
+  advance→finale, unlock gate, in-engine matchday-win→advance); setup-screen snapshot
+  clean; grab_test 20/20; headless boot clean.
+
+> Resume hint (2026-06-15, Season): Phase 1 complete on `feat/season-mode`. Open:
+> (1) a **full human-played season** — logic asserted, 5-matchday feel/pacing not;
+> (2) Phase 2 (named rival teams + home islands, standings screen, between-matchday
+> team perk draft); (3) Phase 3 (divisions/promotion, coin economy, trophy cabinet,
+> 3v3+ via new fighter nodes). Throwaways to delete when locked: `season_test`,
+> `season_shot` (+ the floppy/rig probes).
+
 ## Session — 2026-06-15 ("new process of thinking" + AI floppy self-braking)
 
 Charlie shared six `thinkgpt_ai` prompt frameworks (Sun Tzu / Munger) and said
