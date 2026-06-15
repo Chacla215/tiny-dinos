@@ -14,7 +14,7 @@ python3 scripts/tools/gen_ralph_fighter.py <dino>           # in-match fighter s
 python3 scripts/tools/gen_ralph_fighter.py <dino> --parts   # runtime-rig parts + rig.json
 ```
 then paste the printed `SHEET_`/`ANIM_LAYOUTS` block into `dino.gd` and verify
-(rig_test / arena_shot snapshots). Skin-variant portraits (`<dino>_<skin>.png`) are
+(arena_shot snapshots). Skin-variant portraits (`<dino>_<skin>.png`) are
 secondary — in-match skins are shader recolors, so only the base hero gates the look.
 
 ## How to build each prompt
