@@ -1,5 +1,21 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-15 (Phase 3 merged + Season probes retired)
+
+- **PR #12 merged → master** (`2925da1`, fast-forward). Season Mode Phase 3 —
+  trophies, coins/shop, divisions, squad/fatigue, 3v3 — is now on master; the
+  `feat/season-phase3` branch is deleted (remote + local). Headless boot clean.
+- **Deleted the Season throwaway probes** (Charlie's standing TODO, called now —
+  the human-played feel check is still deferred but he chose to retire the probes
+  regardless): `season_test`, `sixplayer_test`, `season_shot` (script + scene each).
+  **Kept** `grab_test` (functional grab/throw regression guard) and `sim_ai`
+  (balance matrix). Headless boot clean after removal.
+
+> Resume hint: master is clean, no Season probes left. Open work, all Charlie's
+> calls: a **human-played season** feel check (divisions pacing, fatigue feel, 3v3
+> readability — never hands-played); and the standing **chibi restyle**, blocked on
+> Charlie generating the 5 `<dino>_hero.png`.
+
 ## Session — 2026-06-15 (SEASON MODE Phase 3 — ALL 5 FEATURES COMPLETE on `feat/season-phase3`)
 
 Charlie greenlit ALL of Phase 3 ("we will be making all of it") and told Claude to
