@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://b8flopwalk001"]
-
-[ext_resource type="Script" path="res://scripts/tools/floppy_walk_probe.gd" id="1"]
-
-[node name="FloppyWalkProbe" type="Node"]
-script = ExtResource("1")

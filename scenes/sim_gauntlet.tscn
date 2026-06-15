@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://b8simgaunt01"]
-
-[ext_resource type="Script" path="res://scripts/tools/sim_gauntlet.gd" id="1"]
-
-[node name="SimGauntlet" type="Node"]
-script = ExtResource("1")
