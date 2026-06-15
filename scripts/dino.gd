@@ -566,16 +566,16 @@ func _setup_sprite() -> void:
 		sprite.visible = false
 	else:
 		r.free()
-	_add_separation_halo()
+	_add_contact_shadow()
 
-# READABILITY: a soft dark radial that rides BEHIND the fighter so it separates from
-# busy/low-contrast arena grounds (e.g. green dino on Sunny Springs' green field)
-# regardless of island. Look-only; cheaper + seam-safe vs outlining a multi-part rig.
-# Drawn as the first child so the sprite/rig render on top of it.
-func _add_separation_halo() -> void:
+# A grounded CONTACT SHADOW: a soft dark oval cast on the floor at the feet (the
+# footing line), flattened like a real cast shadow so the fighter reads as standing
+# ON the surface, not floating. Also doubles as separation from a busy arena ground.
+# Drawn as the first child so the sprite/rig render on top of it. Look-only.
+func _add_contact_shadow() -> void:
 	var grad := Gradient.new()
-	grad.set_color(0, Color(0.0, 0.0, 0.0, 0.32))   # center
-	grad.set_color(1, Color(0.0, 0.0, 0.0, 0.0))     # fades out at the rim
+	grad.set_color(0, Color(0.0, 0.0, 0.0, 0.42))   # core of the cast shadow
+	grad.set_color(1, Color(0.0, 0.0, 0.0, 0.0))     # soft feathered rim
 	var tex := GradientTexture2D.new()
 	tex.gradient = grad
 	tex.fill = GradientTexture2D.FILL_RADIAL
@@ -583,14 +583,18 @@ func _add_separation_halo() -> void:
 	tex.fill_to = Vector2(1.0, 0.5)
 	tex.width = 128
 	tex.height = 128
-	var halo := Sprite2D.new()
-	halo.texture = tex
-	halo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	halo.position.y = sprite_offset_y * 0.55          # over the body mass, not the feet
-	var s: float = sprite_scale * 1.5
-	halo.scale = Vector2(s, s * 0.82)                 # slightly squashed oval
-	add_child(halo)
-	move_child(halo, 0)
+	var shadow := Sprite2D.new()
+	shadow.name = "ContactShadow"
+	shadow.texture = tex
+	shadow.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	# Sit on the ground at the feet. By the footing convention sprite_offset_y =
+	# 7.6 - 66*scale, so offset_y + 66*scale lands on the ~7.6 ground line for every
+	# dino regardless of the scale boost.
+	shadow.position.y = sprite_offset_y + 66.0 * sprite_scale
+	var w: float = sprite_scale * 1.45
+	shadow.scale = Vector2(w, w * 0.30)               # flat oval = a cast shadow, not a halo
+	add_child(shadow)
+	move_child(shadow, 0)
 
 func _physics_process(delta: float) -> void:
 	if is_falling:
