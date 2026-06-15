@@ -78,8 +78,13 @@ const ANIM_LAYOUTS := {
 # going, very low friction = you keep gliding and overshoot, so you carry
 # momentum and can't reverse instantly. The Gang-Beasts "loose control" core.
 @export var floppy_accel: float = 850.0        # sluggish ramp-up (~0.4s to reverse)
-@export var floppy_friction: float = 360.0     # glide ~170px after you let go
+@export var floppy_friction: float = 360.0     # friction AT the reference speed (below)
 @export var floppy_speed_mult: float = 1.10    # let momentum carry you a bit faster
+# Floppy glide is v^2/(2*friction): with flat friction a 440-speed dino slid ~673px
+# (half the arena — it rang itself out of a centre sprint) while a 240 tank slid
+# ~135px (barely floppy). Scale friction with top speed so every dino coasts for the
+# SAME time (~0.89s) instead — loose but controllable, uniform across the roster.
+const FLOPPY_REF_SPEED := 320.0
 
 @export_group("Combat")
 @export var max_hp: int = 100
@@ -852,7 +857,10 @@ func update_movement(delta: float) -> void:
 	var floppy: bool = MatchConfig.floppy_mode
 	if floppy:
 		accel = floppy_accel if current_surface == Surface.GROUND else minf(ice_accel, floppy_accel)
-		friction = floppy_friction if current_surface == Surface.GROUND else minf(ice_friction, floppy_friction)
+		# Friction scaled by top speed (see FLOPPY_REF_SPEED) → constant glide TIME, so
+		# fast dinos don't slide off the stage and slow ones still feel loose.
+		var fric: float = floppy_friction * (max_speed * floppy_speed_mult) / FLOPPY_REF_SPEED
+		friction = fric if current_surface == Surface.GROUND else minf(ice_friction, fric)
 
 	var move_factor: float = 1.0
 	if defense_state == DefenseState.BLOCKING:
