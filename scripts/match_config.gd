@@ -15,20 +15,24 @@ const SKINS := [
 	{"name": "VOLCANO", "rarity": "RARE",   "swatch": Color("e0622a"), "hue": 0.015, "sat": 1.35, "val": 0.66},
 	{"name": "FROZEN",  "rarity": "RARE",   "swatch": Color("bcd8ec"), "hue": 0.55, "sat": 0.45, "val": 1.15},
 	{"name": "SPRING",  "rarity": "RARE",   "swatch": Color("a9d98c"), "hue": 0.27, "sat": 0.85, "val": 1.06},
-	{"name": "VOID",    "rarity": "EPIC",   "swatch": Color("8a5cc8"), "hue": 0.75, "sat": 0.85, "val": 0.90},
-	{"name": "GOLDEN",  "rarity": "EPIC",   "swatch": Color("e6c860"), "hue": 0.12, "sat": 1.00, "val": 1.12},
+	# EPIC skins are bought in the SHOP with coins (MetaSave.owns_skin). Cosmetic only.
+	{"name": "VOID",    "rarity": "EPIC",   "swatch": Color("8a5cc8"), "hue": 0.75, "sat": 0.85, "val": 0.90, "cost": 120},
+	{"name": "GOLDEN",  "rarity": "EPIC",   "swatch": Color("e6c860"), "hue": 0.12, "sat": 1.00, "val": 1.12, "cost": 200},
 	# Earned by winning a SEASON (MetaSave.champion_skin_unlocked). Gated via skin_unlocked().
 	{"name": "CHAMPION", "rarity": "LEGENDARY", "swatch": Color("ffd84a"), "hue": 0.13, "sat": 1.15, "val": 1.28, "unlock": "champion"},
 ]
 
-# Whether skin `idx` is available to equip. All skins are open except unlock-gated
-# ones (the CHAMPION skin needs a season win). Cosmetic-only gate; never affects play.
+# Whether skin `idx` is available to equip. Free skins are always open; CHAMPION needs
+# a season win; coin-priced ("cost") skins need a SHOP purchase. Cosmetic-only gate.
 func skin_unlocked(idx: int) -> bool:
 	if idx < 0 or idx >= SKINS.size():
 		return false
-	var req: String = SKINS[idx].get("unlock", "")
+	var s: Dictionary = SKINS[idx]
+	var req: String = s.get("unlock", "")
 	if req == "champion":
 		return MetaSave.champion_skin_unlocked()
+	if s.get("cost", 0) > 0:
+		return MetaSave.owns_skin(idx)
 	return true
 
 # A ShaderMaterial configured for skin `idx`, or null for DEFAULT / out-of-range
@@ -52,9 +56,11 @@ const PLAYER_COLORS := {
 	"p2": Color(0.30, 0.80, 1.00, 1.0),
 	"p3": Color(0.95, 0.45, 0.85, 1.0),
 	"p4": Color(0.45, 0.95, 0.45, 1.0),
+	"p5": Color(1.00, 0.55, 0.30, 1.0),   # orange (3v3)
+	"p6": Color(0.65, 0.55, 1.00, 1.0),   # violet (3v3)
 }
 
-const PLAYER_IDS := ["p1", "p2", "p3", "p4"]
+const PLAYER_IDS := ["p1", "p2", "p3", "p4", "p5", "p6"]
 const ACTION_NAMES := ["up", "down", "left", "right", "attack", "heavy", "special", "swap", "block", "dodge", "pickup", "throw", "confirm", "emote"]
 
 # Quick taunt emotes. Tapping Select in a match pops the next one over your dino.
@@ -75,6 +81,8 @@ const PLAYER_TINTS := {
 	"p2": Color(0.50, 1.10, 1.30),
 	"p3": Color(1.30, 0.60, 1.20),
 	"p4": Color(0.60, 1.20, 0.60),
+	"p5": Color(1.30, 0.85, 0.55),
+	"p6": Color(0.90, 0.80, 1.30),
 }
 
 # Weapons modify light + heavy attacks (not the signature special). RB swaps the
@@ -463,14 +471,14 @@ func mode_blurb(mode: String) -> String:
 		"beast": int(BEAST_TARGET),
 	})
 
-var dino_choices: Dictionary = {"p1": "ralph", "p2": "raptor", "p3": "trike", "p4": "pterry"}
+var dino_choices: Dictionary = {"p1": "ralph", "p2": "raptor", "p3": "trike", "p4": "pterry", "p5": "bronto", "p6": "anky"}
 var island: String = "laughing_lava"
 var player_count: int = 2
 ## Which slots are CPU-controlled this match. Set on the select screen.
-var cpu_players: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false}
+var cpu_players: Dictionary = {"p1": false, "p2": false, "p3": false, "p4": false, "p5": false, "p6": false}
 ## pid -> SKINS index picked on the select screen for this match.
 ## -1 = no pick: the dino spawns with its creator-equipped MetaSave skin.
-var skin_choices: Dictionary = {"p1": -1, "p2": -1, "p3": -1, "p4": -1}
+var skin_choices: Dictionary = {"p1": -1, "p2": -1, "p3": -1, "p4": -1, "p5": -1, "p6": -1}
 
 # --- Teams ---
 # When enabled, scoring/win conditions aggregate by side and friendly fire is off.
@@ -514,45 +522,115 @@ var season_schedule: Array = []      # [{foes:[dino,...], mode, difficulty, isla
 var season_size: int = 2             # fighters PER SIDE (1 = 1v1, 2 = 2v2; engine caps at 4)
 var season_team: Array = []          # your side: [{dino: String, human: bool}], len == season_size
 var season_perks: Array = []         # TEAM PERK ids drafted between matchdays (stack, your side only)
+var season_division: int = 0         # 0 ROOKIE / 1 PRO / 2 LEGEND — set by start_season (Phase 3)
+# SQUAD + FATIGUE (Phase 3): your squad is the fielded fighters plus one reserve.
+# Fielded fighters tire each matchday; benched ones recover. Fatigue is a mild capped
+# stat dip applied at spawn (dino.gd), so resting your ace before the finale matters.
+var season_squad: Array = []         # [{dino, fatigue}], len == season_size + 1
+var season_field: Array = []         # indices into season_squad fielded this matchday (len season_size)
+var season_field_fatigue: Dictionary = {}  # fielded pid -> that fighter's fatigue (dino.gd reads at spawn)
+var season_humans: int = 1           # how many present pads on your side; they pilot field slots 0..n-1
+const SEASON_BENCH := 1              # reserves beyond the fielded count
+const FATIGUE_MAX := 4               # fatigue caps here
+const FATIGUE_SPEED_PEN := 0.06      # -6% move speed per fatigue point (floored)
+const FATIGUE_DMG_PEN := 0.05        # -5% damage per fatigue point (floored)
+func season_fatigue_speed_mult(f: int) -> float:
+	return maxf(0.70, 1.0 - FATIGUE_SPEED_PEN * f)
+func season_fatigue_dmg_mult(f: int) -> float:
+	return maxf(0.70, 1.0 - FATIGUE_DMG_PEN * f)
+# Coin rewards (Phase 3 economy). Each matchday win pays out; the championship adds
+# a bonus. Both scale with the division so climbing pays better.
+const MATCHDAY_COIN := 15
+const CHAMPION_COIN := 60
+func season_matchday_reward() -> int:
+	return MATCHDAY_COIN + season_division * 10
+func season_champion_reward() -> int:
+	return CHAMPION_COIN + season_division * 40
 # Matchdays cycle the TEAM-COMPATIBLE modes (Beast + Bomb Tag are FFA, excluded), so
 # a season tours the game. Difficulty ramps to a BRUTAL finale.
 const SEASON_MODES := ["rounds", "koth", "eggs", "sumo", "flood"]
 const SEASON_DIFFS := ["easy", "normal", "normal", "hard", "brutal"]
 # Named rival teams, one per matchday, fought on their HOME island in escalating
-# order — the last is the BRUTAL boss. dinos[0] is used in a 1v1 season, both in 2v2.
+# order — the last is the BRUTAL boss. dinos are sliced to the team size: [0] for
+# 1v1, [0..1] for 2v2, [0..2] for 3v3.
 const RIVAL_TEAMS := [
-	{"name": "BEACH BRAWLERS", "island": "beauty_beach",      "dinos": ["ralph", "raptor"]},
-	{"name": "TIDE RIDERS",    "island": "white_water_falls", "dinos": ["pterry", "raptor"]},
-	{"name": "SPRING STAMPEDE", "island": "sunny_springs",    "dinos": ["bronto", "trike"]},
-	{"name": "FROST FANGS",    "island": "iciest_age",        "dinos": ["anky", "pterry"]},
-	{"name": "MAGMA TYRANTS",  "island": "laughing_lava",     "dinos": ["trike", "anky"]},
+	{"name": "BEACH BRAWLERS", "island": "beauty_beach",      "dinos": ["ralph", "raptor", "trike"]},
+	{"name": "TIDE RIDERS",    "island": "white_water_falls", "dinos": ["pterry", "raptor", "bronto"]},
+	{"name": "SPRING STAMPEDE", "island": "sunny_springs",    "dinos": ["bronto", "trike", "ralph"]},
+	{"name": "FROST FANGS",    "island": "iciest_age",        "dinos": ["anky", "pterry", "raptor"]},
+	{"name": "MAGMA TYRANTS",  "island": "laughing_lava",     "dinos": ["trike", "anky", "bronto"]},
 ]
 
-func start_season(team: Array, size: int, start_island: String = "") -> void:
+# DIVISIONS (Phase 3): a campaign is played at a division (0 ROOKIE / 1 PRO / 2
+# LEGEND). The division raises the whole season's difficulty floor and the coin
+# payouts; you keep promotions (MetaSave.best_division) and may replay any unlocked
+# division. The difficulty ladder each matchday's base difficulty is shifted along.
+const DIFF_LADDER := ["easy", "normal", "hard", "brutal"]
+func _bump_difficulty(diff: String, steps: int) -> String:
+	var i: int = DIFF_LADDER.find(diff)
+	if i < 0:
+		i = 1
+	return DIFF_LADDER[clampi(i + steps, 0, DIFF_LADDER.size() - 1)]
+
+func start_season(team: Array, size: int, division: int = 0, reserve: String = "") -> void:
 	season = true
-	season_size = clampi(size, 1, 2)
+	season_size = clampi(size, 1, 3)   # 1v1 / 2v2 / 3v3 (engine fields up to 6)
 	season_team = team
 	season_matchday = 0
 	season_perks = []
+	season_division = clampi(division, 0, MetaSave.unlocked_division())
+	# Pads follow field SLOTS, not dinos: slot 0 is always you, slot 1 a 2nd pad if it
+	# joined. So rotating the CPU reserve into a slot never drops a present human.
+	season_humans = 0
+	for t in team:
+		if bool(t.get("human", false)):
+			season_humans += 1
+	season_humans = maxi(1, season_humans)
+	season_squad = _build_squad(team, reserve)
+	season_field = []
+	for i in range(season_size):
+		season_field.append(i)   # your starters are fielded for matchday 1
 	teams_enabled = season_size == 2
-	season_schedule = _build_season(start_island)
+	season_schedule = _build_season()
 	_apply_season_matchday()
 
+# Your squad: the starters (with their human flags) + one reserve. The reserve is a
+# chosen dino, else auto-picked as the first roster dino not already a starter. The
+# reserve is CPU-piloted when fielded (you only ever hold one pad as p1 / field[0]).
+func _build_squad(team: Array, reserve: String) -> Array:
+	var sq: Array = []
+	for t in team:
+		sq.append({"dino": t["dino"], "fatigue": 0})
+	var rdino: String = reserve
+	if rdino == "":
+		var used: Array = []
+		for t in team:
+			used.append(t["dino"])
+		for d in ROSTER_ORDER:
+			if not (d in used):
+				rdino = d
+				break
+		if rdino == "":
+			rdino = ROSTER_ORDER[0]
+	sq.append({"dino": rdino, "fatigue": 0})
+	return sq
+
 # One matchday per RIVAL TEAM: a named foe team on its home island, a cycling mode,
-# and a ramping difficulty — fixed escalating fixtures (no island pick; the campaign
-# decides where you play). foes = the rival's dinos sliced to the team size.
-func _build_season(_start_island: String = "") -> Array:
+# and a ramping difficulty (shifted up by the division) — fixed escalating fixtures.
+# foes = the rival's dinos sliced to the team size.
+func _build_season() -> Array:
 	var sched: Array = []
 	for i in range(SEASON_MODES.size()):
 		var rival: Dictionary = RIVAL_TEAMS[i % RIVAL_TEAMS.size()]
 		var rd: Array = rival["dinos"]
-		var foes: Array = [rd[0]]
-		if season_size == 2:
-			foes.append(rd[1] if rd.size() > 1 else rd[0])
+		var foes: Array = []
+		for j in range(season_size):
+			foes.append(rd[j] if j < rd.size() else rd[rd.size() - 1])
+		var base_diff: String = SEASON_DIFFS[min(i, SEASON_DIFFS.size() - 1)]
 		sched.append({
 			"foes": foes,
 			"mode": SEASON_MODES[i],
-			"difficulty": SEASON_DIFFS[min(i, SEASON_DIFFS.size() - 1)],
+			"difficulty": _bump_difficulty(base_diff, season_division),
 			"island": rival["island"],
 			"rival": rival["name"],
 		})
@@ -567,30 +645,58 @@ func _apply_season_matchday() -> void:
 	cpu_difficulty = md["difficulty"]
 	island = md["island"]
 	game_mode = md["mode"]
-	if season_size == 2:
-		player_count = 4
-		teams_enabled = true
-		teams = {"p1": "a", "p2": "a", "p3": "b", "p4": "b"}
-		# p1 is always you; p2 is your ally (human if a 2nd player joined, else a CPU).
-		cpu_players = {"p1": false, "p2": not bool(season_team[1].get("human", false)), "p3": true, "p4": true}
-		dino_choices["p1"] = season_team[0]["dino"]
-		dino_choices["p2"] = season_team[1]["dino"]
-		dino_choices["p3"] = foes[0]
-		dino_choices["p4"] = foes[1] if foes.size() > 1 else foes[0]
-	else:
-		player_count = 2
-		teams_enabled = false
-		cpu_players = {"p1": false, "p2": true, "p3": false, "p4": false}
-		dino_choices["p1"] = season_team[0]["dino"]
-		dino_choices["p2"] = foes[0]
+	# The fighters fielded this matchday, drawn from the squad via season_field.
+	var fielded: Array = []
+	for idx in season_field:
+		fielded.append(season_squad[idx])
+	# Seat your side (A: p1..pN) and the foes (B: the next N), for any size 1/2/3.
+	# Pads fill the low your-side slots (season_humans); the rest of your side + all
+	# foes are CPU. Teams are off only in 1v1 (FFA). Works for 2 / 4 / 6 fighters.
+	season_field_fatigue = {}
+	player_count = season_size * 2
+	teams_enabled = season_size >= 2
+	for i in range(season_size):
+		var your_pid: String = "p%d" % (i + 1)
+		var foe_pid: String = "p%d" % (season_size + i + 1)
+		teams[your_pid] = "a"
+		teams[foe_pid] = "b"
+		cpu_players[your_pid] = i >= season_humans
+		cpu_players[foe_pid] = true
+		dino_choices[your_pid] = fielded[i]["dino"]
+		dino_choices[foe_pid] = foes[i] if i < foes.size() else foes[foes.size() - 1]
+		season_field_fatigue[your_pid] = int(fielded[i]["fatigue"])
 
 # Advance to the next matchday. Returns false when the season is cleared (champion).
-func season_advance() -> bool:
+# By default ages the squad first (the fighters that just played tire, the bench
+# recovers); the rotation flow ages separately, then advances with age=false.
+func season_advance(age: bool = true) -> bool:
+	if age:
+		_age_squad()
 	season_matchday += 1
 	if season_matchday >= season_schedule.size():
 		return false
 	_apply_season_matchday()
 	return true
+
+# Public hook so the rotation screen can tire the lineup that just played BEFORE you
+# pick who rests next matchday (so the shown fatigue is current).
+func season_age_squad() -> void:
+	_age_squad()
+
+# Fielded fighters gain a fatigue point (capped); benched fighters shed one (floored).
+func _age_squad() -> void:
+	for i in range(season_squad.size()):
+		var fat: int = int(season_squad[i]["fatigue"])
+		if i in season_field:
+			season_squad[i]["fatigue"] = mini(FATIGUE_MAX, fat + 1)
+		else:
+			season_squad[i]["fatigue"] = maxi(0, fat - 1)
+
+# Set the fielded lineup (indices into season_squad). Used by the between-matchday
+# rotation screen; ignores invalid sizes so a bad call can't desync seating.
+func season_set_field(indices: Array) -> void:
+	if indices.size() == season_size:
+		season_field = indices.duplicate()
 
 func season_scene() -> String:
 	return ISLAND_SCENES.get(island, "res://scenes/main.tscn")
@@ -768,6 +874,8 @@ func _setup_input_actions() -> void:
 	_register_player_actions("p2", 1)
 	_register_player_actions("p3", 2)
 	_register_player_actions("p4", 3)
+	_register_player_actions("p5", 4)   # 3v3: 5th/6th pads (or CPU-driven)
+	_register_player_actions("p6", 5)
 	_register_restart_action()
 	_register_pause_action()
 

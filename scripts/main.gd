@@ -60,6 +60,8 @@ const PIP_POS := {
 	"p2": Vector2(970.0, 87.0),
 	"p3": Vector2(292.0, 665.0),
 	"p4": Vector2(970.0, 665.0),
+	"p5": Vector2(292.0, 389.0),   # 3v3: left + right mid-edge corners (built in code)
+	"p6": Vector2(970.0, 389.0),
 }
 const PIP_BG := Color(0.1, 0.1, 0.1, 0.75)
 const PIP_CHARGING := Color(0.85, 0.72, 0.35, 1.0)  # muted gold while recharging
@@ -70,6 +72,8 @@ const PIP_READY := Color(1.0, 0.85, 0.3, 1.0)      # bright gold when ready
 @onready var hud_win: Label = $HUD/WinMessage
 @onready var hud_hint: Label = $HUD/RestartHint
 
+# The four fighters are baked into every arena scene; Player5/Player6 are cloned in
+# at runtime only when a 3v3 needs them (see _ensure_extra_players).
 @onready var all_players: Array[CharacterBody2D] = [
 	$Player1, $Player2, $Player3, $Player4,
 ]
@@ -91,12 +95,14 @@ var hill_ring: Line2D = null
 const HILL_RADIUS := 130.0
 var eliminated: Dictionary = {}      # STOCK: pid -> true once out of lives
 var season_end: String = ""          # SEASON end-state: "advance" / "champion" / "gameover"
+var _last_matchday_coins: int = 0    # coins paid out for the just-won matchday (draft header)
 var gauntlet_drafting: bool = false  # a draft overlay (gauntlet OR season) is open
 var draft_mode: String = "gauntlet"  # "gauntlet" | "season" — which flow the draft drives
 var draft_options: Array = []
 var draft_index: int = 0
 var draft_nodes: Array = []   # every node in the draft overlay (for cleanup)
 var draft_cards: Array = []   # just the selectable cards (for highlight)
+var rotating: bool = false    # SEASON: the between-matchday "who rests" rotation overlay is open
 const DRAFT_CARD_W := 320.0
 const DRAFT_CARD_H := 210.0
 const DRAFT_GAP := 34.0
@@ -184,7 +190,10 @@ func _ready() -> void:
 		kos_to_win = 2  # snappy matchdays
 	if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
 		kos_to_win = MatchConfig.gauntlet_kos_to_win()  # best-of-2 early, single-KO later
+	_ensure_extra_players()   # 3v3+: clone Player5/Player6 into the scene if needed
 	_setup_active_players()
+	_layout_spawns()          # 3v3+: arrange six fighters in two team rows
+	_build_extra_huds()       # 3v3+: code-built mid-edge HUD corners for p5/p6
 	_apply_match_colors()
 	_style_hud()
 	_build_special_pips()
@@ -267,6 +276,93 @@ func _setup_active_players() -> void:
 			p.set_process(false)
 			_hide_hud_for(p.player_id)
 
+# 3v3+: the scenes bake only four fighters, so clone Player4 (with its dino.gd +
+# child hitbox/marker structure) into Player5/Player6 when the match needs them.
+# Each clone gets its pid/name BEFORE entering the tree so dino._ready configures
+# the right slot; _layout_spawns fixes positions (and spawn_point) afterward.
+func _ensure_extra_players() -> void:
+	var need: int = MatchConfig.player_count
+	var template: CharacterBody2D = $Player4
+	var idx: int = all_players.size()
+	while all_players.size() < need:
+		idx += 1
+		var clone: CharacterBody2D = template.duplicate()
+		clone.name = "Player%d" % idx
+		clone.player_id = "p%d" % idx
+		add_child(clone)   # always active (only created up to player_count), so stays visible
+		all_players.append(clone)
+
+# 3v3+: with six fighters the four baked corner spawns don't seat two trios, so lay
+# them out in two rows inside the safe zone — side A (p1..p3) up top, side B (p4..p6)
+# along the bottom (matches the first-half/second-half team split). Sets each dino's
+# spawn_point too, since the baked nodes captured theirs before this runs. Counts of
+# four or fewer keep their tuned baked positions.
+func _layout_spawns() -> void:
+	if active_players.size() <= 4:
+		return
+	var r: Rect2 = _polygon_bounds(safe_polygon) if safe_polygon.size() >= 3 else safe_rect
+	r = r.grow(-90.0)
+	var n: int = active_players.size()
+	var half: int = int(ceil(n / 2.0))
+	for i in range(n):
+		var p: CharacterBody2D = active_players[i]
+		var top: bool = i < half
+		var row_n: int = half if top else (n - half)
+		var col: int = i if top else (i - half)
+		var fx: float = (col + 1.0) / (row_n + 1.0)
+		var fy: float = 0.24 if top else 0.76
+		var pos := Vector2(r.position.x + fx * r.size.x, r.position.y + fy * r.size.y)
+		p.global_position = pos
+		p.spawn_point = pos
+
+# 3v3+: the scenes bake HUD corners only for p1..p4. Build matching mid-edge corners
+# for p5 (left) / p6 (right) in code, named so _update_hud_bars / _apply_match_colors
+# find them by node name exactly like the baked ones. Left bars grow from x=24; right
+# bars anchor at x=1256 and grow left (so scale.x depletes toward the screen edge).
+func _build_extra_huds() -> void:
+	var specs := {
+		"p5": {"left": true,  "x": 24.0,   "score_l": 24.0,  "score_r": 440.0},
+		"p6": {"left": false, "x": 1256.0, "score_l": 840.0, "score_r": 1256.0},
+	}
+	for pid in specs:
+		if not (pid in PIP_POS):
+			continue
+		var has_slot: bool = false
+		for p in active_players:
+			if p.player_id == pid:
+				has_slot = true
+		if not has_slot or get_node_or_null("HUD/%sScore" % pid.to_upper()) != null:
+			continue
+		var s: Dictionary = specs[pid]
+		var key: String = pid.to_upper()
+		var col: Color = MatchConfig.PLAYER_COLORS.get(pid, Color.WHITE)
+		var score := Label.new()
+		score.name = "%sScore" % key
+		score.offset_left = s["score_l"]
+		score.offset_top = 316.0
+		score.offset_right = s["score_r"]
+		score.offset_bottom = 348.0
+		score.add_theme_font_size_override("font_size", 24)
+		score.add_theme_color_override("font_color", col)
+		$HUD.add_child(score)
+		_make_bar("%sHPBack" % key, s["x"], 370.0, 260.0, 16.0, Color(0.1, 0.1, 0.1, 0.75), s["left"])
+		_make_bar("%sHPFill" % key, s["x"], 370.0, 260.0, 16.0, col, s["left"])
+		_make_bar("%sBlockBack" % key, s["x"], 392.0, 260.0, 8.0, Color(0.1, 0.1, 0.1, 0.75), s["left"])
+		_make_bar("%sBlockFill" % key, s["x"], 392.0, 260.0, 8.0, Color(0.45, 0.7, 1.0, 1.0), s["left"])
+
+# One HUD bar polygon, added under $HUD. left-anchored bars run 0..w (deplete toward
+# the left edge); right-anchored run -w..0 from the x anchor (deplete toward the right).
+func _make_bar(node_name: String, x: float, y: float, w: float, h: float, col: Color, left: bool) -> void:
+	var bar := Polygon2D.new()
+	bar.name = node_name
+	bar.position = Vector2(x, y)
+	bar.color = col
+	if left:
+		bar.polygon = PackedVector2Array([Vector2(0, 0), Vector2(w, 0), Vector2(w, h), Vector2(0, h)])
+	else:
+		bar.polygon = PackedVector2Array([Vector2(-w, 0), Vector2(0, 0), Vector2(0, h), Vector2(-w, h)])
+	$HUD.add_child(bar)
+
 func _hide_hud_for(pid: String) -> void:
 	var key := pid.to_upper()
 	for suffix in ["Score", "HPBack", "HPFill", "BlockBack", "BlockFill"]:
@@ -295,6 +391,8 @@ func _style_hud() -> void:
 		"p2": Rect2(968, 8, 300, 98),
 		"p3": Rect2(12, 604, 300, 80),
 		"p4": Rect2(968, 604, 300, 80),
+		"p5": Rect2(12, 308, 300, 92),     # 3v3 mid-edge corners
+		"p6": Rect2(968, 308, 300, 92),
 	}
 	for p in active_players:
 		var pid: String = p.player_id
@@ -322,6 +420,8 @@ func _build_special_pips() -> void:
 		if not ("special_type" in p) or p.special_type == "none":
 			continue
 		var pid: String = p.player_id
+		if not PIP_POS.has(pid):
+			continue   # no HUD corner for this slot yet (e.g. p5/p6 before the 6-HUD)
 		var pos: Vector2 = PIP_POS.get(pid, Vector2.ZERO)
 		var quad := PackedVector2Array([
 			Vector2(0, 0), Vector2(PIP_SIZE, 0),
@@ -820,8 +920,15 @@ func _process(delta: float) -> void:
 	_update_powerups(delta)
 	_update_weapon_drops(delta)
 	if match_over:
-		if gauntlet_drafting:
+		if rotating:
+			_rotate_input()
+		elif gauntlet_drafting:
 			_draft_input()
+		# Season gameover: A spends a CONTINUE TOKEN to replay the failed matchday.
+		elif season_end == "gameover" and MetaSave.continue_tokens > 0 and Input.is_action_just_pressed("p1_confirm"):
+			if MetaSave.use_continue_token():
+				Audio.ui("confirm")
+				get_tree().change_scene_to_file(MatchConfig.season_scene())
 		elif Input.is_action_just_pressed("restart"):
 			if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
 				MatchConfig.gauntlet = false  # run over -> back to the title
@@ -1343,13 +1450,13 @@ func _end_round(winner_pid: String) -> void:
 	if in_season:
 		season_rival = MatchConfig.season_schedule[MatchConfig.season_matchday].get("rival", "")
 	if current_round == 1 and season_final:
-		# The BRUTAL finale of the season — the championship vs the boss rival team.
-		hud_win.text = "CHAMPIONSHIP  vs  %s" % season_rival
+		# The BRUTAL finale of the season — the division championship vs the boss team.
+		hud_win.text = "%s CHAMPIONSHIP  vs  %s" % [MetaSave.division_name(MatchConfig.season_division), season_rival]
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.5, 0.3))
 		intro_t = 1.6
 	elif current_round == 1 and in_season:
-		# Each matchday: which day, its mode, and the named rival team you face.
-		hud_win.text = "MATCHDAY %d:  %s  vs  %s" % [MatchConfig.season_matchday + 1, MatchConfig.MODE_NAMES.get(game_mode, "ROUNDS"), season_rival]
+		# Each matchday: division, which day, its mode, and the named rival team.
+		hud_win.text = "%s  -  MATCHDAY %d:  %s  vs  %s" % [MetaSave.division_name(MatchConfig.season_division), MatchConfig.season_matchday + 1, MatchConfig.MODE_NAMES.get(game_mode, "ROUNDS"), season_rival]
 		intro_t = 1.4
 	elif current_round == 1 and not is_special:
 		hud_win.text = MatchConfig.MODE_NAMES.get(game_mode, "BEST OF ROUNDS")
@@ -1450,20 +1557,32 @@ func _end_match_season(winner: Node) -> void:
 		season_end = "gameover"
 		hud_win.text = "SEASON OVER"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
-		hud_hint.text = "%s\n\npress START for the title" % _season_standings_text(MatchConfig.season_matchday - 1)
+		# A CONTINUE TOKEN (bought in the shop) revives the season at this matchday.
+		var revive: String = ""
+		if MetaSave.continue_tokens > 0:
+			revive = "A  USE CONTINUE TOKEN (%d)  -  REVIVE\n" % MetaSave.continue_tokens
+		hud_hint.text = "%s\n\n%spress START for the title" % [_season_standings_text(MatchConfig.season_matchday - 1), revive]
 		play_sfx("ko", 0.0)
 	elif MatchConfig.season_is_final():
 		season_end = "champion"
-		var first_time: bool = MetaSave.record_season()
+		# A championship is also a matchday win — pay both, then the title + bonus.
+		MetaSave.record_matchday_win()
+		var reward: int = MatchConfig.season_matchday_reward() + MatchConfig.season_champion_reward()
+		MetaSave.add_coins(reward)
+		var first_time: bool = MetaSave.record_season(MatchConfig.season_division)
 		hud_win.text = "SEASON CHAMPION!"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
 		var unlock_line: String = "UNLOCKED:  CHAMPION SKIN\n\n" if first_time else ""
-		hud_hint.text = "%s\n\n%spress START for the title" % [_season_standings_text(MatchConfig.season_matchday), unlock_line]
+		hud_hint.text = "%s\n\n+%d COINS\n\n%spress START for the title" % [_season_standings_text(MatchConfig.season_matchday), reward, unlock_line]
 		play_sfx("win", 0.0)
 	else:
-		# Matchday won (not the finale): pick a team perk, which advances the season.
-		# The draft draws its own header/prompt, so clear the centered scene labels.
+		# Matchday won (not the finale): pay the matchday coins, then pick a team perk,
+		# which advances the season. The draft draws its own header/prompt, so clear the
+		# centered scene labels.
 		season_end = "advance"
+		MetaSave.record_matchday_win()
+		_last_matchday_coins = MatchConfig.season_matchday_reward()
+		MetaSave.add_coins(_last_matchday_coins)
 		hud_win.text = ""
 		hud_hint.text = ""
 		play_sfx("win", 0.0)
@@ -1473,7 +1592,7 @@ func _end_match_season(winner: Node) -> void:
 # is the upcoming one (>), the rest are pending. Reads as a standings table in the
 # HUD's hint label (no extra nodes — keeps the cleared/end screens simple).
 func _season_standings_text(cleared_through: int) -> String:
-	var lines: Array[String] = ["- SEASON STANDINGS -"]
+	var lines: Array[String] = ["- %s DIVISION STANDINGS -" % MetaSave.division_name(MatchConfig.season_division)]
 	var sched: Array = MatchConfig.season_schedule
 	for i in sched.size():
 		var md: Dictionary = sched[i]
@@ -1551,7 +1670,7 @@ func _build_draft_cards() -> void:
 	header.position = Vector2(0, 214)
 	header.size = Vector2(1280, 46)
 	if draft_mode == "season":
-		header.text = "MATCHDAY %d CLEARED  -  PICK A TEAM PERK" % (MatchConfig.season_matchday + 1)
+		header.text = "MATCHDAY %d CLEARED  (+%d COINS)  -  PICK A TEAM PERK" % [MatchConfig.season_matchday + 1, _last_matchday_coins]
 	else:
 		header.text = "WAVE %d CLEARED  -  CHOOSE AN UPGRADE" % (MatchConfig.gauntlet_wave + 1)
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1629,8 +1748,9 @@ func _draft_input() -> void:
 		_clear_draft_cards()
 		if draft_mode == "season":
 			MatchConfig.season_add_perk(draft_options[draft_index])
-			MatchConfig.season_advance()
-			get_tree().change_scene_to_file(MatchConfig.season_scene())
+			# The lineup that just played tires now; then pick who rests next matchday.
+			MatchConfig.season_age_squad()
+			_open_rotation()
 		else:
 			MatchConfig.gauntlet_add_upgrade(draft_options[draft_index])
 			MatchConfig.gauntlet_next_wave()
@@ -1642,6 +1762,115 @@ func _clear_draft_cards() -> void:
 			n.queue_free()
 	draft_nodes.clear()
 	draft_cards.clear()
+
+# --- Season squad rotation (between matchdays) ---
+# After the perk pick, choose WHO RESTS next matchday. Exactly one squad member sits
+# out (SEASON_BENCH = 1); the rest are fielded. Reuses the draft overlay machinery.
+func _open_rotation() -> void:
+	rotating = true
+	# Default the cursor to the most-fatigued fighter — the obvious one to bench.
+	draft_index = 0
+	var worst: int = -1
+	for i in range(MatchConfig.season_squad.size()):
+		var f: int = int(MatchConfig.season_squad[i]["fatigue"])
+		if f > worst:
+			worst = f
+			draft_index = i
+	_build_rotation_cards()
+
+func _build_rotation_cards() -> void:
+	_clear_draft_cards()
+	var squad: Array = MatchConfig.season_squad
+	var n: int = squad.size()
+	var card_w := 240.0
+	var gap := 36.0
+	var total := n * card_w + (n - 1) * gap
+	var x0 := (1280.0 - total) / 2.0
+
+	var header := Label.new()
+	header.position = Vector2(0, 150)
+	header.size = Vector2(1280, 46)
+	var next_md: Dictionary = MatchConfig.season_schedule[MatchConfig.season_matchday + 1]
+	header.text = "CHOOSE WHO RESTS  -  NEXT:  %s  vs  %s" % [
+		MatchConfig.MODE_NAMES.get(next_md["mode"], "ROUNDS"), next_md.get("rival", "")]
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	header.add_theme_font_size_override("font_size", 32)
+	header.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0))
+	$HUD.add_child(header)
+	draft_nodes.append(header)
+
+	for i in range(n):
+		var card := ColorRect.new()
+		card.size = Vector2(card_w, 250)
+		card.position = Vector2(x0 + i * (card_w + gap), 240)
+		card.pivot_offset = card.size / 2.0
+		var name_l := Label.new()
+		name_l.position = Vector2(8, 30)
+		name_l.size = Vector2(card_w - 16, 40)
+		name_l.text = MatchConfig.DINOS[squad[i]["dino"]].display_name
+		name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_l.add_theme_font_size_override("font_size", 30)
+		name_l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+		card.add_child(name_l)
+		var fat_l := Label.new()
+		fat_l.position = Vector2(8, 110)
+		fat_l.size = Vector2(card_w - 16, 80)
+		var fat: int = int(squad[i]["fatigue"])
+		var bars: String = "|".repeat(fat) if fat > 0 else "FRESH"
+		fat_l.text = "FATIGUE\n%s" % bars
+		fat_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		fat_l.add_theme_font_size_override("font_size", 22)
+		var hot: float = clampf(float(fat) / float(MatchConfig.FATIGUE_MAX), 0.0, 1.0)
+		fat_l.add_theme_color_override("font_color", Color(0.6 + 0.4 * hot, 0.9 - 0.5 * hot, 0.5 - 0.3 * hot))
+		card.add_child(fat_l)
+		$HUD.add_child(card)
+		draft_nodes.append(card)
+		draft_cards.append(card)
+
+	var prompt := Label.new()
+	prompt.position = Vector2(0, 510)
+	prompt.size = Vector2(1280, 40)
+	prompt.text = "LEFT / RIGHT  CHOOSE      A  REST THIS ONE  (THE REST PLAY)"
+	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt.add_theme_font_size_override("font_size", 22)
+	prompt.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+	$HUD.add_child(prompt)
+	draft_nodes.append(prompt)
+	_refresh_rotation()
+
+# Highlight the benched pick (red-ish) and dim the rest (which will play).
+func _refresh_rotation() -> void:
+	for i in range(draft_cards.size()):
+		var card: ColorRect = draft_cards[i]
+		if i == draft_index:
+			card.color = Color(0.42, 0.20, 0.22, 0.97)   # "rests" = stand-down red
+			card.scale = Vector2(1.06, 1.06)
+		else:
+			card.color = Color(0.12, 0.20, 0.16, 0.94)   # "plays" = green-ish
+			card.scale = Vector2.ONE
+
+func _rotate_input() -> void:
+	var n: int = MatchConfig.season_squad.size()
+	if Input.is_action_just_pressed("p1_left"):
+		Audio.ui("move")
+		draft_index = (draft_index - 1 + n) % n
+		_refresh_rotation()
+	elif Input.is_action_just_pressed("p1_right"):
+		Audio.ui("move")
+		draft_index = (draft_index + 1) % n
+		_refresh_rotation()
+	elif Input.is_action_just_pressed("p1_confirm"):
+		Audio.ui("confirm")
+		# Field everyone EXCEPT the chosen rester.
+		var field: Array = []
+		for i in range(n):
+			if i != draft_index:
+				field.append(i)
+		MatchConfig.season_set_field(field)
+		rotating = false
+		_clear_draft_cards()
+		MatchConfig.season_advance(false)   # already aged before the rotation screen
+		get_tree().change_scene_to_file(MatchConfig.season_scene())
 
 # --- Audio ---
 

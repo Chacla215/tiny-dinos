@@ -25,6 +25,12 @@ const GRAPHIC_TARGET_H := 170.0 # all dino sprites scaled to this height (consis
 const ISLAND_BG_WIDTH := 680.0  # centerpiece island preview width
 
 @onready var countdown_label: Label = $Countdown
+# The select screen only ever configures the four baked slots (versus caps at 4;
+# season your-team caps at 3). p5/p6 exist only in-match (3v3 foes), seated by
+# MatchConfig._apply_season_matchday — so the select's per-slot loops use these four,
+# not MatchConfig.PLAYER_IDS (which now runs to p6 and would index the 4-key dicts).
+const SLOT_IDS := ["p1", "p2", "p3", "p4"]
+
 @onready var panels := {
 	"p1": $P1Panel,
 	"p2": $P2Panel,
@@ -40,6 +46,10 @@ var difficulty_label: Label
 # Built in code too: the match's game mode, on its own line under the island.
 var mode_label: Label
 var mode_idx: int = 0
+# Season-only: the SQUAD RESERVE picker (P1 RB cycles), on its own line. The reserve
+# is the squad's bench fighter you can rotate in to rest a tired starter.
+var reserve_label: Label
+var reserve_idx: int = 0
 # Teams line (also built in code): the chosen split, P1 cycles it with X.
 var teams_label: Label
 # Floppy-mode line (built in code): the Gang-Beasts physics toggle, P1 = Select.
@@ -49,7 +59,8 @@ var team_preset_idx: int = 0
 # driven). Both hide the versus selectors and use the start-island picker.
 var gauntlet: bool = false
 var season: bool = false
-var season_size_idx: int = 1   # 0 = 1v1, 1 = 2v2 (a 2nd pad joins as a human ally; else CPU)
+var season_size_idx: int = 1   # 0 = 1v1, 1 = 2v2, 2 = 3v3 (extra pads join as human allies; else CPU)
+var season_division_idx: int = 0  # chosen division (ROOKIE..unlocked); set on entering season setup
 
 # Gauntlet keeps the strict P1-only flow; season shows your team. _constrained()
 # covers what they share (hidden versus selectors + the start-island picker).
@@ -57,7 +68,7 @@ func _solo() -> bool:
 	return gauntlet
 
 func _season_size() -> int:
-	return 1 if season_size_idx == 0 else 2
+	return season_size_idx + 1   # idx 0/1/2 -> 1v1 / 2v2 / 3v3
 
 func _constrained() -> bool:
 	return gauntlet or season
@@ -82,7 +93,7 @@ func _ready() -> void:
 	var initial_count: int = clamp(controller_count, 2, 4)
 	if controller_count < 2:
 		initial_count = 2
-	for pid in MatchConfig.PLAYER_IDS:
+	for pid in SLOT_IDS:
 		indexes[pid] = clamp(indexes[pid], 0, MatchConfig.ROSTER_ORDER.size() - 1)
 		skin_sel[pid] = MetaSave.get_skin(MatchConfig.ROSTER_ORDER[indexes[pid]])
 		_apply_player_color_to_panel(pid)
@@ -104,6 +115,7 @@ func _ready() -> void:
 		mode_idx = 0
 	_build_mode_label()
 	_update_mode_label()
+	_build_reserve_label()   # season-only; hidden until _enter_season_setup shows it
 	MatchConfig.teams_enabled = false  # versus defaults to FFA until P1 picks a split
 	team_preset_idx = 0
 	_build_teams_label()
@@ -138,13 +150,34 @@ func _enter_solo_setup() -> void:
 func _enter_season_setup() -> void:
 	_apply_active_count(_season_size())
 	island_label.text = "SEASON  -  CLIMB THE MATCHDAYS"
-	hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER   X TEAM SIZE   SELECT FLOPPY"
+	hint_label.text = "A CONFIRM  B BACK  P1 PICK FIGHTER  X SIZE  UP/DOWN DIVISION  RB RESERVE  SELECT FLOPPY"
+	# Default to the hardest division you've unlocked (you can cycle down to replay).
+	season_division_idx = MetaSave.unlocked_division()
+	_reset_reserve_default()   # first roster dino that isn't a starter
 	_update_season_size_label()
-	if mode_label:
-		mode_label.visible = false   # islands are fixed by the rival fixtures, no pick
+	_update_season_division_label()  # repurposes the (otherwise-hidden) mode label
+	_update_reserve_label()
 	_set_island_bg(MatchConfig.RIVAL_TEAMS[0]["island"])  # preview the opening matchday's home turf
 	_refresh_displays()
 	_refresh_start()
+
+# Season DIVISION picker, shown on the (otherwise-hidden) mode label. You may pick
+# any division from ROOKIE up to the highest you've unlocked (cleared the one below).
+func _update_season_division_label() -> void:
+	if not mode_label:
+		return
+	mode_label.visible = true
+	var unlocked: int = MetaSave.unlocked_division()
+	var arrows: String = "   (P1 UP / DOWN)" if unlocked > 0 else ""
+	mode_label.text = "DIVISION:  %s%s" % [MetaSave.division_name(season_division_idx), arrows]
+
+func _cycle_season_division(step: int) -> void:
+	var unlocked: int = MetaSave.unlocked_division()
+	if unlocked <= 0:
+		return
+	Audio.ui("move")
+	season_division_idx = clampi(season_division_idx + step, 0, unlocked)
+	_update_season_division_label()
 
 # Season team-size toggle, shown on the (otherwise-hidden) difficulty line. 1v1 = you
 # solo vs the ladder; 2v2 = you + an ally (2nd pad = human, else a CPU teammate).
@@ -155,7 +188,7 @@ func _update_season_size_label() -> void:
 		difficulty_label.visible = false
 		return
 	difficulty_label.visible = true
-	difficulty_label.text = "TEAM SIZE:  %s    (P1 X)" % ("1v1" if season_size_idx == 0 else "2v2")
+	difficulty_label.text = "TEAM SIZE:  %s    (P1 X)" % ["1v1", "2v2", "3v3"][season_size_idx]
 
 # Solo setup borrows the mode label to show the chosen starting island; the
 # gauntlet randomizes islands after wave 1; season opens its matchdays here.
@@ -177,7 +210,7 @@ func _cycle_solo_island(step: int) -> void:
 func _apply_active_count(n: int) -> void:
 	MatchConfig.player_count = clamp(n, 2, 4)
 	active_players.clear()
-	for pid in MatchConfig.PLAYER_IDS:
+	for pid in SLOT_IDS:
 		var is_active: bool = int(pid.substr(1)) <= MatchConfig.player_count
 		panels[pid].visible = is_active
 		if is_active:
@@ -219,17 +252,26 @@ func _process(delta: float) -> void:
 	# Solo/season: P1 picks the starting island any time before the launch countdown
 	# arms (UP/DOWN is unused by the fighter picker, so there's no conflict).
 	if _constrained() and not launch_armed:
-		# Gauntlet picks a start island; season islands are fixed by the rival fixtures.
+		# Gauntlet picks a start island; season islands are fixed, so UP/DOWN picks the
+		# DIVISION instead (once one is unlocked).
 		if gauntlet and Input.is_action_just_pressed("p1_up"):
 			_cycle_solo_island(-1)
 		elif gauntlet and Input.is_action_just_pressed("p1_down"):
 			_cycle_solo_island(1)
-		# Season only: X cycles TEAM SIZE (1v1 / 2v2), rebuilding your-team panels.
+		elif season and Input.is_action_just_pressed("p1_up"):
+			_cycle_season_division(1)    # UP = higher division
+		elif season and Input.is_action_just_pressed("p1_down"):
+			_cycle_season_division(-1)
+		# Season: RB cycles the SQUAD RESERVE (the bench fighter you can rotate in).
+		if season and Input.is_action_just_pressed("p1_swap"):
+			_cycle_reserve(1)
+		# Season only: X cycles TEAM SIZE (1v1 / 2v2 / 3v3), rebuilding your-team panels.
 		if season and Input.is_action_just_pressed("p1_attack"):
 			Audio.ui("move")
-			season_size_idx = 1 - season_size_idx
+			season_size_idx = (season_size_idx + 1) % 3
 			_apply_active_count(_season_size())
 			_update_season_size_label()
+			_reset_reserve_default()   # keep the reserve distinct from the new starter set
 	if _all_ready():
 		_process_launch(delta)
 		return
@@ -578,6 +620,54 @@ func _build_mode_label() -> void:
 	mode_label.add_theme_color_override("font_color", Color(0.45, 0.95, 0.6, 1))
 	add_child(mode_label)
 
+func _build_reserve_label() -> void:
+	reserve_label = Label.new()
+	reserve_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	reserve_label.offset_top = 162.0
+	reserve_label.offset_bottom = 186.0
+	reserve_label.offset_left = 0.0
+	reserve_label.offset_right = 1280.0
+	reserve_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reserve_label.add_theme_font_size_override("font_size", 18)
+	reserve_label.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0, 1))
+	reserve_label.visible = false
+	add_child(reserve_label)
+
+func _update_reserve_label() -> void:
+	if reserve_label == null:
+		return
+	reserve_label.visible = season
+	if season:
+		var rname: String = MatchConfig.DINOS[MatchConfig.ROSTER_ORDER[reserve_idx]].display_name
+		reserve_label.text = "RESERVE:  %s    (P1 RB)" % rname
+
+# Reset the reserve to the first roster dino that isn't currently a starter (used on
+# entering season setup and whenever the team size changes the starter set).
+func _reset_reserve_default() -> void:
+	var starters: Array = []
+	for pid in active_players:
+		starters.append(indexes[pid])
+	reserve_idx = 0
+	for i in MatchConfig.ROSTER_ORDER.size():
+		if not (i in starters):
+			reserve_idx = i
+			break
+	_update_reserve_label()
+
+# The bench fighter cycles through the roster; skip any dino already picked as a
+# starter so the squad has distinct dinos.
+func _cycle_reserve(step: int) -> void:
+	Audio.ui("move")
+	var n: int = MatchConfig.ROSTER_ORDER.size()
+	var starters: Array = []
+	for pid in active_players:
+		starters.append(indexes[pid])
+	for _i in n:
+		reserve_idx = (reserve_idx + step + n) % n
+		if not (reserve_idx in starters):
+			break
+	_update_reserve_label()
+
 func _update_mode_label() -> void:
 	if mode_label == null:
 		return
@@ -731,7 +821,7 @@ func _controller_present(device: int) -> bool:
 func _refresh_cpu_assignment() -> void:
 	if _solo():
 		return  # the opponent stays CPU no matter what's plugged in
-	for pid in MatchConfig.PLAYER_IDS:
+	for pid in SLOT_IDS:
 		var should_cpu: bool = pid != "p1" and not _controller_present(int(pid.substr(1)) - 1)
 		if cpu_states[pid] != should_cpu:
 			cpu_states[pid] = should_cpu
@@ -762,7 +852,7 @@ func _return_to_title() -> void:
 func _start_match() -> void:
 	# Color picks: configured slots override; everyone else (inactive slots,
 	# solo CPU rungs) falls back to their creator-equipped MetaSave skin via -1.
-	for pid in MatchConfig.PLAYER_IDS:
+	for pid in SLOT_IDS:
 		var picked: bool = pid in active_players and not (_solo() and pid != "p1")
 		MatchConfig.skin_choices[pid] = skin_sel[pid] if picked else -1
 	if gauntlet:
@@ -782,10 +872,11 @@ func _start_match() -> void:
 				"human": not cpu_states.get(pid, false),
 			})
 		MatchConfig.season_setup = false
-		MatchConfig.start_season(team, active_players.size(), MatchConfig.ISLAND_ORDER[island_idx])
+		var reserve: String = MatchConfig.ROSTER_ORDER[reserve_idx]
+		MatchConfig.start_season(team, active_players.size(), season_division_idx, reserve)
 		get_tree().change_scene_to_file(MatchConfig.season_scene())
 		return
-	for pid in MatchConfig.PLAYER_IDS:
+	for pid in SLOT_IDS:
 		MatchConfig.cpu_players[pid] = cpu_states.get(pid, false)
 	for pid in active_players:
 		MatchConfig.dino_choices[pid] = MatchConfig.ROSTER_ORDER[indexes[pid]]

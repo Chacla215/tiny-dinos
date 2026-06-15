@@ -1,5 +1,67 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-15 (SEASON MODE Phase 3 — ALL 5 FEATURES COMPLETE on `feat/season-phase3`)
+
+Charlie greenlit ALL of Phase 3 ("we will be making all of it") and told Claude to
+build it autonomously, making the embedded design calls. Branch `feat/season-phase3`
+(off master after #11), pushed; **draft PR #12**. **All 5 features done + committed
++ validated.** Final state: full headless boot clean; season_test 38/38, sixplayer_test
+13/13, grab_test 20/20. STILL no human-played season — the deferred feel check.
+
+**DONE (committed, validated headless + snapshots):**
+- **1 — MetaSave foundation + TROPHY CABINET.** New persisted fields: `coins`,
+  `owned_skins` (bought EPIC skins), `continue_tokens`, `best_division`,
+  `matchdays_won`, `season_titles_by_division[3]`. All additive ConfigFile keys.
+  `scenes/trophies.tscn` + `trophies.gd` = read-only cabinet (titles, highest
+  division, matchdays, best wave, coins, per-division championship breakdown). New
+  TROPHIES title entry.
+- **2 — COIN ECONOMY + SHOP.** Earn coins per matchday + championship bonus (both
+  scale with division). `scenes/shop.tscn` + `shop.gd`: buy coin-priced EPIC skins
+  (VOID 120 / GOLDEN 200; `skin_unlocked` now checks `MetaSave.owns_skin` for any
+  SKINS entry with a `cost`) + CONTINUE TOKENS (80). A season gameover offers
+  "A USE CONTINUE TOKEN — REVIVE" to replay the failed matchday. New SHOP title entry
+  (shows coins). Title menu now 8 items (re-stacks, tight but clean).
+- **3 — DIVISIONS (ROOKIE/PRO/LEGEND).** `start_season(team, size, division)` (the
+  dead start_island arg is gone). Division shifts the whole schedule's difficulty
+  floor up `DIFF_LADDER` (PRO +1, LEGEND +2, clamp BRUTAL) + scales coin payouts.
+  Winning the finale promotes (`record_season` bumps `best_division`); replay any
+  unlocked division. Select screen: freed UP/DOWN picks DIVISION (mode label +
+  hint). Banners/standings name the division. `season_test` 23/23.
+
+**DESIGN CALLS made (so a cold resume keeps them):** coins are cosmetic + soft-safety
+only, never pay-to-win (sinks = EPIC skins + continue tokens). Divisions reuse the 5
+RIVAL_TEAMS; the challenge comes from the difficulty-floor shift, not new fixtures.
+
+- **4 — PERSISTENT SQUAD + FATIGUE** (3 sub-commits 4A/4B/4C). Your season is a SQUAD
+  = fielded fighters + 1 reserve (`season_squad` `[{dino, fatigue}]`, `season_field`
+  indices, `SEASON_BENCH` 1). Fielded fighters tire each matchday (`_age_squad`, cap
+  `FATIGUE_MAX` 4); benched recover. dino.gd applies a mild capped dip at spawn (-6%
+  speed / -5% dmg per point, floor 0.70) to your fielded side. Seating is slot-based
+  (`season_humans` — pads fill low slots, so rotating the CPU reserve never drops a
+  human). Pre-season RESERVE pick on the select screen (P1 RB). Between matchdays a
+  "CHOOSE WHO RESTS" rotation overlay (after the perk draft) fields all-but-one;
+  `season_advance(age)` decoupled so it ages once. season_test 30/30.
+
+- **5 — 3v3+ (engine lift)** (3 sub-commits 5A/5B/5C). Up to SIX fighters, no per-arena
+  scene edits. 5A: `_ensure_extra_players` clones Player4 → Player5/Player6 at runtime
+  when `player_count` needs them (pid/name set before tree entry); `_layout_spawns`
+  seats six in two team rows + overrides each dino's `spawn_point`; PLAYER_IDS/COLORS/
+  TINTS + default dicts + input actions extended to p5/p6. 5B: `_build_extra_huds`
+  code-builds mid-edge HUD corners for p5 (left) / p6 (right) named so the existing
+  HUD code drives them; PIP_POS + plate rects extended. 5C: `start_season` clamps to
+  3; `_apply_season_matchday` generalized to seat 2/4/6 (side A = p1..pN, foes = next
+  N, pads fill low slots via `season_humans`); RIVAL_TEAMS got a 3rd dino each; select
+  TEAM SIZE cycles 1v1/2v2/3v3. Fix: PLAYER_IDS→p6 broke select's 4-key per-slot loops
+  → added `SLOT_IDS=[p1..p4]`. sixplayer_test 13/13, season_test 38/38.
+
+> **Phase 3 COMPLETE.** Open items: (1) mark draft PR #12 ready + merge when Charlie's
+> happy; (2) a human-played season feel check — divisions pacing, fatigue feel, 3v3
+> readability (all snapshot/sim-validated, never hands-played); (3) per the standing
+> TODO, delete the throwaway probes (`season_test`, `season_shot`, `sixplayer_test`)
+> once the feel check passes. NOTE: kept the probes through the feel check rather than
+> deleting on landing — 3v3 is brand new and unplayed, so the regression coverage earns
+> its keep until Charlie confirms.
+
 ## Session — 2026-06-15 (merge backlog + balance re-check + probe cleanup)
 
 Shipped the branch backlog, re-validated solo balance under default-floppy, and
