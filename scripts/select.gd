@@ -138,10 +138,11 @@ func _enter_solo_setup() -> void:
 func _enter_season_setup() -> void:
 	_apply_active_count(_season_size())
 	island_label.text = "SEASON  -  CLIMB THE MATCHDAYS"
-	hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER  -  UP/DOWN ISLAND   X TEAM SIZE   SELECT FLOPPY"
+	hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER   X TEAM SIZE   SELECT FLOPPY"
 	_update_season_size_label()
-	_update_solo_island_label()
-	_set_island_bg(MatchConfig.ISLAND_ORDER[island_idx])
+	if mode_label:
+		mode_label.visible = false   # islands are fixed by the rival fixtures, no pick
+	_set_island_bg(MatchConfig.RIVAL_TEAMS[0]["island"])  # preview the opening matchday's home turf
 	_refresh_displays()
 	_refresh_start()
 
@@ -218,9 +219,10 @@ func _process(delta: float) -> void:
 	# Solo/season: P1 picks the starting island any time before the launch countdown
 	# arms (UP/DOWN is unused by the fighter picker, so there's no conflict).
 	if _constrained() and not launch_armed:
-		if Input.is_action_just_pressed("p1_up"):
+		# Gauntlet picks a start island; season islands are fixed by the rival fixtures.
+		if gauntlet and Input.is_action_just_pressed("p1_up"):
 			_cycle_solo_island(-1)
-		elif Input.is_action_just_pressed("p1_down"):
+		elif gauntlet and Input.is_action_just_pressed("p1_down"):
 			_cycle_solo_island(1)
 		# Season only: X cycles TEAM SIZE (1v1 / 2v2), rebuilding your-team panels.
 		if season and Input.is_action_just_pressed("p1_attack"):
@@ -747,7 +749,7 @@ func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
 # Gamepad-only, so the hint never changes (except the trimmed solo/season hints).
 func _update_hint() -> void:
 	if season:
-		hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER  -  UP/DOWN ISLAND   X TEAM SIZE   SELECT FLOPPY"
+		hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER   X TEAM SIZE   SELECT FLOPPY"
 		return
 	if _solo():
 		hint_label.text = "A CONFIRM    B BACK    P1 PICK FIGHTER  -  UP/DOWN ISLAND"
