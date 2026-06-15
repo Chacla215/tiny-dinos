@@ -15,20 +15,24 @@ const SKINS := [
 	{"name": "VOLCANO", "rarity": "RARE",   "swatch": Color("e0622a"), "hue": 0.015, "sat": 1.35, "val": 0.66},
 	{"name": "FROZEN",  "rarity": "RARE",   "swatch": Color("bcd8ec"), "hue": 0.55, "sat": 0.45, "val": 1.15},
 	{"name": "SPRING",  "rarity": "RARE",   "swatch": Color("a9d98c"), "hue": 0.27, "sat": 0.85, "val": 1.06},
-	{"name": "VOID",    "rarity": "EPIC",   "swatch": Color("8a5cc8"), "hue": 0.75, "sat": 0.85, "val": 0.90},
-	{"name": "GOLDEN",  "rarity": "EPIC",   "swatch": Color("e6c860"), "hue": 0.12, "sat": 1.00, "val": 1.12},
+	# EPIC skins are bought in the SHOP with coins (MetaSave.owns_skin). Cosmetic only.
+	{"name": "VOID",    "rarity": "EPIC",   "swatch": Color("8a5cc8"), "hue": 0.75, "sat": 0.85, "val": 0.90, "cost": 120},
+	{"name": "GOLDEN",  "rarity": "EPIC",   "swatch": Color("e6c860"), "hue": 0.12, "sat": 1.00, "val": 1.12, "cost": 200},
 	# Earned by winning a SEASON (MetaSave.champion_skin_unlocked). Gated via skin_unlocked().
 	{"name": "CHAMPION", "rarity": "LEGENDARY", "swatch": Color("ffd84a"), "hue": 0.13, "sat": 1.15, "val": 1.28, "unlock": "champion"},
 ]
 
-# Whether skin `idx` is available to equip. All skins are open except unlock-gated
-# ones (the CHAMPION skin needs a season win). Cosmetic-only gate; never affects play.
+# Whether skin `idx` is available to equip. Free skins are always open; CHAMPION needs
+# a season win; coin-priced ("cost") skins need a SHOP purchase. Cosmetic-only gate.
 func skin_unlocked(idx: int) -> bool:
 	if idx < 0 or idx >= SKINS.size():
 		return false
-	var req: String = SKINS[idx].get("unlock", "")
+	var s: Dictionary = SKINS[idx]
+	var req: String = s.get("unlock", "")
 	if req == "champion":
 		return MetaSave.champion_skin_unlocked()
+	if s.get("cost", 0) > 0:
+		return MetaSave.owns_skin(idx)
 	return true
 
 # A ShaderMaterial configured for skin `idx`, or null for DEFAULT / out-of-range
