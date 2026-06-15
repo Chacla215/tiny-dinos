@@ -58,19 +58,22 @@ func _ready() -> void:
 	_setup_dino(right_graphic, RIGHT_DINO, false)
 	# ARCADE + GAUNTLET are added in code (clones of the PLAY label) so the .tscn
 	# isn't restructured; the items are re-stacked (spacing shrinks to fit) below.
-	var arcade_label: Label = $Menu/PlayItem.duplicate()
-	arcade_label.name = "ArcadeItem"
-	$Menu.add_child(arcade_label)
+	var season_label: Label = $Menu/PlayItem.duplicate()
+	season_label.name = "SeasonItem"
+	$Menu.add_child(season_label)
 	var gauntlet_label: Label = $Menu/PlayItem.duplicate()
 	gauntlet_label.name = "GauntletItem"
 	$Menu.add_child(gauntlet_label)
-	# Once you've made progress, the GAUNTLET line shows your best wave so far.
+	# Progress readouts: SEASON shows your trophy count, GAUNTLET your best wave.
+	var season_base: String = "SEASON"
+	if MetaSave.seasons_won > 0:
+		season_base = "SEASON  (WON: %d)" % MetaSave.seasons_won
 	var gauntlet_base: String = "GAUNTLET"
 	if MetaSave.best_wave > 0:
 		gauntlet_base = "GAUNTLET  (BEST: WAVE %d)" % MetaSave.best_wave
 	menu_items = [
 		{"label": $Menu/PlayItem, "base": "VERSUS", "action": "play"},
-		{"label": arcade_label, "base": "ARCADE", "action": "arcade"},
+		{"label": season_label, "base": season_base, "action": "season"},
 		{"label": gauntlet_label, "base": gauntlet_base, "action": "gauntlet"},
 		{"label": $Menu/CharacterItem, "base": "CHARACTER", "action": "creator"},
 		{"label": $Menu/HowToItem, "base": "HOW TO PLAY", "action": "howto"},
@@ -170,13 +173,16 @@ func _activate(action: String) -> void:
 	Audio.ui("confirm")
 	match action:
 		"play":
-			MatchConfig.arcade_setup = false
+			MatchConfig.season_setup = false
+			MatchConfig.gauntlet_setup = false
 			get_tree().change_scene_to_file(SELECT_SCENE)
-		"arcade":
-			MatchConfig.arcade_setup = true
+		"season":
+			MatchConfig.season_setup = true
+			MatchConfig.gauntlet_setup = false
 			get_tree().change_scene_to_file(SELECT_SCENE)
 		"gauntlet":
 			MatchConfig.gauntlet_setup = true
+			MatchConfig.season_setup = false
 			get_tree().change_scene_to_file(SELECT_SCENE)
 		"creator":
 			get_tree().change_scene_to_file(CREATOR_SCENE)

@@ -45,14 +45,22 @@ var teams_label: Label
 # Floppy-mode line (built in code): the Gang-Beasts physics toggle, P1 = Select.
 var floppy_label: Label
 var team_preset_idx: int = 0
-# Solo setup (arcade ladder OR roguelike gauntlet): P1 picks only their own
-# fighter; the p2 slot is the CPU opponent, not host-configurable.
-var arcade: bool = false
+# SOLO gauntlet (P1-only) and SEASON (build a 1-2 fighter team, foes hidden + season-
+# driven). Both hide the versus selectors and use the start-island picker.
 var gauntlet: bool = false
-var solo_duo: bool = false   # arcade co-op: P1 + a CPU partner
+var season: bool = false
+var season_size_idx: int = 1   # 0 = 1v1, 1 = 2v2 (a 2nd pad joins as a human ally; else CPU)
 
+# Gauntlet keeps the strict P1-only flow; season shows your team. _constrained()
+# covers what they share (hidden versus selectors + the start-island picker).
 func _solo() -> bool:
-	return arcade or gauntlet
+	return gauntlet
+
+func _season_size() -> int:
+	return 1 if season_size_idx == 0 else 2
+
+func _constrained() -> bool:
+	return gauntlet or season
 
 var indexes: Dictionary = {"p1": 0, "p2": 1, "p3": 2, "p4": 3}
 # Per-slot skin (color) pick, seeded from the dino's creator-equipped skin
@@ -102,39 +110,54 @@ func _ready() -> void:
 	_update_teams_label()
 	_build_floppy_label()
 	_update_floppy_label()
-	arcade = MatchConfig.arcade_setup
 	gauntlet = MatchConfig.gauntlet_setup
-	if _solo():
+	season = MatchConfig.season_setup
+	if gauntlet:
 		_enter_solo_setup()
+	elif season:
+		_enter_season_setup()
 
-# Solo setup: lock to P1 + a fixed CPU opponent slot the host doesn't configure.
-# Hide the versus-only selectors. The banner/hint differ per solo mode.
+# Gauntlet setup: lock to P1 + a fixed CPU opponent slot the host doesn't configure.
+# Hide the versus-only selectors.
 func _enter_solo_setup() -> void:
 	_apply_active_count(2)
 	cpu_states["p2"] = true
 	ready_states["p2"] = true   # the opponent is always ready; the host can't edit it
 	stages["p2"] = "ready"
-	island_label.text = "ROGUELIKE GAUNTLET  -  SURVIVE + UPGRADE" if gauntlet else "ARCADE LADDER  -  CLIMB THE GAUNTLET"
-	# Arcade can be played co-op (you + a CPU partner); the gauntlet stays solo.
-	hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER  -  UP/DOWN ISLAND   SELECT FLOPPY" + ("   X PARTNER" if arcade else "")
-	_update_solo_duo_label()
+	island_label.text = "ROGUELIKE GAUNTLET  -  SURVIVE + UPGRADE"
+	hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER  -  UP/DOWN ISLAND   SELECT FLOPPY"
+	_update_season_size_label()
 	_update_solo_island_label()  # repurposes the (otherwise-hidden) mode label
 	_set_island_bg(MatchConfig.ISLAND_ORDER[island_idx])
 	_refresh_displays()
 	_refresh_start()
 
-# Arcade co-op toggle, shown on the (otherwise-hidden-in-solo) difficulty line.
-func _update_solo_duo_label() -> void:
+# SEASON setup: build your team (P1 + optional P2 ally), foes are season-driven and
+# hidden. _apply_active_count auto-sets each slot human/CPU by controller presence,
+# so a 2nd pad joins as a human ally; otherwise P2 is a CPU teammate the host picks.
+func _enter_season_setup() -> void:
+	_apply_active_count(_season_size())
+	island_label.text = "SEASON  -  CLIMB THE MATCHDAYS"
+	hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER  -  UP/DOWN ISLAND   X TEAM SIZE   SELECT FLOPPY"
+	_update_season_size_label()
+	_update_solo_island_label()
+	_set_island_bg(MatchConfig.ISLAND_ORDER[island_idx])
+	_refresh_displays()
+	_refresh_start()
+
+# Season team-size toggle, shown on the (otherwise-hidden) difficulty line. 1v1 = you
+# solo vs the ladder; 2v2 = you + an ally (2nd pad = human, else a CPU teammate).
+func _update_season_size_label() -> void:
 	if not difficulty_label:
 		return
-	if not arcade:
+	if not season:
 		difficulty_label.visible = false
 		return
 	difficulty_label.visible = true
-	difficulty_label.text = "PARTNER (CO-OP):  %s    (P1 X)" % ("ON" if solo_duo else "OFF")
+	difficulty_label.text = "TEAM SIZE:  %s    (P1 X)" % ("1v1" if season_size_idx == 0 else "2v2")
 
 # Solo setup borrows the mode label to show the chosen starting island; the
-# gauntlet randomizes islands after wave 1, the arcade ladder opens here.
+# gauntlet randomizes islands after wave 1; season opens its matchdays here.
 func _update_solo_island_label() -> void:
 	if not mode_label:
 		return
@@ -192,18 +215,19 @@ func _cycle_opponent_count() -> void:
 	_refresh_start()
 
 func _process(delta: float) -> void:
-	# Solo: P1 picks the starting island any time before the launch countdown
+	# Solo/season: P1 picks the starting island any time before the launch countdown
 	# arms (UP/DOWN is unused by the fighter picker, so there's no conflict).
-	if _solo() and not launch_armed:
+	if _constrained() and not launch_armed:
 		if Input.is_action_just_pressed("p1_up"):
 			_cycle_solo_island(-1)
 		elif Input.is_action_just_pressed("p1_down"):
 			_cycle_solo_island(1)
-		# Arcade only: X toggles the co-op partner.
-		if arcade and Input.is_action_just_pressed("p1_attack"):
+		# Season only: X cycles TEAM SIZE (1v1 / 2v2), rebuilding your-team panels.
+		if season and Input.is_action_just_pressed("p1_attack"):
 			Audio.ui("move")
-			solo_duo = not solo_duo
-			_update_solo_duo_label()
+			season_size_idx = 1 - season_size_idx
+			_apply_active_count(_season_size())
+			_update_season_size_label()
 	if _all_ready():
 		_process_launch(delta)
 		return
@@ -214,8 +238,8 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("p1_emote"):
 		_toggle_floppy()
 	# Versus-only match settings (island / extra opponents / difficulty / mode). The
-	# solo modes fix all of these, so the host only picks a fighter.
-	if not _solo():
+	# solo + season modes fix all of these, so the host only picks fighters.
+	if not _constrained():
 		if Input.is_action_just_pressed("p1_up"):
 			island_idx = (island_idx - 1 + MatchConfig.ISLAND_ORDER.size()) % MatchConfig.ISLAND_ORDER.size()
 			_update_island()
@@ -377,7 +401,12 @@ func _cycle_dino(pid: String, step: int) -> void:
 
 func _cycle_skin(pid: String, step: int) -> void:
 	var n: int = MatchConfig.SKINS.size()
-	skin_sel[pid] = (skin_sel[pid] + step + n) % n
+	var i: int = skin_sel[pid]
+	for _k in n:
+		i = (i + step + n) % n
+		if MatchConfig.skin_unlocked(i):
+			break  # skip unlock-gated skins (CHAMPION before a season win)
+	skin_sel[pid] = i
 	_update_display(pid)
 
 func _set_ready(pid: String, ready_state: bool) -> void:
@@ -497,6 +526,9 @@ func _build_difficulty_label() -> void:
 
 func _update_difficulty_label() -> void:
 	if difficulty_label == null:
+		return
+	if season:
+		_update_season_size_label()   # season repurposes this line for TEAM SIZE
 		return
 	if _solo():
 		difficulty_label.visible = false
@@ -712,8 +744,11 @@ func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
 	_update_hint()
 	_update_difficulty_label()
 
-# Gamepad-only, so the hint never changes (except the trimmed arcade hint).
+# Gamepad-only, so the hint never changes (except the trimmed solo/season hints).
 func _update_hint() -> void:
+	if season:
+		hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER  -  UP/DOWN ISLAND   X TEAM SIZE   SELECT FLOPPY"
+		return
 	if _solo():
 		hint_label.text = "A CONFIRM    B BACK    P1 PICK FIGHTER  -  UP/DOWN ISLAND"
 		return
@@ -728,17 +763,25 @@ func _start_match() -> void:
 	for pid in MatchConfig.PLAYER_IDS:
 		var picked: bool = pid in active_players and not (_solo() and pid != "p1")
 		MatchConfig.skin_choices[pid] = skin_sel[pid] if picked else -1
-	if _solo():
+	if gauntlet:
 		var pd: String = MatchConfig.ROSTER_ORDER[indexes["p1"]]
 		var pi: String = MatchConfig.ISLAND_ORDER[island_idx]
-		if gauntlet:
-			MatchConfig.gauntlet_setup = false
-			MatchConfig.start_gauntlet(pd, pi)
-			get_tree().change_scene_to_file(MatchConfig.gauntlet_scene())
-		else:
-			MatchConfig.arcade_setup = false
-			MatchConfig.start_arcade(pd, pi, solo_duo)
-			get_tree().change_scene_to_file(MatchConfig.arcade_scene())
+		MatchConfig.gauntlet_setup = false
+		MatchConfig.start_gauntlet(pd, pi)
+		get_tree().change_scene_to_file(MatchConfig.gauntlet_scene())
+		return
+	if season:
+		# Gather YOUR side; foes are season-driven. P2 is human if a 2nd pad joined
+		# (cpu_states false), else a CPU teammate the host configured.
+		var team: Array = []
+		for pid in active_players:
+			team.append({
+				"dino": MatchConfig.ROSTER_ORDER[indexes[pid]],
+				"human": not cpu_states.get(pid, false),
+			})
+		MatchConfig.season_setup = false
+		MatchConfig.start_season(team, active_players.size(), MatchConfig.ISLAND_ORDER[island_idx])
+		get_tree().change_scene_to_file(MatchConfig.season_scene())
 		return
 	for pid in MatchConfig.PLAYER_IDS:
 		MatchConfig.cpu_players[pid] = cpu_states.get(pid, false)

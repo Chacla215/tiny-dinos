@@ -821,19 +821,31 @@ func _handle_profile_input() -> void:
 	# ◀▶ previews skins (every dino), A equips the previewed one (persisted).
 	if skin_slots.is_empty():
 		return
-	var n: int = MatchConfig.SKINS.size()
 	if Input.is_action_just_pressed("p1_right"):
 		Audio.ui("move")
-		skin_idx = (skin_idx + 1) % n
+		skin_idx = _next_unlocked_skin(skin_idx, 1)
 		_refresh_skin_selection()
 	elif Input.is_action_just_pressed("p1_left"):
 		Audio.ui("move")
-		skin_idx = (skin_idx - 1 + n) % n
+		skin_idx = _next_unlocked_skin(skin_idx, -1)
 		_refresh_skin_selection()
 	elif Input.is_action_just_pressed("p1_confirm"):
+		if not MatchConfig.skin_unlocked(skin_idx):
+			return  # locked (e.g. CHAMPION before a season win) — can't equip
 		Audio.ui("confirm")
 		MetaSave.set_skin(current_dino, skin_idx)
 		_refresh_skin_selection()
+
+# Step the carousel to the next AVAILABLE skin, skipping unlock-gated ones (the
+# CHAMPION skin only appears here after a season win).
+func _next_unlocked_skin(from: int, step: int) -> int:
+	var n: int = MatchConfig.SKINS.size()
+	var i: int = from
+	for _k in n:
+		i = (i + step + n) % n
+		if MatchConfig.skin_unlocked(i):
+			return i
+	return from
 
 
 # Offscreen screenshot for previews: godot <scene> -- --shot [view] [dino_id]
