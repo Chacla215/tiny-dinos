@@ -27,7 +27,13 @@ func _ready() -> void:
 		await _shoot(name, ARENAS[name])
 	get_tree().quit()
 
+const ISLAND_ID := {
+	"lava": "laughing_lava", "beach": "beauty_beach", "springs": "sunny_springs",
+	"falls": "white_water_falls", "purple": "purple_fields", "floes": "iciest_age",
+}
+
 func _shoot(name: String, path: String) -> void:
+	MatchConfig.island = ISLAND_ID.get(name, "")  # so the per-island play-calm strength is right
 	var arena: Node = load(path).instantiate()
 	get_tree().root.add_child(arena)
 	get_tree().current_scene = arena
