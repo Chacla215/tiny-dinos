@@ -482,11 +482,12 @@ const CPU_DIFFICULTY_NAMES := {"easy": "EASY", "normal": "NORMAL", "hard": "HARD
 var cpu_difficulty: String = "normal"
 
 # --- FLOPPY MODE (Gang-Beasts-style physics movement) ---
-# An opt-in party mode, OFF by default so the base game stays precise. When on,
-# fighters move with momentum/inertia (skate + overshoot, can't reverse on a
-# dime), hard hits knock them off their feet, and LT grabs / RT throws a foe.
-# The host toggles it on the select screen (Select button).
-var floppy_mode: bool = false
+# The DEFAULT couch experience (the game's identity: party chaos beats a precise
+# ladder we can't sustain without online). Fighters move with momentum/inertia
+# (skate + overshoot, can't reverse on a dime), hard hits knock them off their
+# feet, and LT grabs / RT throws a foe. The host can flip it OFF on the select
+# screen (Select button) for the precise/balance-tuned model.
+var floppy_mode: bool = true
 
 # --- Arcade ladder (solo spine) ---
 # A single-player gauntlet: P1 fights a rising sequence of CPU foes, each on its

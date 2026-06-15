@@ -9,7 +9,7 @@ func _ready() -> void:
 		return
 	MatchConfig.player_count = 4          # show teams + difficulty lines too
 	MatchConfig.cpu_players = {"p1": false, "p2": true, "p3": true, "p4": true}
-	MatchConfig.floppy_mode = true        # so the line reads ON (lit)
+	# floppy_mode left at its default to verify the new default reads ON (lit)
 	var sel: Node = load("res://scenes/select.tscn").instantiate()
 	get_tree().root.add_child.call_deferred(sel)
 	await get_tree().process_frame
