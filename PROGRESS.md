@@ -1,5 +1,32 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-15 (arena readability + art-consistency direction)
+
+Readability follow-ups + an art-direction decision, then branch cleanup.
+
+- **Arena readability finished**: (1) **play-surface calm** — a soft dark radial over
+  the play area (per-island `PLAY_CALM` strength; strong on busy Springs/Purple, light
+  on Lava/Ice) so the busy painterly centres recede and fighters pop; (2) **grounded
+  contact shadows** — the old separation halo sat in the body and looked like a
+  float-glow; reworked into a flat dark oval cast at the feet (the 7.6 footing line).
+  Both look-only, on top of the existing art. Validated by arena snapshots +
+  grab_test 20/20.
+- **Art-consistency call:** Ralph is cute painterly-CHIBI; the other 5 drifted too
+  detailed/realistic. The kit's INTENDED style is Ralph's chibi, so Charlie chose to
+  **restyle the 5 others toward Ralph**. Prompts ready in
+  `scripts/tools/dino_chibi_restyle_prompts.md`. **Blocked on Charlie generating the 5
+  heroes** (Claude can't gen painterly images — memory `art-generation-pipeline`); once
+  a `<dino>_hero.png` lands, rebake via `gen_ralph_fighter.py <dino>` (+`--parts`) and
+  wire ANIM_LAYOUTS into `dino.gd`.
+
+> HANDOFF (branches/PRs after this session):
+> - **PR #6 (`feat/season-phase2`) MERGED** — rival teams, standings, perk draft now on master.
+> - `feat/arena-readability` rebased onto post-#6 master → pushed + PR'd.
+> - master has: floppy-default, gauntlet rebalance, Season Phase 1+2.
+> - **Next:** run the 5 chibi restyle prompts → rebake (blocked on Charlie's art);
+>   re-validate solo arcade/gauntlet balance under the now-default floppy model;
+>   STILL no human-played season/floppy session (deferred feel).
+
 ## Session — 2026-06-15 (SEASON MODE Phase 2 — identity + depth)
 
 Planned (plan mode) + built behind `feat/season-phase2`. Three sub-steps, each
