@@ -90,7 +90,7 @@ var hill_visual: Node2D = null
 var hill_ring: Line2D = null
 const HILL_RADIUS := 130.0
 var eliminated: Dictionary = {}      # STOCK: pid -> true once out of lives
-var arcade_end: String = ""          # ARCADE end-state: "advance" / "champion" / "gameover"
+var season_end: String = ""          # SEASON end-state: "advance" / "champion" / "gameover"
 var gauntlet_drafting: bool = false  # GAUNTLET: the between-wave upgrade pick is open
 var draft_options: Array = []
 var draft_index: int = 0
@@ -179,8 +179,8 @@ func _ready() -> void:
 	hud_win.text = ""
 	hud_hint.text = ""
 	game_mode = MatchConfig.game_mode if MatchConfig and "game_mode" in MatchConfig else "rounds"
-	if MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade:
-		kos_to_win = 2  # snappier rungs for the solo ladder
+	if MatchConfig and "season" in MatchConfig and MatchConfig.season:
+		kos_to_win = 2  # snappy matchdays
 	if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
 		kos_to_win = MatchConfig.gauntlet_kos_to_win()  # best-of-2 early, single-KO later
 	_setup_active_players()
@@ -195,7 +195,7 @@ func _ready() -> void:
 	# [experiment] Power-ups in standard versus only (not the balance-tuned solo
 	# ladders, and not the modes that already revolve around their own pickups).
 	var special: bool = (MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet) \
-		or (MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade)
+		or (MatchConfig and "season" in MatchConfig and MatchConfig.season)
 	powerups_enabled = not special and game_mode in ["rounds", "koth", "sumo", "flood"]
 	powerup_spawn_timer = 6.0
 
@@ -787,8 +787,8 @@ func _process(delta: float) -> void:
 			if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
 				MatchConfig.gauntlet = false  # run over -> back to the title
 				get_tree().change_scene_to_file("res://scenes/title.tscn")
-			elif MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade:
-				_arcade_continue()
+			elif MatchConfig and "season" in MatchConfig and MatchConfig.season:
+				_season_continue()
 			else:
 				get_tree().change_scene_to_file("res://scenes/select.tscn")
 
@@ -1294,16 +1294,21 @@ func _end_round(winner_pid: String) -> void:
 			p.respawn()
 	hud_win.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 	# Announce the mode by name on the opening round of a standard versus match so
-	# the rule is clear before the fight (gauntlet/arcade keep their wave banners).
+	# the rule is clear before the fight (gauntlet/season have their own banners).
 	var is_special: bool = (MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet) \
-		or (MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade)
+		or (MatchConfig and "season" in MatchConfig and MatchConfig.season)
 	var intro_t := 0.8
-	var arcade_final: bool = MatchConfig.has_method("arcade_is_final_rung") and MatchConfig.arcade_is_final_rung()
-	if current_round == 1 and arcade_final:
-		# The BRUTAL capstone of the arcade climb — announce it so the spike feels earned.
-		hud_win.text = "FINAL BOSS"
+	var in_season: bool = MatchConfig and "season" in MatchConfig and MatchConfig.season
+	var season_final: bool = in_season and MatchConfig.has_method("season_is_final") and MatchConfig.season_is_final()
+	if current_round == 1 and season_final:
+		# The BRUTAL finale of the season — announce the championship matchday.
+		hud_win.text = "CHAMPIONSHIP"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.5, 0.3))
 		intro_t = 1.6
+	elif current_round == 1 and in_season:
+		# Each matchday is a different mode — name it + which matchday it is.
+		hud_win.text = "MATCHDAY %d  -  %s" % [MatchConfig.season_matchday + 1, MatchConfig.MODE_NAMES.get(game_mode, "ROUNDS")]
+		intro_t = 1.4
 	elif current_round == 1 and not is_special:
 		hud_win.text = MatchConfig.MODE_NAMES.get(game_mode, "BEST OF ROUNDS")
 		intro_t = 1.4
@@ -1365,8 +1370,8 @@ func end_match(winner: CharacterBody2D, label: String) -> void:
 	if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
 		_end_match_gauntlet(winner)
 		return
-	if MatchConfig and "arcade" in MatchConfig and MatchConfig.arcade:
-		_end_match_arcade(winner)
+	if MatchConfig and "season" in MatchConfig and MatchConfig.season:
+		_end_match_season(winner)
 		return
 	match_over = true
 	round_active = false
@@ -1388,48 +1393,48 @@ func end_match(winner: CharacterBody2D, label: String) -> void:
 		p.set_physics_process(false)
 	play_sfx("win", 0.0)
 
-# Arcade ladder end-of-rung: win -> advance or crown champion; loss -> game over.
-# START then routes through _arcade_continue.
-func _end_match_arcade(winner: Node) -> void:
+# Season matchday end: win -> next matchday or crown champion; loss -> season over.
+# A win is anyone on YOUR side (p1's side) landing the KO, so co-op resolves too.
+# START then routes through _season_continue.
+func _end_match_season(winner: Node) -> void:
 	match_over = true
 	round_active = false
 	_show_end_backdrop()
 	for p in active_players:
 		p.set_process_input(false)
 		p.set_physics_process(false)
-	# In duo the ally can land the winning KO — a win is anyone on the player's side.
 	var player_won: bool = winner != null and (winner.player_id == "p1" or MatchConfig.same_side(winner.player_id, "p1"))
-	var stage: int = MatchConfig.arcade_rung + 1
-	var total: int = MatchConfig.arcade_ladder.size()
+	var day: int = MatchConfig.season_matchday + 1
+	var total: int = MatchConfig.season_schedule.size()
 	if not player_won:
-		arcade_end = "gameover"
-		hud_win.text = "DEFEATED"
+		season_end = "gameover"
+		hud_win.text = "SEASON OVER"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
-		hud_hint.text = "REACHED STAGE %d / %d\n\npress START for the title" % [stage, total]
+		hud_hint.text = "REACHED MATCHDAY %d / %d\n\npress START for the title" % [day, total]
 		play_sfx("ko", 0.0)
-	elif MatchConfig.arcade_is_final():
-		arcade_end = "champion"
-		hud_win.text = "CHAMPION!"
+	elif MatchConfig.season_is_final():
+		season_end = "champion"
+		var first_time: bool = MetaSave.record_season()
+		hud_win.text = "SEASON CHAMPION!"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
-		hud_hint.text = "YOU CLEARED THE GAUNTLET\n\npress START for the title"
+		var unlock_line: String = "\n\nUNLOCKED:  CHAMPION SKIN" if first_time else ""
+		hud_hint.text = "YOU WON THE SEASON%s\n\npress START for the title" % unlock_line
 		play_sfx("win", 0.0)
 	else:
-		arcade_end = "advance"
-		var next_foes: Array = MatchConfig.arcade_ladder[MatchConfig.arcade_rung + 1]["foes"]
-		var names: Array = []
-		for f in next_foes:
-			names.append(MatchConfig.DINOS[f].display_name)
-		hud_win.text = "STAGE %d CLEARED" % stage
+		season_end = "advance"
+		var next_md: Dictionary = MatchConfig.season_schedule[MatchConfig.season_matchday + 1]
+		var mode_name: String = MatchConfig.MODE_NAMES.get(next_md["mode"], "ROUNDS")
+		hud_win.text = "MATCHDAY %d CLEARED" % day
 		hud_win.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5))
-		hud_hint.text = "NEXT:  %s   (STAGE %d / %d)\n\npress START to continue" % [" + ".join(names), stage + 1, total]
+		hud_hint.text = "NEXT:  %s   (MATCHDAY %d / %d)\n\npress START to continue" % [mode_name, day + 1, total]
 		play_sfx("win", 0.0)
 
-func _arcade_continue() -> void:
-	if arcade_end == "advance":
-		MatchConfig.arcade_advance()
-		get_tree().change_scene_to_file(MatchConfig.arcade_scene())
-	else:  # champion or gameover -> end the run, back to the title
-		MatchConfig.arcade = false
+func _season_continue() -> void:
+	if season_end == "advance":
+		MatchConfig.season_advance()
+		get_tree().change_scene_to_file(MatchConfig.season_scene())
+	else:  # champion or game over -> end the season, back to the title
+		MatchConfig.season = false
 		get_tree().change_scene_to_file("res://scenes/title.tscn")
 
 # --- Gauntlet (roguelike) wave flow + upgrade draft ---
