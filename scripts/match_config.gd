@@ -522,9 +522,10 @@ var season_division: int = 0         # 0 ROOKIE / 1 PRO / 2 LEGEND — set by st
 # SQUAD + FATIGUE (Phase 3): your squad is the fielded fighters plus one reserve.
 # Fielded fighters tire each matchday; benched ones recover. Fatigue is a mild capped
 # stat dip applied at spawn (dino.gd), so resting your ace before the finale matters.
-var season_squad: Array = []         # [{dino, human, fatigue}], len == season_size + 1
+var season_squad: Array = []         # [{dino, fatigue}], len == season_size + 1
 var season_field: Array = []         # indices into season_squad fielded this matchday (len season_size)
 var season_field_fatigue: Dictionary = {}  # fielded pid -> that fighter's fatigue (dino.gd reads at spawn)
+var season_humans: int = 1           # how many present pads on your side; they pilot field slots 0..n-1
 const SEASON_BENCH := 1              # reserves beyond the fielded count
 const FATIGUE_MAX := 4               # fatigue caps here
 const FATIGUE_SPEED_PEN := 0.06      # -6% move speed per fatigue point (floored)
@@ -573,6 +574,13 @@ func start_season(team: Array, size: int, division: int = 0, reserve: String = "
 	season_matchday = 0
 	season_perks = []
 	season_division = clampi(division, 0, MetaSave.unlocked_division())
+	# Pads follow field SLOTS, not dinos: slot 0 is always you, slot 1 a 2nd pad if it
+	# joined. So rotating the CPU reserve into a slot never drops a present human.
+	season_humans = 0
+	for t in team:
+		if bool(t.get("human", false)):
+			season_humans += 1
+	season_humans = maxi(1, season_humans)
 	season_squad = _build_squad(team, reserve)
 	season_field = []
 	for i in range(season_size):
@@ -587,7 +595,7 @@ func start_season(team: Array, size: int, division: int = 0, reserve: String = "
 func _build_squad(team: Array, reserve: String) -> Array:
 	var sq: Array = []
 	for t in team:
-		sq.append({"dino": t["dino"], "human": bool(t.get("human", false)), "fatigue": 0})
+		sq.append({"dino": t["dino"], "fatigue": 0})
 	var rdino: String = reserve
 	if rdino == "":
 		var used: Array = []
@@ -599,7 +607,7 @@ func _build_squad(team: Array, reserve: String) -> Array:
 				break
 		if rdino == "":
 			rdino = ROSTER_ORDER[0]
-	sq.append({"dino": rdino, "human": false, "fatigue": 0})
+	sq.append({"dino": rdino, "fatigue": 0})
 	return sq
 
 # One matchday per RIVAL TEAM: a named foe team on its home island, a cycling mode,
@@ -641,8 +649,9 @@ func _apply_season_matchday() -> void:
 		player_count = 4
 		teams_enabled = true
 		teams = {"p1": "a", "p2": "a", "p3": "b", "p4": "b"}
-		# p1 is always you; p2 is your ally (human if a 2nd player joined, else a CPU).
-		cpu_players = {"p1": false, "p2": not bool(fielded[1].get("human", false)), "p3": true, "p4": true}
+		# Pads fill the low field slots: p1 is always you, p2 a 2nd pad if one joined
+		# (season_humans), else a CPU ally — independent of which dino sits there.
+		cpu_players = {"p1": false, "p2": season_humans < 2, "p3": true, "p4": true}
 		dino_choices["p1"] = fielded[0]["dino"]
 		dino_choices["p2"] = fielded[1]["dino"]
 		dino_choices["p3"] = foes[0]
@@ -658,14 +667,21 @@ func _apply_season_matchday() -> void:
 		season_field_fatigue["p1"] = int(fielded[0]["fatigue"])
 
 # Advance to the next matchday. Returns false when the season is cleared (champion).
-# Ages the squad first: the fighters that just played tire, the bench recovers.
-func season_advance() -> bool:
-	_age_squad()
+# By default ages the squad first (the fighters that just played tire, the bench
+# recovers); the rotation flow ages separately, then advances with age=false.
+func season_advance(age: bool = true) -> bool:
+	if age:
+		_age_squad()
 	season_matchday += 1
 	if season_matchday >= season_schedule.size():
 		return false
 	_apply_season_matchday()
 	return true
+
+# Public hook so the rotation screen can tire the lineup that just played BEFORE you
+# pick who rests next matchday (so the shown fatigue is current).
+func season_age_squad() -> void:
+	_age_squad()
 
 # Fielded fighters gain a fatigue point (capped); benched fighters shed one (floored).
 func _age_squad() -> void:

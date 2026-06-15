@@ -98,6 +98,7 @@ var draft_options: Array = []
 var draft_index: int = 0
 var draft_nodes: Array = []   # every node in the draft overlay (for cleanup)
 var draft_cards: Array = []   # just the selectable cards (for highlight)
+var rotating: bool = false    # SEASON: the between-matchday "who rests" rotation overlay is open
 const DRAFT_CARD_W := 320.0
 const DRAFT_CARD_H := 210.0
 const DRAFT_GAP := 34.0
@@ -821,7 +822,9 @@ func _process(delta: float) -> void:
 	_update_powerups(delta)
 	_update_weapon_drops(delta)
 	if match_over:
-		if gauntlet_drafting:
+		if rotating:
+			_rotate_input()
+		elif gauntlet_drafting:
 			_draft_input()
 		# Season gameover: A spends a CONTINUE TOKEN to replay the failed matchday.
 		elif season_end == "gameover" and MetaSave.continue_tokens > 0 and Input.is_action_just_pressed("p1_confirm"):
@@ -1647,8 +1650,9 @@ func _draft_input() -> void:
 		_clear_draft_cards()
 		if draft_mode == "season":
 			MatchConfig.season_add_perk(draft_options[draft_index])
-			MatchConfig.season_advance()
-			get_tree().change_scene_to_file(MatchConfig.season_scene())
+			# The lineup that just played tires now; then pick who rests next matchday.
+			MatchConfig.season_age_squad()
+			_open_rotation()
 		else:
 			MatchConfig.gauntlet_add_upgrade(draft_options[draft_index])
 			MatchConfig.gauntlet_next_wave()
@@ -1660,6 +1664,115 @@ func _clear_draft_cards() -> void:
 			n.queue_free()
 	draft_nodes.clear()
 	draft_cards.clear()
+
+# --- Season squad rotation (between matchdays) ---
+# After the perk pick, choose WHO RESTS next matchday. Exactly one squad member sits
+# out (SEASON_BENCH = 1); the rest are fielded. Reuses the draft overlay machinery.
+func _open_rotation() -> void:
+	rotating = true
+	# Default the cursor to the most-fatigued fighter — the obvious one to bench.
+	draft_index = 0
+	var worst: int = -1
+	for i in range(MatchConfig.season_squad.size()):
+		var f: int = int(MatchConfig.season_squad[i]["fatigue"])
+		if f > worst:
+			worst = f
+			draft_index = i
+	_build_rotation_cards()
+
+func _build_rotation_cards() -> void:
+	_clear_draft_cards()
+	var squad: Array = MatchConfig.season_squad
+	var n: int = squad.size()
+	var card_w := 240.0
+	var gap := 36.0
+	var total := n * card_w + (n - 1) * gap
+	var x0 := (1280.0 - total) / 2.0
+
+	var header := Label.new()
+	header.position = Vector2(0, 150)
+	header.size = Vector2(1280, 46)
+	var next_md: Dictionary = MatchConfig.season_schedule[MatchConfig.season_matchday + 1]
+	header.text = "CHOOSE WHO RESTS  -  NEXT:  %s  vs  %s" % [
+		MatchConfig.MODE_NAMES.get(next_md["mode"], "ROUNDS"), next_md.get("rival", "")]
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	header.add_theme_font_size_override("font_size", 32)
+	header.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0))
+	$HUD.add_child(header)
+	draft_nodes.append(header)
+
+	for i in range(n):
+		var card := ColorRect.new()
+		card.size = Vector2(card_w, 250)
+		card.position = Vector2(x0 + i * (card_w + gap), 240)
+		card.pivot_offset = card.size / 2.0
+		var name_l := Label.new()
+		name_l.position = Vector2(8, 30)
+		name_l.size = Vector2(card_w - 16, 40)
+		name_l.text = MatchConfig.DINOS[squad[i]["dino"]].display_name
+		name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_l.add_theme_font_size_override("font_size", 30)
+		name_l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+		card.add_child(name_l)
+		var fat_l := Label.new()
+		fat_l.position = Vector2(8, 110)
+		fat_l.size = Vector2(card_w - 16, 80)
+		var fat: int = int(squad[i]["fatigue"])
+		var bars: String = "|".repeat(fat) if fat > 0 else "FRESH"
+		fat_l.text = "FATIGUE\n%s" % bars
+		fat_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		fat_l.add_theme_font_size_override("font_size", 22)
+		var hot: float = clampf(float(fat) / float(MatchConfig.FATIGUE_MAX), 0.0, 1.0)
+		fat_l.add_theme_color_override("font_color", Color(0.6 + 0.4 * hot, 0.9 - 0.5 * hot, 0.5 - 0.3 * hot))
+		card.add_child(fat_l)
+		$HUD.add_child(card)
+		draft_nodes.append(card)
+		draft_cards.append(card)
+
+	var prompt := Label.new()
+	prompt.position = Vector2(0, 510)
+	prompt.size = Vector2(1280, 40)
+	prompt.text = "LEFT / RIGHT  CHOOSE      A  REST THIS ONE  (THE REST PLAY)"
+	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt.add_theme_font_size_override("font_size", 22)
+	prompt.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+	$HUD.add_child(prompt)
+	draft_nodes.append(prompt)
+	_refresh_rotation()
+
+# Highlight the benched pick (red-ish) and dim the rest (which will play).
+func _refresh_rotation() -> void:
+	for i in range(draft_cards.size()):
+		var card: ColorRect = draft_cards[i]
+		if i == draft_index:
+			card.color = Color(0.42, 0.20, 0.22, 0.97)   # "rests" = stand-down red
+			card.scale = Vector2(1.06, 1.06)
+		else:
+			card.color = Color(0.12, 0.20, 0.16, 0.94)   # "plays" = green-ish
+			card.scale = Vector2.ONE
+
+func _rotate_input() -> void:
+	var n: int = MatchConfig.season_squad.size()
+	if Input.is_action_just_pressed("p1_left"):
+		Audio.ui("move")
+		draft_index = (draft_index - 1 + n) % n
+		_refresh_rotation()
+	elif Input.is_action_just_pressed("p1_right"):
+		Audio.ui("move")
+		draft_index = (draft_index + 1) % n
+		_refresh_rotation()
+	elif Input.is_action_just_pressed("p1_confirm"):
+		Audio.ui("confirm")
+		# Field everyone EXCEPT the chosen rester.
+		var field: Array = []
+		for i in range(n):
+			if i != draft_index:
+				field.append(i)
+		MatchConfig.season_set_field(field)
+		rotating = false
+		_clear_draft_cards()
+		MatchConfig.season_advance(false)   # already aged before the rotation screen
+		get_tree().change_scene_to_file(MatchConfig.season_scene())
 
 # --- Audio ---
 
