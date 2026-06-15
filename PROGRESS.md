@@ -11,10 +11,18 @@
   **Kept** `grab_test` (functional grab/throw regression guard) and `sim_ai`
   (balance matrix). Headless boot clean after removal.
 
-> Resume hint: master is clean, no Season probes left. Open work, all Charlie's
-> calls: a **human-played season** feel check (divisions pacing, fatigue feel, 3v3
-> readability — never hands-played); and the standing **chibi restyle**, blocked on
-> Charlie generating the 5 `<dino>_hero.png`.
+> **NEXT UP — CHIBI RESTYLE.** Ralph is cute painterly-chibi; the other 5 dinos
+> (max/gus/jessie/steve/frank) drifted too detailed/realistic. Restyle them toward
+> Ralph's chibi bar — the kit's intended brand (memory `dino-chibi-restyle-plan`).
+> Prompts are ready in `scripts/tools/dino_chibi_restyle_prompts.md`. **Blocked on
+> Charlie generating the 5 `<dino>_hero.png`** (Claude can't gen painterly images —
+> memory `art-generation-pipeline`); once one lands in `assets/concept/<dino>/`,
+> Claude rebakes via `gen_ralph_fighter.py <dino>` (+`--parts`) and wires
+> ANIM_LAYOUTS into `dino.gd`.
+>
+> Also open (Charlie's call, no rush): a **human-played season** feel check
+> (divisions pacing, fatigue feel, 3v3 readability — never hands-played). Master is
+> clean, no Season probes left, no open PRs.
 
 ## Session — 2026-06-15 (SEASON MODE Phase 3 — ALL 5 FEATURES COMPLETE on `feat/season-phase3`)
 
