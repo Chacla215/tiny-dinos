@@ -11,7 +11,7 @@ const START_DELAY := 0.8
 const DinoScript := preload("res://scripts/dino.gd")
 const TITLE_SCENE := "res://scenes/title.tscn"
 # Bottom-of-screen control hint. The game is gamepad-only, so this is constant.
-const HINT_PAD := "A CONFIRM   B BACK   LB ADD OPPONENT   RB DIFFICULTY   Y MODE   X TEAMS   SELECT FLOPPY   P1 PICKS EACH CPU"
+const HINT_PAD := "A CONFIRM   B BACK   LB ADD OPPONENT   RB DIFFICULTY   Y MODE   X TEAMS   SELECT FLOPPY"
 const ISLAND_PREVIEW := {
 	"laughing_lava":     "res://assets/tilesets/laughing_lava_bg.png",
 	"beauty_beach":      "res://assets/tilesets/beauty_beach_bg.png",
@@ -89,6 +89,10 @@ var launch_armed: bool = false
 
 func _ready() -> void:
 	Audio.play_music("menu")
+	# Set the mode up front so _constrained()/_solo() are correct for the rest of
+	# _ready (e.g. versus auto-randomizes CPUs, season lets the host pick them).
+	gauntlet = MatchConfig.gauntlet_setup
+	season = MatchConfig.season_setup
 	var controller_count: int = Input.get_connected_joypads().size()
 	var initial_count: int = clamp(controller_count, 2, 4)
 	if controller_count < 2:
@@ -122,8 +126,6 @@ func _ready() -> void:
 	_update_teams_label()
 	_build_floppy_label()
 	_update_floppy_label()
-	gauntlet = MatchConfig.gauntlet_setup
-	season = MatchConfig.season_setup
 	if gauntlet:
 		_enter_solo_setup()
 	elif season:
@@ -241,9 +243,12 @@ func _cycle_opponent_count() -> void:
 	_apply_active_count(n)
 	for pid in active_players:
 		if int(pid.substr(1)) > prev and pid != "p1":
-			cpu_states[pid] = not _controller_present(int(pid.substr(1)) - 1)
-			ready_states[pid] = false
-			stages[pid] = "dino"
+			if not _controller_present(int(pid.substr(1)) - 1):
+				_randomize_cpu(pid)   # a fresh computer opponent picks itself
+			else:
+				cpu_states[pid] = false
+				ready_states[pid] = false
+				stages[pid] = "dino"
 	_update_difficulty_label()
 	_refresh_displays()
 	_refresh_start()
@@ -362,9 +367,12 @@ func _host_queue() -> Array:
 	if _solo():
 		return ["p1"]  # the CPU opponent slot isn't host-configurable
 	var arr: Array = ["p1"]
-	for pid in active_players:
-		if pid != "p1" and cpu_states[pid]:
-			arr.append(pid)
+	# Season only: the host hand-picks CPU team-mates (you build YOUR squad). Versus
+	# CPU opponents auto-pick + auto-ready, so they're not in the host's queue.
+	if season:
+		for pid in active_players:
+			if pid != "p1" and cpu_states[pid]:
+				arr.append(pid)
 	return arr
 
 # The slot P1 is editing right now: first one in the queue not yet locked in.
@@ -435,6 +443,23 @@ func _host_back_to_prev(pid: String) -> void:
 	var prev: String = q[i - 1]
 	stages[prev] = "skin"
 	_set_ready(prev, false)
+
+# Versus CPU opponents pick themselves: a random dino + a random unlocked colour,
+# locked in as ready. The host never steps through them (see _host_queue) — they
+# just fill the lobby. (Season CPU team-mates stay host-picked; you build YOUR squad.)
+func _randomize_cpu(pid: String) -> void:
+	indexes[pid] = randi() % MatchConfig.ROSTER_ORDER.size()
+	skin_sel[pid] = _random_unlocked_skin()
+	cpu_states[pid] = true
+	ready_states[pid] = true
+	stages[pid] = "ready"
+
+func _random_unlocked_skin() -> int:
+	var pool: Array = []
+	for i in MatchConfig.SKINS.size():
+		if MatchConfig.skin_unlocked(i):
+			pool.append(i)
+	return pool[randi() % pool.size()] if not pool.is_empty() else 0
 
 func _cycle_dino(pid: String, step: int) -> void:
 	var n: int = MatchConfig.ROSTER_ORDER.size()
@@ -824,9 +849,12 @@ func _refresh_cpu_assignment() -> void:
 	for pid in SLOT_IDS:
 		var should_cpu: bool = pid != "p1" and not _controller_present(int(pid.substr(1)) - 1)
 		if cpu_states[pid] != should_cpu:
-			cpu_states[pid] = should_cpu
-			ready_states[pid] = false
-			stages[pid] = "dino"
+			if should_cpu and not _constrained():
+				_randomize_cpu(pid)   # versus: CPUs auto-pick + auto-ready
+			else:
+				cpu_states[pid] = should_cpu
+				ready_states[pid] = false
+				stages[pid] = "dino"
 
 # A pad was plugged in or removed: re-decide human/CPU slots and refresh prompts.
 func _on_joy_connection_changed(_device: int, _connected: bool) -> void:

@@ -2102,8 +2102,16 @@ func update_visual() -> void:
 	# the old flat sprites, but it crushes the painterly fighters (P2's 0.5-red
 	# tint turned the red raptor near-black). 35% keeps who's-who readable
 	# without destroying each species' palette.
-	var sprite_tint: Color = MatchConfig.PLAYER_TINTS.get(player_id, Color.WHITE) if MatchConfig else Color.WHITE
-	sprite_tint = Color.WHITE.lerp(sprite_tint, 0.35)
+	var sprite_tint: Color
+	if MatchConfig and MatchConfig.teams_enabled:
+		# Team mode: the whole side wears its team colour (RED / BLUE) so allies
+		# read as one group and the two teams are easy to tell apart — a touch
+		# stronger than the per-player hue hint, since that matters more here.
+		var team_col: Color = MatchConfig.TEAM_COLORS.get(MatchConfig.side_of(player_id), Color.WHITE)
+		sprite_tint = Color.WHITE.lerp(team_col, 0.5)
+	else:
+		sprite_tint = MatchConfig.PLAYER_TINTS.get(player_id, Color.WHITE) if MatchConfig else Color.WHITE
+		sprite_tint = Color.WHITE.lerp(sprite_tint, 0.35)
 	if beast_active:
 		color *= BEAST_TINT  # gold glow marks the juggernaut
 	polygon.modulate = color
