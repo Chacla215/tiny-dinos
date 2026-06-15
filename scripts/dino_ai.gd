@@ -20,6 +20,7 @@ var punish_chance: float = 0.55  # P(it capitalizes when you whiff / get guard-b
 var pressure: float = 0.5        # 0..1: how relentlessly it stays in your face after trading
 var edge_caution: float = 0.6    # 0..1: how hard it refuses to be pinned against a lethal edge
 var grab_chance: float = 0.22    # FLOPPY: P(grab a foe in reach) — way higher near an edge (throw-off)
+var momentum_brake: bool = true  # FLOPPY: anticipate the slide so the bot doesn't overshoot its pocket
 
 const THROW_RANGE := 540.0       # max distance it will throw a weapon from
 const WEAPON_SEEK_RANGE := 720.0 # how far it'll detour for a weapon — drops are the only source now
@@ -447,6 +448,47 @@ func think(owner: Node, target: Node, delta: float) -> void:
 
 	# Never steer itself off a ledge / out of bounds.
 	move_dir = _avoid(owner, move_dir)
+
+	# FLOPPY: anticipate the slide. Low friction means holding full stick into the
+	# spacing pocket sails the bot straight past it, then a ~0.4s reversal — it read
+	# as drunk-in-a-bad-way (the open "overshooty walk"). Brake / counter-steer when
+	# our own momentum will overshoot, the way a human eases off the stick early.
+	# Precise model stops on a dime, so this is floppy-only.
+	if momentum_brake and MatchConfig.floppy_mode and "velocity" in owner:
+		move_dir = _floppy_brake(owner, move_dir, dir, dist, reach + gap)
+
+# FLOPPY momentum anticipation. `heading` is the stick we'd hold; `dir` points at
+# the (lookahead) target, `dist` is range to it, `pocket` is where we want to stop
+# (reach+gap). If our radial closing speed would carry us past the pocket within
+# its braking distance, blend the stick toward a brake (opposing velocity), ramping
+# to a full counter-steer once we've already blown past. Returns Vector2.ZERO when
+# the right move is just to coast (release the stick and let friction settle us).
+func _floppy_brake(owner: Node, heading: Vector2, dir: Vector2, dist: float, pocket: float) -> Vector2:
+	# Only fast, momentum-y dinos need this. A heavy (max_speed <= 300, the same
+	# breakpoint `skittish` uses) barely overshoots and never oscillates; braking it
+	# just makes it stop short of its pocket. Leave its lumber alone.
+	if owner.max_speed <= 300.0:
+		return heading
+	var v: Vector2 = owner.velocity
+	if v.length() < 60.0:
+		return heading                       # no real momentum to manage
+	var v_rad: float = v.dot(dir)            # closing speed toward the target
+	if v_rad < 120.0:
+		return heading                       # only manage genuinely fast closings
+	var friction: float = owner.floppy_friction if "floppy_friction" in owner else 360.0
+	var stop_dist: float = v_rad * v_rad / (2.0 * maxf(friction, 1.0))
+	var rem: float = dist - pocket           # radial room before our pocket
+	if rem > stop_dist + 24.0:
+		return heading                       # won't overshoot; keep accelerating in
+	# We WILL overshoot. Replace only the radial part of the stick (keep any strafe):
+	# while still short of the pocket, coast (release) so friction lands us on it;
+	# ease back out only once we've actually slid past it. No counter-steer on
+	# approach — that's what made it stop short of fighting range.
+	var radial_in: float = heading.dot(dir)
+	var tangential: Vector2 = heading - dir * radial_in
+	var radial_want: float = 0.0 if rem >= 0.0 else clampf(rem / 60.0, -1.0, 0.0)
+	var out: Vector2 = tangential + dir * radial_want
+	return out.normalized() if out.length() > 0.05 else Vector2.ZERO
 
 # Ring-out plan for arenas with a lethal edge (ledge ring-out or floe drown). The
 # knockback shoves the victim along the attacker's facing, so to push it off-stage
