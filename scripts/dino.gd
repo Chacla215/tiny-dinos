@@ -77,13 +77,16 @@ const ANIM_LAYOUTS := {
 # FLOPPY MODE locomotion (MatchConfig.floppy_mode): low accel = sluggish to get
 # going, very low friction = you keep gliding and overshoot, so you carry
 # momentum and can't reverse instantly. The Gang-Beasts "loose control" core.
-@export var floppy_accel: float = 850.0        # sluggish ramp-up (~0.4s to reverse)
-@export var floppy_friction: float = 360.0     # friction AT the reference speed (below)
+@export var floppy_accel: float = 1500.0       # ramp-up / reverse (~0.25s to reverse)
+@export var floppy_friction: float = 620.0     # friction AT the reference speed (below)
 @export var floppy_speed_mult: float = 1.10    # let momentum carry you a bit faster
 # Floppy glide is v^2/(2*friction): with flat friction a 440-speed dino slid ~673px
 # (half the arena — it rang itself out of a centre sprint) while a 240 tank slid
 # ~135px (barely floppy). Scale friction with top speed so every dino coasts for the
-# SAME time (~0.89s) instead — loose but controllable, uniform across the roster.
+# SAME time instead — loose but controllable, uniform across the roster.
+# Hands-feel pass (Charlie playtest: "controls feel slippery"): tightened from
+# accel 850 / fric 360 (~0.89s coast, ~234px glide) to 1500 / 620 (~0.52s coast,
+# ~137px glide) + snappier reverse — still clearly floppy, far less sliding off.
 const FLOPPY_REF_SPEED := 320.0
 
 @export_group("Combat")
@@ -230,6 +233,7 @@ var slow_overlap_count: int = 0
 var floe_overlap_count: int = 0  # Frozen Floes: >0 means standing on safe ice
 var current_push: Vector2 = Vector2.ZERO
 var knockback_active: bool = false
+var dash_active: bool = false   # a self-dash lunge is in flight (decays at a fixed rate)
 
 # FLOPPY MODE stage 2: a big enough hit knocks you OFF YOUR FEET. While downed you
 # lose control, slide with the blow, and the rig goes limp/tumbling until you
@@ -307,8 +311,12 @@ const SLOW_MOVE_FACTOR := 0.4
 const SLOW_ACCEL_FACTOR := 0.6
 ## How fast knockback "launch" speed (the part above your normal max_speed)
 ## bleeds off, regardless of surface. Stops a hit from gliding you off an ice
-## map while leaving normal ice-sliding and self-dash lunges untouched.
+## map while leaving normal ice-sliding untouched.
 const KNOCKBACK_DECEL := 2000.0
+## Self-dash lunges (dash_claw / headbutt charge) bleed their launch speed at this
+## FIXED rate regardless of floppy_mode, so a lunge is a committed ~300px gap-closer
+## in both models — not a launch that rides floppy's low friction off the edge.
+const DASH_DECEL := 3000.0
 
 ## Ring-out fall tuning: how long the downward tumble lasts, downward accel, the
 ## initial downward pop, and tumble spin (radians/sec).
@@ -949,6 +957,16 @@ func update_movement(delta: float) -> void:
 		else:
 			knockback_active = false
 
+	# Self-dash lunge: bleed the launch speed at a FIXED rate so floppy's low
+	# locomotion friction can't turn a heavy/special lunge into a fly-off-the-map.
+	# (An incoming hit's knockback takes priority — it overrides the lunge.)
+	if dash_active and not knockback_active:
+		var d_speed := velocity.length()
+		if d_speed > max_speed:
+			velocity = velocity.normalized() * maxf(max_speed, d_speed - DASH_DECEL * delta)
+		else:
+			dash_active = false
+
 	if direction != Vector2.ZERO:
 		velocity = velocity.move_toward(direction * max_speed * move_factor * powerup_speed_mult, accel * delta)
 	else:
@@ -1167,7 +1185,8 @@ func _release_all_grabs() -> void:
 # --- Attack ---
 
 func start_attack(heavy: bool = false) -> void:
-	knockback_active = false  # self-dash lunges shouldn't be damped as knockback
+	knockback_active = false  # self-dash lunges decay via dash_active, not knockback
+	dash_active = false
 	current_is_special = false
 	current_is_heavy = heavy
 	if heavy:
@@ -1180,6 +1199,7 @@ func start_attack(heavy: bool = false) -> void:
 		attack_timer = heavy_windup
 		if heavy_self_dash > 0.0:
 			velocity = facing * heavy_self_dash
+			dash_active = true
 	else:
 		current_attack_damage = attack_damage
 		current_attack_knockback = attack_knockback
@@ -1316,6 +1336,7 @@ func weapon_name() -> String:
 func start_special() -> void:
 	special_cooldown_timer = special_cooldown
 	knockback_active = false
+	dash_active = false
 	current_is_special = true
 	current_is_heavy = false
 	current_attack_damage = special_damage
@@ -1327,6 +1348,7 @@ func start_special() -> void:
 	attack_timer = special_windup
 	if special_self_dash > 0.0:
 		velocity = facing * special_self_dash
+		dash_active = true
 	attack_phase = AttackPhase.WINDUP
 	play_scene_sfx("swing", 0.06)
 
