@@ -74,6 +74,18 @@ const ANIM_LAYOUTS := {
 @export var ice_accel: float = 600.0
 @export var ice_friction: float = 200.0
 
+# FLOPPY MODE locomotion (MatchConfig.floppy_mode): low accel = sluggish to get
+# going, very low friction = you keep gliding and overshoot, so you carry
+# momentum and can't reverse instantly. The Gang-Beasts "loose control" core.
+@export var floppy_accel: float = 850.0        # sluggish ramp-up (~0.4s to reverse)
+@export var floppy_friction: float = 360.0     # friction AT the reference speed (below)
+@export var floppy_speed_mult: float = 1.10    # let momentum carry you a bit faster
+# Floppy glide is v^2/(2*friction): with flat friction a 440-speed dino slid ~673px
+# (half the arena — it rang itself out of a centre sprint) while a 240 tank slid
+# ~135px (barely floppy). Scale friction with top speed so every dino coasts for the
+# SAME time (~0.89s) instead — loose but controllable, uniform across the roster.
+const FLOPPY_REF_SPEED := 320.0
+
 @export_group("Combat")
 @export var max_hp: int = 100
 @export var attack_damage: int = 15
@@ -178,6 +190,11 @@ var sprite_faces_left: bool = false
 
 @onready var polygon: Polygon2D = $Polygon2D
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
+# Runtime limb skeleton (built in code at spawn). When present it drives the
+# in-match look (live idle/walk/hit motion) and the baked AnimatedSprite2D above
+# is hidden; if its parts aren't on disk yet, `rig` stays null and we fall back
+# to the baked sheet. Menus still use the sheet for static previews.
+var rig: DinoRig = null
 @onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 @onready var hitbox_visual: Polygon2D = $Hitbox/Visual
@@ -206,6 +223,33 @@ var slow_overlap_count: int = 0
 var floe_overlap_count: int = 0  # Frozen Floes: >0 means standing on safe ice
 var current_push: Vector2 = Vector2.ZERO
 var knockback_active: bool = false
+
+# FLOPPY MODE stage 2: a big enough hit knocks you OFF YOUR FEET. While downed you
+# lose control, slide with the blow, and the rig goes limp/tumbling until you
+# scramble back up. Pure floppy-mode mechanic — gated on MatchConfig.floppy_mode.
+var is_downed: bool = false
+var down_timer: float = 0.0
+var knockdown_immune_timer: float = 0.0  # after getting up, can't be re-floored a beat
+const DOWN_DURATION := 0.85          # seconds floored before you scramble up
+const DOWN_KB_THRESHOLD := 420.0     # knockback strength that takes your feet
+const DOWN_GETUP_INVULN := 0.25
+const DOWN_IMMUNE_AFTER := 0.9       # no re-knockdown window so you can't be juggled
+
+# FLOPPY MODE stage 3: GRAB / carry / throw — the core Gang-Beasts verb. LT grabs
+# a foe in front (else picks up a weapon as before); RT hurls a held foe (else
+# throws a weapon). The held foe is dragged, goes limp, and mashes to break free.
+var grabbing: Node = null            # the foe I'm currently holding (null = none)
+var grabbed_by: Node = null          # who's holding me (null = free)
+var grab_hold_timer: float = 0.0     # auto-release countdown while I hold someone
+var grab_cooldown: float = 0.0       # brief lockout after a grab ends
+var grab_escape: float = 0.0         # 0..1 struggle progress while I'm held
+const GRAB_RANGE := 96.0             # how far in front a grab reaches
+const GRAB_MAX_HOLD := 1.7           # seconds before a held foe slips free
+const GRAB_HOLD_DIST := 62.0         # how far in front the held foe is carried
+const GRAB_THROW_KB := 740.0         # launch power when you hurl them
+const GRAB_COOLDOWN := 0.55
+const GRAB_ESCAPE_PER_MASH := 0.17   # struggle gained per button press (humans)
+const GRAB_ESCAPE_CPU_RATE := 0.62   # struggle/sec a held CPU builds automatically
 
 # Ring-out: shoved off the island, the dino either tumbles off the BOTTOM (sides
 # + low edge, a clean KO) or gets sucked UP and spirals into the sky off the TOP.
@@ -476,13 +520,36 @@ func _setup_sprite() -> void:
 	var skin_idx: int = int(MatchConfig.skin_choices.get(player_id, -1))
 	if skin_idx < 0:
 		skin_idx = MetaSave.get_skin(sprite_role)
-	sprite.material = MatchConfig.skin_material(skin_idx)
+	var skin_mat := MatchConfig.skin_material(skin_idx)
+	sprite.material = skin_mat
 	sprite.play("idle")
 	polygon.visible = false
+	# Prefer the live limb rig; the baked sheet stays as the fallback if a dino's
+	# parts haven't been exported yet (gen_ralph_fighter.py <dino> --parts).
+	var r := DinoRig.new()
+	r.scale = Vector2(sprite_scale, sprite_scale)
+	r.position.y = sprite_offset_y
+	if r.build_for(sprite_role, skin_mat):
+		rig = r
+		add_child(rig)
+		rig.set_facing(true)
+		sprite.visible = false
+	else:
+		r.free()
 
 func _physics_process(delta: float) -> void:
 	if is_falling:
 		_process_fall(delta)
+		return
+	# FLOPPY stage 3: while a foe is holding you, you're out of control — dragged,
+	# limp, mashing to break free. Takes priority over everything else.
+	if grabbed_by != null:
+		_process_grabbed(delta)
+		return
+	# FLOPPY stage 2: while floored you can't act — you just slide and the rig
+	# tumbles. No AI, no inputs, no attacks; movement keeps your momentum.
+	if is_downed:
+		_process_downed(delta)
 		return
 	if is_cpu and ai != null:
 		ai.think(self, _find_nearest_opponent(), delta)
@@ -492,6 +559,8 @@ func _physics_process(delta: float) -> void:
 	update_dodge(delta)
 	update_attack(delta)
 	update_movement(delta)
+	if grabbing != null:
+		_update_grab_hold(delta)
 	update_block_regen(delta)
 	update_timers(delta)
 	update_visual()
@@ -521,10 +590,18 @@ func _process_input_actions() -> void:
 		start_special()
 	if Input.is_action_just_pressed(_action("swap")):
 		_swap_weapon()
-	if Input.is_action_just_pressed(_action("throw")) and can_throw():
-		throw_weapon()
-	if Input.is_action_just_pressed(_action("pickup")) and can_pickup():
-		try_pickup()
+	# RT: hurl a held foe if you have one, else throw your weapon.
+	if Input.is_action_just_pressed(_action("throw")):
+		if grabbing != null:
+			throw_grabbed()
+		elif can_throw():
+			throw_weapon()
+	# LT: grab a foe in front if one's there, else pick up a weapon.
+	if Input.is_action_just_pressed(_action("pickup")):
+		if can_grab() and _foe_in_grab_range() != null:
+			begin_grab(_foe_in_grab_range())
+		elif can_pickup():
+			try_pickup()
 	if Input.is_action_just_pressed(_action("block")) and can_start_block():
 		start_block()
 	elif Input.is_action_just_released(_action("block")) and defense_state == DefenseState.BLOCKING:
@@ -535,6 +612,13 @@ func _process_input_actions() -> void:
 		play_emote()
 
 func _process_cpu_actions() -> void:
+	# FLOPPY: hurl a held foe, or reach out and grab one.
+	if ai.consume_throw_grabbed() and grabbing != null:
+		throw_grabbed()
+	if ai.consume_grab() and can_grab():
+		var foe := _foe_in_grab_range()
+		if foe != null:
+			begin_grab(foe)
 	if ai.consume_throw() and can_throw():
 		throw_weapon()
 	if ai.consume_pickup() and can_pickup():
@@ -637,6 +721,18 @@ func _find_nearest_opponent() -> Node:
 	return best
 
 func update_sprite_animation() -> void:
+	var attacking := attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE
+	var moving := velocity.length() > 12.0
+	# Live limb rig path: feed it facing / walk speed / state; springs do the rest.
+	if rig != null:
+		if facing.x > 0.05:
+			rig.set_facing(true)
+		elif facing.x < -0.05:
+			rig.set_facing(false)
+		rig.set_walk_speed(velocity.length())
+		rig.set_motion(velocity.x)
+		rig.play("attack" if attacking else ("walk" if moving else "idle"))
+		return
 	if not sprite.visible or sprite.sprite_frames == null:
 		return
 	# flip_h is relative to the source art's default facing: sprites drawn facing
@@ -645,11 +741,10 @@ func update_sprite_animation() -> void:
 		sprite.flip_h = sprite_faces_left
 	elif facing.x < -0.05:
 		sprite.flip_h = not sprite_faces_left
-	if attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE:
+	if attacking:
 		if sprite.animation != "attack":
 			sprite.play("attack")
 		return
-	var moving := velocity.length() > 12.0
 	var target := "walk" if moving else "idle"
 	if sprite.animation != target:
 		sprite.play(target)
@@ -657,29 +752,36 @@ func update_sprite_animation() -> void:
 # --- Capability checks ---
 
 func can_attack() -> bool:
-	return attack_phase == AttackPhase.IDLE \
+	return not is_downed and grabbing == null and grabbed_by == null \
+		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_start_block() -> bool:
-	return attack_phase == AttackPhase.IDLE \
+	return not is_downed and grabbing == null and grabbed_by == null \
+		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_special() -> bool:
-	return special_type != "none" \
+	return not is_downed and grabbing == null and grabbed_by == null \
+		and special_type != "none" \
 		and special_cooldown_timer <= 0.0 \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_throw() -> bool:
-	return _active_weapon_id() != "fists" \
+	return not is_downed and grabbed_by == null \
+		and _active_weapon_id() != "fists" \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_pickup() -> bool:
-	return defense_state != DefenseState.DODGING \
+	return not is_downed and grabbed_by == null \
+		and defense_state != DefenseState.DODGING \
 		and defense_state != DefenseState.GUARD_BROKEN
 
 func can_dodge() -> bool:
+	if is_downed or grabbed_by != null:
+		return false
 	if dodge_cooldown_timer > 0.0:
 		return false
 	if slow_overlap_count > 0 or timed_slow_timer > 0.0:
@@ -750,6 +852,15 @@ func update_movement(delta: float) -> void:
 
 	var accel := ground_accel if current_surface == Surface.GROUND else ice_accel
 	var friction := ground_friction if current_surface == Surface.GROUND else ice_friction
+	# FLOPPY: momentum locomotion. Keep ice even slippier than floppy-ground so
+	# surfaces still read differently.
+	var floppy: bool = MatchConfig.floppy_mode
+	if floppy:
+		accel = floppy_accel if current_surface == Surface.GROUND else minf(ice_accel, floppy_accel)
+		# Friction scaled by top speed (see FLOPPY_REF_SPEED) → constant glide TIME, so
+		# fast dinos don't slide off the stage and slow ones still feel loose.
+		var fric: float = floppy_friction * (max_speed * floppy_speed_mult) / FLOPPY_REF_SPEED
+		friction = fric if current_surface == Surface.GROUND else minf(ice_friction, fric)
 
 	var move_factor: float = 1.0
 	if defense_state == DefenseState.BLOCKING:
@@ -757,6 +868,8 @@ func update_movement(delta: float) -> void:
 	if slow_overlap_count > 0 or timed_slow_timer > 0.0:
 		move_factor *= SLOW_MOVE_FACTOR
 		accel *= SLOW_ACCEL_FACTOR
+	if floppy:
+		move_factor *= floppy_speed_mult
 
 	# Bleed off knockback launch speed at a fixed rate so a big hit can't skate
 	# you across an ice map. Only the speed above max_speed is affected, so it
@@ -781,6 +894,205 @@ func update_movement(delta: float) -> void:
 func _apply_current(delta: float) -> void:
 	if current_push != Vector2.ZERO:
 		move_and_collide(current_push * delta)
+
+# FLOPPY stage 2 — being floored. You keep the blow's momentum (and can slide off
+# an edge for a ring-out, very Gang Beasts) but can't act until you scramble up.
+func _process_downed(delta: float) -> void:
+	down_timer -= delta
+	var friction: float = floppy_friction if MatchConfig.floppy_mode else ground_friction
+	if knockback_active:
+		var sp := velocity.length()
+		if sp > max_speed:
+			velocity = velocity.normalized() * maxf(max_speed, sp - KNOCKBACK_DECEL * delta)
+		else:
+			knockback_active = false
+	velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+	move_and_slide()
+	_apply_current(delta)
+	update_timers(delta)
+	update_visual()
+	update_sprite_animation()
+	if down_timer <= 0.0:
+		get_up()
+
+func knock_down(dir: Vector2, power: float) -> void:
+	# Anti-juggle: just got up, so this hit shoves you (knockback already applied)
+	# but can't put you back on the floor — you get a fair beat to act.
+	if knockdown_immune_timer > 0.0 and not is_downed:
+		return
+	if is_downed:
+		down_timer = maxf(down_timer, DOWN_DURATION * 0.6)  # re-floored: top it up
+		if rig != null:
+			rig.topple(dir, power)
+		return
+	is_downed = true
+	down_timer = DOWN_DURATION
+	# Drop whatever you were doing — you're on the floor now.
+	attack_phase = AttackPhase.IDLE
+	defense_state = DefenseState.NORMAL
+	update_block_bar()
+	if grabbing != null:
+		_drop_grab()  # can't keep holding a foe while you're being floored
+	play_scene_sfx("drop_land", 0.12)
+	if rig != null:
+		rig.topple(dir, power)
+
+func get_up() -> void:
+	is_downed = false
+	down_timer = 0.0
+	invuln_timer = maxf(invuln_timer, DOWN_GETUP_INVULN)  # brief grace as you rise
+	knockdown_immune_timer = DOWN_IMMUNE_AFTER           # can't be juggled straight back down
+
+# --- FLOPPY stage 3: GRAB / carry / throw ------------------------------------
+
+func can_grab() -> bool:
+	return MatchConfig.floppy_mode \
+		and not is_downed and grabbing == null and grabbed_by == null \
+		and grab_cooldown <= 0.0 \
+		and attack_phase == AttackPhase.IDLE \
+		and defense_state == DefenseState.NORMAL
+
+# Nearest grabbable foe within reach and roughly in front (facing). Skips
+# teammates, the already-grabbed, the dodging/invulnerable, and corpses.
+func _foe_in_grab_range() -> Node:
+	var best: Node = null
+	var best_d := GRAB_RANGE
+	for other in get_parent().get_children():
+		if other == self or not (other is CharacterBody2D):
+			continue
+		if not ("player_id" in other) or other.player_id == player_id:
+			continue
+		if MatchConfig.same_side(player_id, other.player_id) or not other.visible:
+			continue
+		if other.grabbed_by != null or other.is_falling:
+			continue
+		if other.invuln_timer > 0.0 or other.defense_state == DefenseState.DODGING:
+			continue
+		var to_foe: Vector2 = other.global_position - global_position
+		var d := to_foe.length()
+		if d > best_d:
+			continue
+		if facing.normalized().dot(to_foe.normalized()) < 0.25:  # must be in front
+			continue
+		best_d = d
+		best = other
+	return best
+
+func begin_grab(foe: Node) -> void:
+	if foe == null or not is_instance_valid(foe):
+		return
+	grabbing = foe
+	grab_hold_timer = GRAB_MAX_HOLD
+	foe._on_grabbed_by(self)
+	play_scene_sfx("pickup", 0.1)
+
+# Called on the foe when someone grabs them: go limp, drop everything, get dragged.
+func _on_grabbed_by(g: Node) -> void:
+	if grabbing != null:
+		_drop_grab()  # you can't hold someone while you're being grabbed
+	grabbed_by = g
+	grab_escape = 0.0
+	is_downed = false
+	down_timer = 0.0
+	attack_phase = AttackPhase.IDLE
+	defense_state = DefenseState.NORMAL
+	update_block_bar()
+	velocity = Vector2.ZERO
+	if rig != null:
+		rig.set_held(true)
+
+# Grabber side: tick the hold timer (auto-release if it runs out).
+func _update_grab_hold(delta: float) -> void:
+	var f := grabbing
+	if not is_instance_valid(f) or f.grabbed_by != self:
+		grabbing = null
+		return
+	grab_hold_timer -= delta
+	if grab_hold_timer <= 0.0:
+		_drop_grab()
+
+# Grabbed side: get carried in front of the holder, limp, and mash to escape.
+func _process_grabbed(delta: float) -> void:
+	var g := grabbed_by
+	if not is_instance_valid(g) or g.grabbing != self:
+		_clear_grabbed()
+		return
+	var hold: Vector2 = g.global_position + g.facing.normalized() * GRAB_HOLD_DIST + Vector2(0, -8)
+	global_position = global_position.lerp(hold, 0.45)
+	velocity = Vector2.ZERO
+	if g.facing != Vector2.ZERO:
+		facing = (-g.facing).normalized()  # held foe faces its captor
+	# Struggle free: humans mash any action; CPUs build escape on a timer.
+	if is_cpu:
+		grab_escape += GRAB_ESCAPE_CPU_RATE * delta
+	else:
+		for a in ["attack", "heavy", "dodge", "special", "block", "pickup", "throw"]:
+			if Input.is_action_just_pressed(_action(a)):
+				grab_escape += GRAB_ESCAPE_PER_MASH
+	if grab_escape >= 1.0:
+		_escape_grab()
+		return
+	update_timers(delta)
+	update_visual()
+	update_sprite_animation()
+
+# RT while holding: launch the foe (big knockback -> they topple + skid off).
+func throw_grabbed() -> void:
+	var foe := grabbing
+	grabbing = null
+	grab_cooldown = GRAB_COOLDOWN
+	if not is_instance_valid(foe):
+		return
+	var dir := facing.normalized()
+	if dir == Vector2.ZERO:
+		dir = Vector2.RIGHT
+	foe._released(dir * GRAB_THROW_KB, true)
+	play_scene_sfx("throw", 0.12)
+
+# Hold timer expired: just let go (no launch).
+func _drop_grab() -> void:
+	var foe := grabbing
+	grabbing = null
+	grab_cooldown = GRAB_COOLDOWN
+	if is_instance_valid(foe):
+		foe._released(Vector2.ZERO, false)
+
+# Foe broke free on their own.
+func _escape_grab() -> void:
+	var g := grabbed_by
+	_clear_grabbed()
+	if is_instance_valid(g):
+		g.grabbing = null
+		g.grab_cooldown = GRAB_COOLDOWN
+
+# Released (thrown or dropped). `thrown` => launched hard enough to be floored.
+func _released(kb: Vector2, thrown: bool) -> void:
+	grabbed_by = null
+	grab_escape = 0.0
+	if rig != null:
+		rig.set_held(false)
+	if thrown:
+		velocity = kb
+		knockback_active = true
+		invuln_timer = 0.0
+		knock_down(kb.normalized(), kb.length() / 500.0)
+
+# The holder vanished (died / fell) — just come free.
+func _clear_grabbed() -> void:
+	grabbed_by = null
+	grab_escape = 0.0
+	if rig != null:
+		rig.set_held(false)
+
+# Drop both sides of any grab — called when I die or fall so links never dangle.
+func _release_all_grabs() -> void:
+	if is_instance_valid(grabbing):
+		grabbing._clear_grabbed()
+	grabbing = null
+	if is_instance_valid(grabbed_by):
+		grabbed_by.grabbing = null
+		grabbed_by.grab_cooldown = GRAB_COOLDOWN
+	grabbed_by = null
 
 # --- Attack ---
 
@@ -1332,13 +1644,22 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	if not ringout_only:
 		hp -= amount
 	# HEADBUTT armor: mid-charge Gus takes the damage but can't be shoved off course.
-	if not (current_is_special and special_type == "headbutt" and attack_phase != AttackPhase.IDLE):
+	var shoved := not (current_is_special and special_type == "headbutt" and attack_phase != AttackPhase.IDLE)
+	if shoved:
 		velocity += knockback
 		knockback_active = true
 	notify_hit(amount)
 	# Impact burst at the contact point (cosmetic): spray along the knockback.
 	var kdir: Vector2 = knockback.normalized() if knockback.length() > 1.0 else facing
 	_spawn_hit_burst(global_position - kdir * 16.0 + Vector2(0, sprite_offset_y * 0.5), kdir, amount, hp <= 0 and not ringout_only)
+	# Limb flail: kick the rig's springs so head/legs/tail react to the blow.
+	if rig != null:
+		rig.hit(kdir, float(amount) / 18.0)
+	# FLOPPY stage 2: a hard enough shove takes your feet out from under you. (Not
+	# on a lethal hit — that path goes to die() below.)
+	var lethal := hp <= 0 and not ringout_only
+	if MatchConfig.floppy_mode and shoved and not lethal and knockback.length() >= DOWN_KB_THRESHOLD:
+		knock_down(kdir, knockback.length() / 500.0)
 	combo_count = 0  # taking a clean hit breaks your own combo
 	if source != null and source != self and source.has_method("register_combo_hit"):
 		source.register_combo_hit()
@@ -1534,6 +1855,8 @@ func begin_ringout(go_up: bool = false, center_y: float = 360.0) -> void:
 	if is_falling:
 		return
 	is_falling = true
+	_release_all_grabs()  # don't drag a grab link off the edge
+	is_downed = false
 	fall_up = go_up
 	fall_center_y = center_y
 	fall_timer = SKY_MAX_TIME if go_up else FALL_DURATION
@@ -1625,6 +1948,7 @@ func _finish_ringout() -> void:
 		respawn()
 
 func die() -> void:
+	_release_all_grabs()
 	var scene_root := get_tree().current_scene
 	if scene_root and scene_root.has_method("on_ko_landed"):
 		scene_root.on_ko_landed()
@@ -1640,6 +1964,10 @@ func update_timers(delta: float) -> void:
 		invuln_timer -= delta
 	if dodge_cooldown_timer > 0.0:
 		dodge_cooldown_timer -= delta
+	if grab_cooldown > 0.0:
+		grab_cooldown -= delta
+	if knockdown_immune_timer > 0.0:
+		knockdown_immune_timer -= delta
 	if hit_flash_timer > 0.0:
 		hit_flash_timer -= delta
 	if special_cooldown_timer > 0.0:
@@ -1682,6 +2010,10 @@ func update_visual() -> void:
 		color *= BEAST_TINT  # gold glow marks the juggernaut
 	polygon.modulate = color
 	sprite.modulate = color * sprite_tint
+	if rig != null:
+		# Node2D.modulate propagates to every part sprite, so flash + player tint
+		# cover the whole skeleton in one set.
+		rig.modulate = color * sprite_tint
 
 # --- THE BEAST (juggernaut) crown toggling ---
 # Paired multiply/divide on the visual scale reverts exactly; HP swaps to a bonus
@@ -1763,6 +2095,15 @@ func respawn() -> void:
 	floe_overlap_count = 0
 	current_push = Vector2.ZERO
 	knockback_active = false
+	# FLOPPY: clear any downed/grab state so a respawn or round-reset never lands
+	# you on the floor or still tangled in a grab link.
+	is_downed = false
+	down_timer = 0.0
+	knockdown_immune_timer = 0.0
+	grab_cooldown = 0.0
+	_release_all_grabs()
+	if rig != null:
+		rig.reset_pose()
 	special_cooldown_timer = 0.0
 	timed_slow_timer = 0.0
 	current_is_special = false

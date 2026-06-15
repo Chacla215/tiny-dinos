@@ -11,7 +11,7 @@ const START_DELAY := 0.8
 const DinoScript := preload("res://scripts/dino.gd")
 const TITLE_SCENE := "res://scenes/title.tscn"
 # Bottom-of-screen control hint. The game is gamepad-only, so this is constant.
-const HINT_PAD := "A CONFIRM   B BACK   LB ADD OPPONENT   RB DIFFICULTY   Y MODE   X TEAMS   P1 PICKS EACH CPU"
+const HINT_PAD := "A CONFIRM   B BACK   LB ADD OPPONENT   RB DIFFICULTY   Y MODE   X TEAMS   SELECT FLOPPY   P1 PICKS EACH CPU"
 const ISLAND_PREVIEW := {
 	"laughing_lava":     "res://assets/tilesets/laughing_lava_bg.png",
 	"beauty_beach":      "res://assets/tilesets/beauty_beach_bg.png",
@@ -42,6 +42,8 @@ var mode_label: Label
 var mode_idx: int = 0
 # Teams line (also built in code): the chosen split, P1 cycles it with X.
 var teams_label: Label
+# Floppy-mode line (built in code): the Gang-Beasts physics toggle, P1 = Select.
+var floppy_label: Label
 var team_preset_idx: int = 0
 # Solo setup (arcade ladder OR roguelike gauntlet): P1 picks only their own
 # fighter; the p2 slot is the CPU opponent, not host-configurable.
@@ -98,6 +100,8 @@ func _ready() -> void:
 	team_preset_idx = 0
 	_build_teams_label()
 	_update_teams_label()
+	_build_floppy_label()
+	_update_floppy_label()
 	arcade = MatchConfig.arcade_setup
 	gauntlet = MatchConfig.gauntlet_setup
 	if _solo():
@@ -112,7 +116,7 @@ func _enter_solo_setup() -> void:
 	stages["p2"] = "ready"
 	island_label.text = "ROGUELIKE GAUNTLET  -  SURVIVE + UPGRADE" if gauntlet else "ARCADE LADDER  -  CLIMB THE GAUNTLET"
 	# Arcade can be played co-op (you + a CPU partner); the gauntlet stays solo.
-	hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER  -  UP/DOWN ISLAND" + ("   X PARTNER" if arcade else "")
+	hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER  -  UP/DOWN ISLAND   SELECT FLOPPY" + ("   X PARTNER" if arcade else "")
 	_update_solo_duo_label()
 	_update_solo_island_label()  # repurposes the (otherwise-hidden) mode label
 	_set_island_bg(MatchConfig.ISLAND_ORDER[island_idx])
@@ -205,6 +209,10 @@ func _process(delta: float) -> void:
 		return
 	launch_armed = false
 	countdown_label.text = ""
+	# FLOPPY MODE: a global gameplay toggle (works in versus AND solo) — host flips
+	# it with Select.
+	if Input.is_action_just_pressed("p1_emote"):
+		_toggle_floppy()
 	# Versus-only match settings (island / extra opponents / difficulty / mode). The
 	# solo modes fix all of these, so the host only picks a fighter.
 	if not _solo():
@@ -610,6 +618,33 @@ func _update_teams_label() -> void:
 	var presets: Array = _team_presets()
 	team_preset_idx = clamp(team_preset_idx, 0, presets.size() - 1)
 	teams_label.text = "TEAMS:  %s    (P1 X)" % presets[team_preset_idx]["name"]
+
+# --- Floppy mode (Gang-Beasts physics) ---
+
+func _toggle_floppy() -> void:
+	Audio.ui("move")
+	MatchConfig.floppy_mode = not MatchConfig.floppy_mode
+	_update_floppy_label()
+
+func _build_floppy_label() -> void:
+	floppy_label = Label.new()
+	floppy_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	floppy_label.offset_top = 190.0
+	floppy_label.offset_bottom = 214.0
+	floppy_label.offset_left = 0.0
+	floppy_label.offset_right = 1280.0
+	floppy_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	floppy_label.add_theme_font_size_override("font_size", 18)
+	add_child(floppy_label)
+
+func _update_floppy_label() -> void:
+	if floppy_label == null:
+		return
+	var on: bool = MatchConfig.floppy_mode
+	# Glow when on so it reads as the "wacky" opt-in; dim grey when off.
+	floppy_label.add_theme_color_override("font_color",
+		Color(1.0, 0.55, 0.95, 1) if on else Color(0.6, 0.6, 0.66, 1))
+	floppy_label.text = "FLOPPY MODE:  %s    (P1 SELECT)" % ("ON" if on else "OFF")
 
 # --- Concept-art helpers ---
 

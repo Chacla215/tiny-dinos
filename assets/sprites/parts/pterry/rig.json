@@ -1,0 +1,66 @@
+{
+  "core_size": [
+    132,
+    132
+  ],
+  "order": [
+    "body",
+    "back_leg",
+    "tail",
+    "front_leg",
+    "head"
+  ],
+  "parts": {
+    "body": {
+      "tex": "res://assets/sprites/parts/pterry/body.png",
+      "center": [
+        0.0,
+        0.0
+      ]
+    },
+    "back_leg": {
+      "tex": "res://assets/sprites/parts/pterry/back_leg.png",
+      "center": [
+        -38.0,
+        15.0
+      ],
+      "pivot": [
+        -23.76,
+        -5.28
+      ]
+    },
+    "tail": {
+      "tex": "res://assets/sprites/parts/pterry/tail.png",
+      "center": [
+        1.5,
+        50.0
+      ],
+      "pivot": [
+        1.32,
+        47.52
+      ]
+    },
+    "front_leg": {
+      "tex": "res://assets/sprites/parts/pterry/front_leg.png",
+      "center": [
+        38.0,
+        14.5
+      ],
+      "pivot": [
+        23.76,
+        -5.28
+      ]
+    },
+    "head": {
+      "tex": "res://assets/sprites/parts/pterry/head.png",
+      "center": [
+        15.5,
+        -28.5
+      ],
+      "pivot": [
+        2.64,
+        -13.2
+      ]
+    }
+  }
+}

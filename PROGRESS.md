@@ -1,5 +1,190 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-15 ("new process of thinking" + AI floppy self-braking)
+
+Charlie shared six `thinkgpt_ai` prompt frameworks (Sun Tzu / Munger) and said
+"this is our new process of thinking" — then "want you to think for yourself."
+
+- **Process is now durable.** `THINKING.md` (repo root) adapts the six into our
+  decision lenses (Advantage Identifier / Positioning Audit / Inversion Engine /
+  Mental Model Installer / Stupidity Auditor / First Principles Stripper) — tuned to
+  this project's standing bias: *shipping breadth on snapshot-validation while feel
+  stays deferred*. Memory: `thinking-process-frameworks`. Use ONE fitting lens per
+  big call, not all six.
+- **Live strategic read (logged, not yet acted on):** Positioning Audit + First
+  Principles suggest **floppy may be our winning terrain** (Gang-Beasts/party,
+  couch, no-online — what a solo dev wins) and precise-combat the *losing* one
+  (Smash terrain, needs online). Open question for Charlie: should floppy graduate
+  from opt-in toggle to the **default** couch experience? Gated on it feeling good.
+- **First feel fix (autonomous): AI floppy momentum self-braking.** Closed the
+  PROGRESS-flagged open soft spot ("walks a bit overshooty / deeper AI self-braking
+  untuned"). `dino_ai.gd` `_floppy_brake` (+ `momentum_brake` flag): in floppy, a
+  fast bot now *anticipates the slide* — releases the stick to coast onto its
+  spacing pocket, counter-steers only once actually past it, leaving any strafe
+  intact. Gated to `max_speed > 300` (the `skittish` breakpoint) so heavies, which
+  don't oscillate, are untouched.
+  - **Measured, not asserted** (`scripts/tools/floppy_walk_probe.gd` +
+    `scenes/floppy_walk_probe.tscn`, 14-trial avg): raptor overshoot **46→7px**,
+    reversals **1.57→0.79**; the probe also *caught* an early over-aggressive
+    version that made the bot stop short of fighting range — fixed before shipping.
+  - `grab_test.gd` (20 assertions incl. two-CPU floppy brawl) stays green; full
+    headless boot clean.
+- **Floppy is now the DEFAULT** (Charlie's call). `MatchConfig.floppy_mode` flipped
+  false→true; the select Select-toggle now flips you TO the precise model. Global,
+  so solo arcade/gauntlet are floppy too (their sim-tuned balance needs re-checking).
+- **Floppy feel pass — locomotion constants (measured).** Built
+  `floppy_feel_probe` (drives a fighter with simulated stick input, measures top
+  speed / glide / stop / reverse). Found the real defect: with a FLAT
+  `floppy_friction` (360 for all), glide = v²/2f made the fast dino (raptor, 484)
+  slide **~325px on clean ground and ~673px across the lava arena's low-friction
+  centre — it rings itself out of a sprint** — while 240-speed tanks slid ~100px
+  (barely floppy). Fix: scale friction by top speed (`FLOPPY_REF_SPEED` 320) → every
+  dino coasts the SAME ~0.89s. Clean re-measure: raptor glide **325→234px**
+  (controllable), tanks ~100→~117 (still loose); band tightened 100–325 → 115–234.
+  - **Honest scope:** the 673px lava figure is an arena-surface interaction
+    (`minf(ice_friction, fric)` caps friction at 200 on slow/ice zones) — flagged,
+    NOT chased; the locomotion constant itself is now sound.
+- **Floppy feel pass — verb cadence (measured, inconclusive).** `floppy_cadence_probe`
+  (two HARD CPUs, 40s, per-arena): knockdowns 3–7.5/min, grabs/throws 0–4.5/min —
+  the verbs FIRE but the rate is very noisy across 40s samples, so it's not
+  tune-able data. Deliberately did NOT twiddle `DOWN_*`/`GRAB_*`/`grab_chance` off
+  noisy data — those + the exact glide target remain genuine hands-feel calls.
+- **Floppy feel pass — KO resolution (measured, ANSWERED).** `floppy_ko_probe` runs
+  two HARD CPUs to a real match end (`round_wins`/`match_over`), floppy vs precise,
+  ring-out arena + HP arena. **Floppy resolves fine — faster than precise in every
+  case:** beach floppy ends 13.7s vs precise 21.0s; lava floppy 21.6s vs precise
+  **UNRESOLVED at 60s** (2 KOs/min). Floppy's knockdown-slides + throw-offs are a
+  *decisive* mechanic, the opposite of the "does it even end?" worry. (That worry
+  came from the cadence probe never detecting KOs — a probe bug: `dino.die()` reports
+  via `get_tree().current_scene.report_ko`, so the probe must set `current_scene` to
+  the arena or every match falsely reads UNRESOLVED. Caught + fixed before trusting.)
+
+> Resume hint (2026-06-15): floppy is the DEFAULT, AI self-braking + locomotion
+> friction-scaling landed & probe-validated; today's earlier work (THINKING.md, AI
+> brake, default-flip) already committed + pushed; the locomotion fix + two new
+> probes are NOT yet committed. Next: (1) commit the locomotion fix + feel probes;
+> (2) genuine hands-feel pass on `DOWN_*`/`GRAB_*`/`dino_rig` PROFILES + the exact
+> glide target — needs a controller, not a probe; (3) KO-resolution ANSWERED (floppy
+> resolves faster than precise) via `floppy_ko_probe`; (4) re-validate solo
+> arcade/gauntlet balance under floppy — note lava-PRECISE was UNRESOLVED in 60s,
+> so precise pacing on HP arenas may itself be a separate issue; (5) delete throwaway
+> probes (`floppy_walk_probe`, `floppy_feel_probe`, `floppy_cadence_probe`,
+> `floppy_ko_probe`, `rig_test`, `montage_rig`, `grab_test`, `ui_shot`) when feel is
+> locked.
+
+## Session — 2026-06-14 (fighters come alive: runtime limb rig)
+
+Charlie: "I want the animation to feel realistic, the characters arms and legs
+should move as well as their head or body when hit" — and idle/walk should feel
+alive too. He picked the most ambitious option (full runtime limb rig over the
+cheaper procedural-only paths), then told Claude to **experiment, not playtest**
+(new memory: iterate on feel via the snapshot tools, don't gate on his hands).
+
+- **Each fighter is now a live skeleton, not one flat sprite.** Body + head +
+  tail + front/back limbs, each on its own angular **spring**, reassembled in
+  code at spawn (`scripts/dino_rig.gd`, a Node2D built by `dino.gd._setup_sprite`).
+  No `.tscn` edits — it works across all 6 arenas automatically. The old baked
+  `AnimatedSprite2D` stays as an auto-fallback (parts missing → old path) and
+  still drives the menu previews.
+- **Reused the painterly pipeline instead of replacing it.** New
+  `gen_ralph_fighter.py --parts` mode exports each dino's `body + 4 limb` PNGs +
+  a `rig.json` manifest (pivots/offsets in core-centre space), reusing the bake
+  tool's existing `PART_DEFS_BY_DINO` boxes/pivots. All 6 exported.
+- **Feathered partition of unity** kills the seams: limbs are cut with soft-edged
+  masks and the body has the *matching* soft amount removed, so part+body sum to
+  the original at rest and cross-fade (not crack) when a limb swings. First pass
+  without it tore the tail off and showed a rectangular belly box; with it, even
+  raptor's aggressive flail (max 48°) holds clean.
+- **Live motion, per-dino character** (`PROFILES` in dino_rig.gd): idle breathing
+  + sway, walk leg-scissor + bounce, attack lunge, and a **hit flail** (head snaps
+  the way it's thrown, tail whips opposite, body recoils + squashes, legs splay,
+  springs settle ~0.25s; impulse scales with damage so heavies throw harder).
+  Bipeds (ralph/raptor) stride; quads (trike/bronto/anky) barely move their legs;
+  **pterry's "legs" flap as wings**; **bronto's "head" is a long swaying neck**;
+  **anky's club tail is under-damped so it lags + carries momentum**.
+- **Validated by snapshot, not playtest** (per Charlie's ask): throwaway
+  `scenes/rig_test.tscn` + `scripts/tools/{rig_test.gd,montage_rig.py}` shoot a
+  fixed idle/walk/attack/hit frame set per dino and tile them into contact sheets
+  (`/tmp/ralph/sheet_*.png`). All 6 reassemble seamlessly; all 6 arenas boot
+  clean headless. **No human has felt it yet** — timing/feel is the open item.
+
+- **Gang-Beasts pass** (Charlie: "look at the movement of Gang Beasts"): added a
+  **whole-body wobble** the rig was missing. A lean spring pivots the body around
+  its FEET (`_lean_node`) — it leans INTO a run (momentum, fed signed `velocity.x`
+  via `set_motion`), idle-teeters so it's never frozen, and a hit **kicks it into
+  a drunk stumble** (low `lean_damp` = it reels and wobbles back upright). Per-dino
+  character: raptor/pterry wobble most, the armored quads (trike/bronto/anky) are
+  near-immovable. Crucially it's **look-only** — the lean rotates the sprite, the
+  CharacterBody2D control/hitboxes stay exact, so the precise-combat pillar is
+  untouched. The bigger fork (actual floppy *control* like real Gang Beasts
+  gameplay) was flagged to Charlie as a pillar-level redesign, NOT done.
+
+- **FLOPPY GAMEPLAY** (Charlie: "make it actually play floppy like Gang Beasts").
+  Committed to the direction but **staged behind `MatchConfig.floppy_mode`** (on by
+  default) so it A/Bs against the precise model, since it fights the precise-combat
+  pillar. Two stages landed:
+  - **Stage 1 — momentum locomotion** (`dino.gd update_movement`): floppy uses low
+    accel (850) + low friction (360) instead of 3000/3000, so you ramp up
+    sluggishly, **glide ~170px after releasing**, and take **~0.4s to reverse**
+    (numeric probe in the bash log; precise glides 14px / turns in 0.1s). The
+    Gang-Beasts loose control. The visual lean reads `velocity.x`, so momentum makes
+    the body wobble naturally with the slides.
+  - **Stage 2 — losing your footing** (`knock_down`/`_process_downed`/`get_up` +
+    `rig.topple`): a hit past `DOWN_KB_THRESHOLD` (420 kb, i.e. heavies/specials)
+    floors you — you lose control for `DOWN_DURATION` (0.85s), slide with the blow
+    (can ring yourself out, very Gang Beasts), and the rig tips fully over (~62°
+    lean) with limbs splayed limp, then springs upright. Verified in stills: clean
+    topple→limp→getup, no seam cracks even toppled.
+  - **Stage 3 — GRAB / carry / throw** (the core Gang Beasts verb). Reuses the
+    pickup/throw buttons: **LT** grabs a foe in front (`_foe_in_grab_range`, must be
+    within 96px and in your facing arc) else picks up a weapon as before; **RT**
+    hurls a held foe (`throw_grabbed` → 740 kb → they topple + skid off) else throws
+    a weapon. The held foe (`_on_grabbed_by`) goes limp (`rig.set_held`), is dragged
+    to a hold point in front, can't act, and **mashes any button to struggle free**
+    (CPUs auto-build escape). Hold auto-releases after 1.7s. Grabs drop cleanly on
+    knockdown / being-grabbed / death / ring-out (`_release_all_grabs`). Validated
+    by `scripts/tools/grab_test.gd` (instances a real arena, drives the whole
+    grab→carry→throw→topple→escape chain): **13/13 assertions PASS**.
+  - **Stage 3b — the CPU grabs too** (`dino_ai.gd`): new `grab_chance` knob per
+    difficulty (easy .10 → brutal .44). In reach it sometimes grabs instead of
+    swinging, and **leans in hard when a ring-out is set up** (+0.5) — because
+    grab→throw-off-the-edge is a KO the plain shove can't guarantee. While holding,
+    the brain takes over: it turns to face the **nearest edge** (`_ai_center`
+    outward) and hurls the foe off it. Emits via `consume_grab`/`consume_throw_grabbed`,
+    same input pattern as everything else. `grab_test.gd` now also asserts a CPU
+    **grabs and throws a foe autonomously** — 15/15 PASS.
+  - **Stage 3c — hardening pass** (Claude advancing autonomously). Fixed three
+    things that make floppy actually *fair/robust*:
+    1. **Anti-juggle guard**: getting up grants `DOWN_IMMUNE_AFTER` (0.9s) where a
+       hit still shoves you but **can't re-floor you** — so you can't be chain-
+       knocked off an edge with no recovery.
+    2. **Respawn/round-reset cleanup**: `respawn()` now clears downed/grab state and
+       calls `rig.reset_pose()`, so a round never resets with someone still
+       toppled, held, or mid-wobble (a dangling-link bug waiting to happen).
+    3. **AI momentum-leading**: in floppy the bot aims where a *sliding* foe is
+       heading (`target.velocity * 0.16`), so it stops chasing a drifting target's
+       tail. (Deeper AI self-braking still untuned — a known soft spot.)
+    `grab_test.gd` extended to 20 assertions incl. anti-juggle + a 700-frame
+    two-CPU floppy brawl (no crash/deadlock, knockdowns confirmed): all PASS.
+  - **Stage 3d — shipped as an opt-in mode.** `floppy_mode` now defaults **OFF**
+    (the base game stays precise/balance-tuned) and is a **select-screen toggle**:
+    P1 taps **Select** to flip `FLOPPY MODE: ON/OFF` (lit magenta when on), works in
+    versus AND solo, hint lines updated. So floppy is a party-mode opt-in, not an
+    override of the main game. Verified by a select-screen snapshot (clean layout,
+    no overlap) + grab_test still green with it forced on.
+  - **Still open:** deeper AI movement tuning for momentum (fights/grabs well, walks
+    a bit overshooty). Feel pass on all floppy constants remains Charlie's call.
+
+> Resume hint: FLOPPY MODE is feature-complete and shipped as an **opt-in select
+> toggle** (default off; P1 Select). Full Gang-Beasts loop for humans AND CPUs —
+> momentum locomotion, footing-loss, grab/carry/throw-off-the-edge, anti-juggle,
+> clean resets, AI that grabs. Plus the live limb rig + wobble underneath it. The
+> ONE thing left is a **live-hands feel pass** (Charlie's call) on the tunables
+> (`dino.gd floppy_*`/`DOWN_*`/`GRAB_*`, `dino_ai.gd grab_chance`, `dino_rig.gd`
+> DEFAULT+PROFILES) and deeper AI momentum-walk tuning. Housekeeping: menus could
+> use the rig (pick==play); delete throwaway helpers `rig_test`/`montage_rig`/
+> `grab_test`/`ui_shot` when done iterating.
+
 ## Session — 2026-06-11 (the game gets a voice: music + full-coverage sound)
 
 Charlie said "start on audio." The game had 8 placeholder combat WAVs and

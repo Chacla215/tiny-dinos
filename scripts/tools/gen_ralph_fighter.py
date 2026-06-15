@@ -13,9 +13,10 @@ Run:  python3 scripts/tools/gen_ralph_fighter.py [dino]
       (per scripts/tools/dino_art_prompts.md), e.g. `... gen_ralph_fighter.py trike`
       bakes that species' fighter the same way.
 """
+import json
 import os
 import sys
-from PIL import Image
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -257,6 +258,96 @@ def build_sheet(core, out_sheet, dino):
     return CW, CH, len(frames)
 
 
+# --- Runtime limb rig export -------------------------------------------------
+# Instead of baking the motion into a sheet, export each part (body + 4 limbs) as
+# its own trimmed PNG and a rig.json manifest. The Godot rig (dino_rig.gd)
+# reassembles them and drives the motion LIVE (idle breathe/sway, walk scissor,
+# hit flail with springs) — so limbs move on their own at runtime, not just on
+# the frames we pre-rendered. Reuses the SAME _part_layers() cut + pivots as the
+# baked path, so the silhouette is identical; only WHERE the motion happens moves
+# from bake-time to run-time.
+#
+# Coordinates in rig.json are in "core space" relative to the core's CENTER (so
+# the rig drops in exactly where the centered AnimatedSprite2D used to sit):
+#   center = the part sprite's center, at rest, relative to core center
+#   pivot  = the joint the limb rotates around, relative to core center
+# Paint/child order is body, back_leg, tail, front_leg, head (matches the sheet).
+RIG_PART_ORDER = ["body", "back_leg", "tail", "front_leg", "head"]
+
+
+RIG_FEATHER = 9   # px the limb masks blur across, so cuts cross-fade not crack
+
+
+def _soft_mask(w, h, box, feather):
+    """A [0..255] mask: opaque inside `box`, ramping to 0 across `feather` px on
+    each edge. Drawn slightly inset then blurred so the interior stays solid."""
+    m = Image.new("L", (w, h), 0)
+    d = ImageDraw.Draw(m)
+    x0, y0, x1, y1 = box
+    d.rectangle((x0 + feather * 0.4, y0 + feather * 0.4,
+                 x1 - feather * 0.4, y1 - feather * 0.4), fill=255)
+    return m.filter(ImageFilter.GaussianBlur(feather * 0.6))
+
+
+def _rig_layers(core, part_defs, feather=RIG_FEATHER):
+    """Feathered partition of unity: split `core` into body + limb layers whose
+    alphas sum back to the original. Each limb = core * mask; the body has that
+    same mask removed (except the HEAD, which keeps its pixels as backing so a
+    rotated head never opens a transparent hole). The soft mask edges make a
+    rotated limb cross-fade into the body instead of showing a hard rectangle."""
+    w, h = core.size
+    core_a = core.getchannel("A")
+    body = core.copy()
+    body_a = body.getchannel("A")
+    layers = []
+    for name in ("back_leg", "tail", "front_leg", "head"):  # paint order
+        d = part_defs[name]
+        box = (d["box"][0] * w, d["box"][1] * h, d["box"][2] * w, d["box"][3] * h)
+        m = _soft_mask(w, h, box, feather)
+        part = core.copy()
+        part.putalpha(ImageChops.multiply(core_a, m))
+        if name != "head":
+            body_a = ImageChops.multiply(body_a, ImageChops.invert(m))
+        pivot = (d["pivot"][0] * w, d["pivot"][1] * h)
+        layers.append((name, part, pivot))
+    body.putalpha(body_a)
+    return body, layers
+
+
+def build_parts(core, dino):
+    """Export body + limb PNGs + rig.json for the runtime skeleton."""
+    part_defs = PART_DEFS_BY_DINO.get(dino, PART_DEFS_BY_DINO["default"])
+    body, layers = _rig_layers(core, part_defs)
+    cw, ch = core.size
+    cx, cy = cw / 2.0, ch / 2.0
+    out_dir = os.path.join(ROOT, f"assets/sprites/parts/{dino}")
+    os.makedirs(out_dir, exist_ok=True)
+    manifest = {"core_size": [cw, ch], "order": RIG_PART_ORDER, "parts": {}}
+
+    def emit(name, layer, pivot_px=None):
+        bbox = layer.getbbox()
+        if bbox is None:
+            return  # empty box (e.g. a part the cut missed) — skip, rig ignores it
+        trimmed = layer.crop(bbox)
+        trimmed.save(os.path.join(out_dir, f"{name}.png"))
+        ccx = (bbox[0] + bbox[2]) / 2.0 - cx
+        ccy = (bbox[1] + bbox[3]) / 2.0 - cy
+        entry = {"tex": f"res://assets/sprites/parts/{dino}/{name}.png",
+                 "center": [round(ccx, 2), round(ccy, 2)]}
+        if pivot_px is not None:
+            entry["pivot"] = [round(pivot_px[0] - cx, 2), round(pivot_px[1] - cy, 2)]
+        manifest["parts"][name] = entry
+
+    emit("body", body)
+    for name, part, pivot in layers:
+        emit(name, part, pivot)
+
+    with open(os.path.join(out_dir, "rig.json"), "w") as fh:
+        json.dump(manifest, fh, indent=2)
+    print(f"wrote rig parts -> {out_dir}/  ({len(manifest['parts'])} parts, core {cw}x{ch})")
+    print(f"  parts: {', '.join(manifest['parts'].keys())}")
+
+
 def preview(out_sheet, out_preview):
     sheet = Image.open(out_sheet)
     bg = Image.new("RGB", sheet.size, (90, 96, 110))
@@ -287,11 +378,17 @@ def main():
     if not os.path.exists(src):
         sys.exit(f"no hero art at {src}\n"
                  f"  generate it per scripts/tools/dino_art_prompts.md, then re-run.")
-    smooth = "--smooth" in sys.argv
-    out_sheet = os.path.join(ROOT, f"assets/sprites/{dino}_fighter.png")
-    out_preview = f"/tmp/ralph/{dino}_fighter_preview.png"
+    parts_mode = "--parts" in sys.argv
+    # The in-match look is painterly (LINEAR), so both the rig parts and the
+    # default bake use the smooth core unless --pixel is forced.
+    smooth = parts_mode or "--smooth" in sys.argv
     flip = HERO_FACES_LEFT.get(dino, False)
     core = (smoothen if smooth else pixelate)(cutout(Image.open(src)), flip)
+    if parts_mode:
+        build_parts(core, dino)
+        return
+    out_sheet = os.path.join(ROOT, f"assets/sprites/{dino}_fighter.png")
+    out_preview = f"/tmp/ralph/{dino}_fighter_preview.png"
     cw, ch, n = build_sheet(core, out_sheet, dino)
     preview(out_sheet, out_preview)
     print(f"wrote {out_sheet}  cell={cw}x{ch}  char_h={core.size[1]}  frames={n}")

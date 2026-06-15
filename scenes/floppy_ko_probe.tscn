@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8flopko0001"]
+
+[ext_resource type="Script" path="res://scripts/tools/floppy_ko_probe.gd" id="1"]
+
+[node name="FloppyKOProbe" type="Node"]
+script = ExtResource("1")
