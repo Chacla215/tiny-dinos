@@ -24,6 +24,8 @@ retired the throwaway probes now that floppy + the rig are locked.
   - **Kept** `grab_test` (functional regression guard for the grab/throw chain),
     `sim_ai` (general balance matrix), `season_test`/`season_shot` (Season Phase 3
     still open), `arena_shot`/`ui_shot`, and all the `gen_*`/`bake_*` art-pipeline tools.
+  - **TODO (Charlie's standing call):** delete `season_test`/`season_shot` once
+    **Season Phase 3 lands** — they're the last throwaway probes still in flight.
 
 > Resume hint: master is clean, no open PRs. Open work (all need Charlie):
 > (1) **chibi restyle** — blocked on Charlie generating the 5 `<dino>_hero.png`;
