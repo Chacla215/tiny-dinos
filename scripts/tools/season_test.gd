@@ -19,6 +19,17 @@ func _ready() -> void:
 	for md in MatchConfig.season_schedule:
 		modes.append(md["mode"])
 	_check("modes cycle rounds->koth->eggs->sumo->flood", modes == ["rounds", "koth", "eggs", "sumo", "flood"])
+	# --- Phase 2 A: named rival teams on their home islands, in escalating order ---
+	var rivals: Array = []
+	var rival_islands_ok := true
+	for i in MatchConfig.season_schedule.size():
+		var md: Dictionary = MatchConfig.season_schedule[i]
+		rivals.append(md.get("rival", ""))
+		if md["island"] != MatchConfig.RIVAL_TEAMS[i]["island"]:
+			rival_islands_ok = false
+	_check("each matchday names a rival team", rivals.size() == 5 and not ("" in rivals))
+	_check("rivals fought on their home islands", rival_islands_ok)
+	_check("finale is the boss rival", rivals[4] == MatchConfig.RIVAL_TEAMS[4]["name"])
 	_check("matchday 0 mode applied", MatchConfig.game_mode == "rounds")
 	_check("2v2 = 4 fighters", MatchConfig.player_count == 4)
 	_check("teams enabled", MatchConfig.teams_enabled)
@@ -61,15 +72,29 @@ func _ready() -> void:
 	_check("seasons_won incremented", MetaSave.seasons_won == 1)
 	_check("CHAMPION unlocked after a win", MatchConfig.skin_unlocked(champ_idx))
 
-	# --- main.gd matchday end flow on a real arena ---
+	# --- Phase 2 C: perk draft options exclude HP-carry-only heal perks ---
+	var opts: Array = MatchConfig.season_draft_options()
+	_check("draft offers 3 team perks", opts.size() == 3)
+	var no_heal := true
+	for id in opts:
+		if MatchConfig.UPGRADES[id].has("heal_now") or MatchConfig.UPGRADES[id].has("wave_heal"):
+			no_heal = false
+	_check("draft excludes heal-only perks", no_heal)
+
+	# --- main.gd matchday end flow + perk application on a real arena ---
 	MetaSave.seasons_won = saved_seasons   # restore before the in-engine bit
 	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, "")
+	MatchConfig.season_perks = ["sharp_claws"]   # +25% attack dmg — your side only
 	var arena: Node = load("res://scenes/arena_beach.tscn").instantiate()
 	get_tree().root.add_child.call_deferred(arena)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	get_tree().current_scene = arena
 	var p1: Node = arena.get_node("Player1")
+	var p3: Node = arena.get_node("Player3")
+	var ralph_base: int = int(MatchConfig.DINOS["ralph"]["attack_damage"])
+	_check("team perk boosts your side", p1.attack_damage > ralph_base)
+	_check("team perk skips foes", p3.attack_damage == ralph_base)
 	arena.end_match(p1, "P1")
 	_check("matchday win -> advance state", arena.season_end == "advance")
 
