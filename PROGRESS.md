@@ -1,11 +1,12 @@
 # Tiny Dinos — Progress Log
 
-## Session — 2026-06-15 (SEASON MODE Phase 3 — IN PROGRESS on `feat/season-phase3`)
+## Session — 2026-06-15 (SEASON MODE Phase 3 — ALL 5 FEATURES COMPLETE on `feat/season-phase3`)
 
 Charlie greenlit ALL of Phase 3 ("we will be making all of it") and told Claude to
 build it autonomously, making the embedded design calls. Branch `feat/season-phase3`
-(off master after #11), NOT pushed. **4 of 5 features done + committed; 1 remains
-(3v3+).** Tracked via the session task list. Resume by reading this entry + `git log`.
+(off master after #11), pushed; **draft PR #12**. **All 5 features done + committed
++ validated.** Final state: full headless boot clean; season_test 38/38, sixplayer_test
+13/13, grab_test 20/20. STILL no human-played season — the deferred feel check.
 
 **DONE (committed, validated headless + snapshots):**
 - **1 — MetaSave foundation + TROPHY CABINET.** New persisted fields: `coins`,
@@ -41,15 +42,25 @@ RIVAL_TEAMS; the challenge comes from the difficulty-floor shift, not new fixtur
   "CHOOSE WHO RESTS" rotation overlay (after the perk draft) fields all-but-one;
   `season_advance(age)` decoupled so it ages once. season_test 30/30.
 
-**TODO — Feature 5: 3v3+ (engine lift).** Only 4 fighter nodes are baked per scene.
-Each `scenes/arena_*.tscn` (beach/falls/floes/lava/purple/springs) + `main.tscn` has
-Player1–4; need Player5/Player6. Then `main.gd`: `active_players` (line ~74 `$Player1
-..$Player4`), `SPAWN_POINTS` (p5/p6), HUD corner rects (~294–297), win/seating logic;
-`MatchConfig.PLAYER_IDS` + team maps; season seating for 3v3. Heaviest piece — its
-own focused pass. Consider scripting the node injection vs hand-editing 7 .tscn files.
+- **5 — 3v3+ (engine lift)** (3 sub-commits 5A/5B/5C). Up to SIX fighters, no per-arena
+  scene edits. 5A: `_ensure_extra_players` clones Player4 → Player5/Player6 at runtime
+  when `player_count` needs them (pid/name set before tree entry); `_layout_spawns`
+  seats six in two team rows + overrides each dino's `spawn_point`; PLAYER_IDS/COLORS/
+  TINTS + default dicts + input actions extended to p5/p6. 5B: `_build_extra_huds`
+  code-builds mid-edge HUD corners for p5 (left) / p6 (right) named so the existing
+  HUD code drives them; PIP_POS + plate rects extended. 5C: `start_season` clamps to
+  3; `_apply_season_matchday` generalized to seat 2/4/6 (side A = p1..pN, foes = next
+  N, pads fill low slots via `season_humans`); RIVAL_TEAMS got a 3rd dino each; select
+  TEAM SIZE cycles 1v1/2v2/3v3. Fix: PLAYER_IDS→p6 broke select's 4-key per-slot loops
+  → added `SLOT_IDS=[p1..p4]`. sixplayer_test 13/13, season_test 38/38.
 
-**When Phase 3 is fully landed:** PR the branch; then per the standing TODO delete the
-last throwaway probes (`season_test`, `season_shot`).
+> **Phase 3 COMPLETE.** Open items: (1) mark draft PR #12 ready + merge when Charlie's
+> happy; (2) a human-played season feel check — divisions pacing, fatigue feel, 3v3
+> readability (all snapshot/sim-validated, never hands-played); (3) per the standing
+> TODO, delete the throwaway probes (`season_test`, `season_shot`, `sixplayer_test`)
+> once the feel check passes. NOTE: kept the probes through the feel check rather than
+> deleting on landing — 3v3 is brand new and unplayed, so the regression coverage earns
+> its keep until Charlie confirms.
 
 ## Session — 2026-06-15 (merge backlog + balance re-check + probe cleanup)
 
