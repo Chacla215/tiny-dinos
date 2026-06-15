@@ -1,5 +1,43 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-15 ("new process of thinking" + AI floppy self-braking)
+
+Charlie shared six `thinkgpt_ai` prompt frameworks (Sun Tzu / Munger) and said
+"this is our new process of thinking" — then "want you to think for yourself."
+
+- **Process is now durable.** `THINKING.md` (repo root) adapts the six into our
+  decision lenses (Advantage Identifier / Positioning Audit / Inversion Engine /
+  Mental Model Installer / Stupidity Auditor / First Principles Stripper) — tuned to
+  this project's standing bias: *shipping breadth on snapshot-validation while feel
+  stays deferred*. Memory: `thinking-process-frameworks`. Use ONE fitting lens per
+  big call, not all six.
+- **Live strategic read (logged, not yet acted on):** Positioning Audit + First
+  Principles suggest **floppy may be our winning terrain** (Gang-Beasts/party,
+  couch, no-online — what a solo dev wins) and precise-combat the *losing* one
+  (Smash terrain, needs online). Open question for Charlie: should floppy graduate
+  from opt-in toggle to the **default** couch experience? Gated on it feeling good.
+- **First feel fix (autonomous): AI floppy momentum self-braking.** Closed the
+  PROGRESS-flagged open soft spot ("walks a bit overshooty / deeper AI self-braking
+  untuned"). `dino_ai.gd` `_floppy_brake` (+ `momentum_brake` flag): in floppy, a
+  fast bot now *anticipates the slide* — releases the stick to coast onto its
+  spacing pocket, counter-steers only once actually past it, leaving any strafe
+  intact. Gated to `max_speed > 300` (the `skittish` breakpoint) so heavies, which
+  don't oscillate, are untouched.
+  - **Measured, not asserted** (`scripts/tools/floppy_walk_probe.gd` +
+    `scenes/floppy_walk_probe.tscn`, 14-trial avg): raptor overshoot **46→7px**,
+    reversals **1.57→0.79**; the probe also *caught* an early over-aggressive
+    version that made the bot stop short of fighting range — fixed before shipping.
+  - `grab_test.gd` (20 assertions incl. two-CPU floppy brawl) stays green; full
+    headless boot clean.
+
+> Resume hint (2026-06-15): floppy AI self-braking landed + probe-validated; NOT
+> committed yet (branch `feat/floppy-mode`). Next: (1) Charlie's call on the big
+> Positioning question — floppy as default vs opt-in; (2) the rest of the floppy
+> live-hands feel pass (constants in `dino.gd floppy_*`/`DOWN_*`/`GRAB_*`,
+> `dino_rig.gd`, `dino_ai.gd grab_chance`); (3) commit today's work (THINKING.md,
+> AI brake) in themed commits; (4) delete throwaway probes when done iterating
+> (`floppy_walk_probe`, `rig_test`, `montage_rig`, `grab_test`, `ui_shot`).
+
 ## Session — 2026-06-14 (fighters come alive: runtime limb rig)
 
 Charlie: "I want the animation to feel realistic, the characters arms and legs
