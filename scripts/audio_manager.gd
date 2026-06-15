@@ -9,8 +9,8 @@ extends Node
 ## missing files are skipped silently so audio can land piecemeal.
 
 const TRACKS := {
-	"menu": "res://assets/music/title_theme.wav",
-	"battle": "res://assets/music/battle_theme.wav",
+	"menu": "res://assets/music/title_theme.ogg",
+	"battle": "res://assets/music/battle_theme.ogg",
 }
 const UI_SOUNDS := {
 	"move": "res://assets/sfx/ui_move.wav",
@@ -56,6 +56,10 @@ func play_music(track: String) -> void:
 	# CACHE_MODE_IGNORE: the audio thread can hold the stream past tree teardown,
 	# and a cached ref then trips "resources still in use" on every quit.
 	to.stream = ResourceLoader.load(TRACKS[track], "", ResourceLoader.CACHE_MODE_IGNORE)
+	# Force seamless looping regardless of the .ogg's import settings (the JRPG
+	# tracks are composed to loop). AudioStreamOggVorbis/WAV both expose `loop`.
+	if to.stream != null and "loop" in to.stream:
+		to.stream.loop = true
 	to.volume_db = SILENT_DB
 	to.play()
 	var tw := create_tween()
