@@ -518,6 +518,15 @@ var season_schedule: Array = []      # [{foes:[dino,...], mode, difficulty, isla
 var season_size: int = 2             # fighters PER SIDE (1 = 1v1, 2 = 2v2; engine caps at 4)
 var season_team: Array = []          # your side: [{dino: String, human: bool}], len == season_size
 var season_perks: Array = []         # TEAM PERK ids drafted between matchdays (stack, your side only)
+var season_division: int = 0         # 0 ROOKIE / 1 PRO / 2 LEGEND — set by start_season (Phase 3)
+# Coin rewards (Phase 3 economy). Each matchday win pays out; the championship adds
+# a bonus. Both scale with the division so climbing pays better.
+const MATCHDAY_COIN := 15
+const CHAMPION_COIN := 60
+func season_matchday_reward() -> int:
+	return MATCHDAY_COIN + season_division * 10
+func season_champion_reward() -> int:
+	return CHAMPION_COIN + season_division * 40
 # Matchdays cycle the TEAM-COMPATIBLE modes (Beast + Bomb Tag are FFA, excluded), so
 # a season tours the game. Difficulty ramps to a BRUTAL finale.
 const SEASON_MODES := ["rounds", "koth", "eggs", "sumo", "flood"]

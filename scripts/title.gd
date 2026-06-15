@@ -7,6 +7,7 @@ const DinoScript := preload("res://scripts/dino.gd")
 const SELECT_SCENE := "res://scenes/select.tscn"
 const CREATOR_SCENE := "res://scenes/ralph_creator.tscn"
 const TROPHIES_SCENE := "res://scenes/trophies.tscn"
+const SHOP_SCENE := "res://scenes/shop.tscn"
 const BACKDROP_PATH := "res://assets/tilesets/beauty_beach_bg.png"
 
 # Two crowd-pleasers flanking the logo, facing center (echoes the versus screen).
@@ -68,6 +69,9 @@ func _ready() -> void:
 	var trophies_label: Label = $Menu/PlayItem.duplicate()
 	trophies_label.name = "TrophiesItem"
 	$Menu.add_child(trophies_label)
+	var shop_label: Label = $Menu/PlayItem.duplicate()
+	shop_label.name = "ShopItem"
+	$Menu.add_child(shop_label)
 	# Progress readouts: SEASON shows your trophy count, GAUNTLET your best wave.
 	var season_base: String = "SEASON"
 	if MetaSave.seasons_won > 0:
@@ -78,11 +82,15 @@ func _ready() -> void:
 	var trophies_base: String = "TROPHIES"
 	if MetaSave.seasons_won > 0:
 		trophies_base = "TROPHIES  (%d)" % MetaSave.seasons_won
+	var shop_base: String = "SHOP"
+	if MetaSave.coins > 0:
+		shop_base = "SHOP  (%d COINS)" % MetaSave.coins
 	menu_items = [
 		{"label": $Menu/PlayItem, "base": "VERSUS", "action": "play"},
 		{"label": season_label, "base": season_base, "action": "season"},
 		{"label": gauntlet_label, "base": gauntlet_base, "action": "gauntlet"},
 		{"label": $Menu/CharacterItem, "base": "CHARACTER", "action": "creator"},
+		{"label": shop_label, "base": shop_base, "action": "shop"},
 		{"label": trophies_label, "base": trophies_base, "action": "trophies"},
 		{"label": $Menu/HowToItem, "base": "HOW TO PLAY", "action": "howto"},
 		{"label": $Menu/QuitItem, "base": "QUIT", "action": "quit"},
@@ -196,6 +204,8 @@ func _activate(action: String) -> void:
 			get_tree().change_scene_to_file(CREATOR_SCENE)
 		"trophies":
 			get_tree().change_scene_to_file(TROPHIES_SCENE)
+		"shop":
+			get_tree().change_scene_to_file(SHOP_SCENE)
 		"howto":
 			_open_howto()
 		"quit":

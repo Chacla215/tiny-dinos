@@ -91,6 +91,7 @@ var hill_ring: Line2D = null
 const HILL_RADIUS := 130.0
 var eliminated: Dictionary = {}      # STOCK: pid -> true once out of lives
 var season_end: String = ""          # SEASON end-state: "advance" / "champion" / "gameover"
+var _last_matchday_coins: int = 0    # coins paid out for the just-won matchday (draft header)
 var gauntlet_drafting: bool = false  # a draft overlay (gauntlet OR season) is open
 var draft_mode: String = "gauntlet"  # "gauntlet" | "season" — which flow the draft drives
 var draft_options: Array = []
@@ -822,6 +823,11 @@ func _process(delta: float) -> void:
 	if match_over:
 		if gauntlet_drafting:
 			_draft_input()
+		# Season gameover: A spends a CONTINUE TOKEN to replay the failed matchday.
+		elif season_end == "gameover" and MetaSave.continue_tokens > 0 and Input.is_action_just_pressed("p1_confirm"):
+			if MetaSave.use_continue_token():
+				Audio.ui("confirm")
+				get_tree().change_scene_to_file(MatchConfig.season_scene())
 		elif Input.is_action_just_pressed("restart"):
 			if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
 				MatchConfig.gauntlet = false  # run over -> back to the title
@@ -1450,20 +1456,32 @@ func _end_match_season(winner: Node) -> void:
 		season_end = "gameover"
 		hud_win.text = "SEASON OVER"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
-		hud_hint.text = "%s\n\npress START for the title" % _season_standings_text(MatchConfig.season_matchday - 1)
+		# A CONTINUE TOKEN (bought in the shop) revives the season at this matchday.
+		var revive: String = ""
+		if MetaSave.continue_tokens > 0:
+			revive = "A  USE CONTINUE TOKEN (%d)  -  REVIVE\n" % MetaSave.continue_tokens
+		hud_hint.text = "%s\n\n%spress START for the title" % [_season_standings_text(MatchConfig.season_matchday - 1), revive]
 		play_sfx("ko", 0.0)
 	elif MatchConfig.season_is_final():
 		season_end = "champion"
-		var first_time: bool = MetaSave.record_season()
+		# A championship is also a matchday win — pay both, then the title + bonus.
+		MetaSave.record_matchday_win()
+		var reward: int = MatchConfig.season_matchday_reward() + MatchConfig.season_champion_reward()
+		MetaSave.add_coins(reward)
+		var first_time: bool = MetaSave.record_season(MatchConfig.season_division)
 		hud_win.text = "SEASON CHAMPION!"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
 		var unlock_line: String = "UNLOCKED:  CHAMPION SKIN\n\n" if first_time else ""
-		hud_hint.text = "%s\n\n%spress START for the title" % [_season_standings_text(MatchConfig.season_matchday), unlock_line]
+		hud_hint.text = "%s\n\n+%d COINS\n\n%spress START for the title" % [_season_standings_text(MatchConfig.season_matchday), reward, unlock_line]
 		play_sfx("win", 0.0)
 	else:
-		# Matchday won (not the finale): pick a team perk, which advances the season.
-		# The draft draws its own header/prompt, so clear the centered scene labels.
+		# Matchday won (not the finale): pay the matchday coins, then pick a team perk,
+		# which advances the season. The draft draws its own header/prompt, so clear the
+		# centered scene labels.
 		season_end = "advance"
+		MetaSave.record_matchday_win()
+		_last_matchday_coins = MatchConfig.season_matchday_reward()
+		MetaSave.add_coins(_last_matchday_coins)
 		hud_win.text = ""
 		hud_hint.text = ""
 		play_sfx("win", 0.0)
@@ -1551,7 +1569,7 @@ func _build_draft_cards() -> void:
 	header.position = Vector2(0, 214)
 	header.size = Vector2(1280, 46)
 	if draft_mode == "season":
-		header.text = "MATCHDAY %d CLEARED  -  PICK A TEAM PERK" % (MatchConfig.season_matchday + 1)
+		header.text = "MATCHDAY %d CLEARED  (+%d COINS)  -  PICK A TEAM PERK" % [MatchConfig.season_matchday + 1, _last_matchday_coins]
 	else:
 		header.text = "WAVE %d CLEARED  -  CHOOSE AN UPGRADE" % (MatchConfig.gauntlet_wave + 1)
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
