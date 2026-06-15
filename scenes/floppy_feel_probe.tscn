@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8flopfeel01"]
+
+[ext_resource type="Script" path="res://scripts/tools/floppy_feel_probe.gd" id="1"]
+
+[node name="FloppyFeelProbe" type="Node"]
+script = ExtResource("1")
