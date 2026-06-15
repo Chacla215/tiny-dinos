@@ -4,8 +4,8 @@
 
 Charlie greenlit ALL of Phase 3 ("we will be making all of it") and told Claude to
 build it autonomously, making the embedded design calls. Branch `feat/season-phase3`
-(off master after #11), NOT pushed. **3 of 5 features done + committed; 2 remain.**
-Tracked via the session task list. Resume by reading this entry + `git log`.
+(off master after #11), NOT pushed. **4 of 5 features done + committed; 1 remains
+(3v3+).** Tracked via the session task list. Resume by reading this entry + `git log`.
 
 **DONE (committed, validated headless + snapshots):**
 - **1 — MetaSave foundation + TROPHY CABINET.** New persisted fields: `coins`,
@@ -31,15 +31,15 @@ Tracked via the session task list. Resume by reading this entry + `git log`.
 only, never pay-to-win (sinks = EPIC skins + continue tokens). Divisions reuse the 5
 RIVAL_TEAMS; the challenge comes from the difficulty-floor shift, not new fixtures.
 
-**TODO — Feature 4: PERSISTENT SQUAD + FATIGUE.** Plan: pre-season pick a SQUAD with
-a BENCH (more than `season_size`, e.g. up to 4); each matchday field `season_size`
-of them. Fielded fighters gain FATIGUE per matchday (mild stat dip — scale down a
-couple of `dino.gd` stats like speed/damage, applied at spawn like a perk); benched
-ones recover. Between matchdays (alongside the perk draft) rotate who plays. Bites
-mainly in 2v2 (you have a bench to rotate); 1v1 = swap your one starter with a bench
-dino. Touches: MatchConfig squad state (`[{dino, fatigue}]` + fielded set), select.gd
-squad-builder UI (multi-pick), a between-matchday rotation step, dino.gd fatigue
-application, main.gd hook. Keep gentle/opt-in-feeling.
+- **4 — PERSISTENT SQUAD + FATIGUE** (3 sub-commits 4A/4B/4C). Your season is a SQUAD
+  = fielded fighters + 1 reserve (`season_squad` `[{dino, fatigue}]`, `season_field`
+  indices, `SEASON_BENCH` 1). Fielded fighters tire each matchday (`_age_squad`, cap
+  `FATIGUE_MAX` 4); benched recover. dino.gd applies a mild capped dip at spawn (-6%
+  speed / -5% dmg per point, floor 0.70) to your fielded side. Seating is slot-based
+  (`season_humans` — pads fill low slots, so rotating the CPU reserve never drops a
+  human). Pre-season RESERVE pick on the select screen (P1 RB). Between matchdays a
+  "CHOOSE WHO RESTS" rotation overlay (after the perk draft) fields all-but-one;
+  `season_advance(age)` decoupled so it ages once. season_test 30/30.
 
 **TODO — Feature 5: 3v3+ (engine lift).** Only 4 fighter nodes are baked per scene.
 Each `scenes/arena_*.tscn` (beach/falls/floes/lava/purple/springs) + `main.tscn` has
