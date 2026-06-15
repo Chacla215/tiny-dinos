@@ -717,6 +717,12 @@ func gauntlet_enemy_hp_mult() -> float:
 func gauntlet_enemy_dmg_mult() -> float:
 	return 1.0 + 0.04 * float(gauntlet_wave)
 
+# Floppy difficulty lever: late foes absorb more knockback so they can't be trivially
+# thrown/shoved off the edge. Without this the gauntlet curve was FLAT on ring-out
+# arenas under floppy (a wave-16 foe lost 7:1) while it scaled fine on confined ones.
+func gauntlet_enemy_kb_resist() -> float:
+	return clampf(0.04 * float(gauntlet_wave), 0.0, 0.6)
+
 func _ready() -> void:
 	_setup_input_actions()
 

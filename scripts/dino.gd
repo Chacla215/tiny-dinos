@@ -88,6 +88,11 @@ const FLOPPY_REF_SPEED := 320.0
 
 @export_group("Combat")
 @export var max_hp: int = 100
+# Fraction of incoming knockback absorbed (0 = none, 1 = immovable). Default 0 for
+# everyone; the gauntlet scales it on foes per wave so late enemies resist being
+# thrown/shoved off the edge — the difficulty lever that actually bites under floppy
+# (HP scaling is moot when ring-outs ignore HP). See _apply_run_upgrades.
+@export var knockback_resist: float = 0.0
 @export var attack_damage: int = 15
 @export var attack_knockback: float = 300.0
 @export var attack_windup: float = 0.12
@@ -379,6 +384,10 @@ func _apply_run_upgrades() -> void:
 		_scale_stat("attack_damage", dm)
 		_scale_stat("heavy_damage", dm)
 		_scale_stat("special_damage", dm)
+		# Under floppy, HP scaling is moot — you just throw the foe off the edge. So
+		# also make late foes harder to RING OUT (the only scaling lever that bites on
+		# ring-out arenas; on confined arenas the HP/dmg scaling already worked).
+		knockback_resist = MatchConfig.gauntlet_enemy_kb_resist()
 		return
 	for uid in MatchConfig.gauntlet_upgrades:
 		var up: Dictionary = MatchConfig.UPGRADES.get(uid, {})
@@ -1105,6 +1114,8 @@ func _released(kb: Vector2, thrown: bool) -> void:
 	if rig != null:
 		rig.set_held(false)
 	if thrown:
+		if knockback_resist > 0.0:
+			kb *= (1.0 - knockback_resist)   # a tossed late-wave foe flies less far
 		velocity = kb
 		knockback_active = true
 		invuln_timer = 0.0
@@ -1627,6 +1638,12 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 		return
 	if defense_state == DefenseState.DODGING:
 		return
+
+	# Knockback resistance (gauntlet foe scaling): absorb a fraction of the shove so
+	# late-wave enemies are harder to ring out. Applied once here so every downstream
+	# use — velocity, the knock_down threshold, block paths — sees the reduced blow.
+	if knockback_resist > 0.0:
+		knockback *= (1.0 - knockback_resist)
 
 	if source != null:
 		last_damaged_by = source
