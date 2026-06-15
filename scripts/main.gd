@@ -91,7 +91,8 @@ var hill_ring: Line2D = null
 const HILL_RADIUS := 130.0
 var eliminated: Dictionary = {}      # STOCK: pid -> true once out of lives
 var season_end: String = ""          # SEASON end-state: "advance" / "champion" / "gameover"
-var gauntlet_drafting: bool = false  # GAUNTLET: the between-wave upgrade pick is open
+var gauntlet_drafting: bool = false  # a draft overlay (gauntlet OR season) is open
+var draft_mode: String = "gauntlet"  # "gauntlet" | "season" — which flow the draft drives
 var draft_options: Array = []
 var draft_index: int = 0
 var draft_nodes: Array = []   # every node in the draft overlay (for cleanup)
@@ -1300,14 +1301,17 @@ func _end_round(winner_pid: String) -> void:
 	var intro_t := 0.8
 	var in_season: bool = MatchConfig and "season" in MatchConfig and MatchConfig.season
 	var season_final: bool = in_season and MatchConfig.has_method("season_is_final") and MatchConfig.season_is_final()
+	var season_rival: String = ""
+	if in_season:
+		season_rival = MatchConfig.season_schedule[MatchConfig.season_matchday].get("rival", "")
 	if current_round == 1 and season_final:
-		# The BRUTAL finale of the season — announce the championship matchday.
-		hud_win.text = "CHAMPIONSHIP"
+		# The BRUTAL finale of the season — the championship vs the boss rival team.
+		hud_win.text = "CHAMPIONSHIP  vs  %s" % season_rival
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.5, 0.3))
 		intro_t = 1.6
 	elif current_round == 1 and in_season:
-		# Each matchday is a different mode — name it + which matchday it is.
-		hud_win.text = "MATCHDAY %d  -  %s" % [MatchConfig.season_matchday + 1, MatchConfig.MODE_NAMES.get(game_mode, "ROUNDS")]
+		# Each matchday: which day, its mode, and the named rival team you face.
+		hud_win.text = "MATCHDAY %d:  %s  vs  %s" % [MatchConfig.season_matchday + 1, MatchConfig.MODE_NAMES.get(game_mode, "ROUNDS"), season_rival]
 		intro_t = 1.4
 	elif current_round == 1 and not is_special:
 		hud_win.text = MatchConfig.MODE_NAMES.get(game_mode, "BEST OF ROUNDS")
@@ -1404,30 +1408,41 @@ func _end_match_season(winner: Node) -> void:
 		p.set_process_input(false)
 		p.set_physics_process(false)
 	var player_won: bool = winner != null and (winner.player_id == "p1" or MatchConfig.same_side(winner.player_id, "p1"))
-	var day: int = MatchConfig.season_matchday + 1
-	var total: int = MatchConfig.season_schedule.size()
 	if not player_won:
 		season_end = "gameover"
 		hud_win.text = "SEASON OVER"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
-		hud_hint.text = "REACHED MATCHDAY %d / %d\n\npress START for the title" % [day, total]
+		hud_hint.text = "%s\n\npress START for the title" % _season_standings_text(MatchConfig.season_matchday - 1)
 		play_sfx("ko", 0.0)
 	elif MatchConfig.season_is_final():
 		season_end = "champion"
 		var first_time: bool = MetaSave.record_season()
 		hud_win.text = "SEASON CHAMPION!"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
-		var unlock_line: String = "\n\nUNLOCKED:  CHAMPION SKIN" if first_time else ""
-		hud_hint.text = "YOU WON THE SEASON%s\n\npress START for the title" % unlock_line
+		var unlock_line: String = "UNLOCKED:  CHAMPION SKIN\n\n" if first_time else ""
+		hud_hint.text = "%s\n\n%spress START for the title" % [_season_standings_text(MatchConfig.season_matchday), unlock_line]
 		play_sfx("win", 0.0)
 	else:
+		# Matchday won (not the finale): pick a team perk, which advances the season.
+		# The draft draws its own header/prompt, so clear the centered scene labels.
 		season_end = "advance"
-		var next_md: Dictionary = MatchConfig.season_schedule[MatchConfig.season_matchday + 1]
-		var mode_name: String = MatchConfig.MODE_NAMES.get(next_md["mode"], "ROUNDS")
-		hud_win.text = "MATCHDAY %d CLEARED" % day
-		hud_win.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5))
-		hud_hint.text = "NEXT:  %s   (MATCHDAY %d / %d)\n\npress START to continue" % [mode_name, day + 1, total]
+		hud_win.text = ""
+		hud_hint.text = ""
 		play_sfx("win", 0.0)
+		_open_season_draft()
+
+# The season fixture list with status: matchdays 0..cleared_through are WON, the next
+# is the upcoming one (>), the rest are pending. Reads as a standings table in the
+# HUD's hint label (no extra nodes — keeps the cleared/end screens simple).
+func _season_standings_text(cleared_through: int) -> String:
+	var lines: Array[String] = ["- SEASON STANDINGS -"]
+	var sched: Array = MatchConfig.season_schedule
+	for i in sched.size():
+		var md: Dictionary = sched[i]
+		var mark: String = "WON " if i <= cleared_through else ("  > " if i == cleared_through + 1 else "    ")
+		var mode_name: String = MatchConfig.MODE_NAMES.get(md["mode"], "ROUNDS")
+		lines.append("%s MATCHDAY %d   %s   vs %s" % [mark, i + 1, mode_name, md.get("rival", "")])
+	return "\n".join(lines)
 
 func _season_continue() -> void:
 	if season_end == "advance":
@@ -1469,7 +1484,17 @@ func _end_match_gauntlet(winner: Node) -> void:
 	_open_draft()
 
 func _open_draft() -> void:
+	draft_mode = "gauntlet"
 	draft_options = MatchConfig.gauntlet_draft_options()
+	draft_index = 0
+	gauntlet_drafting = true
+	_build_draft_cards()
+
+# Season team-perk draft (reuses the gauntlet draft overlay). Shown on a non-final
+# MATCHDAY CLEARED; the pick applies to your whole side for the rest of the season.
+func _open_season_draft() -> void:
+	draft_mode = "season"
+	draft_options = MatchConfig.season_draft_options()
 	draft_index = 0
 	gauntlet_drafting = true
 	_build_draft_cards()
@@ -1487,7 +1512,10 @@ func _build_draft_cards() -> void:
 	var header := Label.new()
 	header.position = Vector2(0, 214)
 	header.size = Vector2(1280, 46)
-	header.text = "WAVE %d CLEARED  -  CHOOSE AN UPGRADE" % (MatchConfig.gauntlet_wave + 1)
+	if draft_mode == "season":
+		header.text = "MATCHDAY %d CLEARED  -  PICK A TEAM PERK" % (MatchConfig.season_matchday + 1)
+	else:
+		header.text = "WAVE %d CLEARED  -  CHOOSE AN UPGRADE" % (MatchConfig.gauntlet_wave + 1)
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	header.add_theme_font_size_override("font_size", 34)
 	header.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5))
@@ -1497,7 +1525,12 @@ func _build_draft_cards() -> void:
 	var prompt := Label.new()
 	prompt.position = Vector2(0, 510)
 	prompt.size = Vector2(1280, 40)
-	prompt.text = "HP  %d / %d      LEFT / RIGHT  CHOOSE      A  TAKE IT" % [MatchConfig.gauntlet_player_hp, MatchConfig.gauntlet_player_max_hp()]
+	if draft_mode == "season":
+		prompt.text = "NEXT:  %s  vs  %s      LEFT / RIGHT  CHOOSE      A  TAKE IT" % [
+			MatchConfig.MODE_NAMES.get(MatchConfig.season_schedule[MatchConfig.season_matchday + 1]["mode"], "ROUNDS"),
+			MatchConfig.season_schedule[MatchConfig.season_matchday + 1].get("rival", "")]
+	else:
+		prompt.text = "HP  %d / %d      LEFT / RIGHT  CHOOSE      A  TAKE IT" % [MatchConfig.gauntlet_player_hp, MatchConfig.gauntlet_player_max_hp()]
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt.add_theme_font_size_override("font_size", 22)
 	prompt.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
@@ -1554,11 +1587,16 @@ func _draft_input() -> void:
 		_refresh_draft()
 	elif Input.is_action_just_pressed("p1_confirm"):
 		Audio.ui("confirm")
-		MatchConfig.gauntlet_add_upgrade(draft_options[draft_index])
 		gauntlet_drafting = false
 		_clear_draft_cards()
-		MatchConfig.gauntlet_next_wave()
-		get_tree().change_scene_to_file(MatchConfig.gauntlet_scene())
+		if draft_mode == "season":
+			MatchConfig.season_add_perk(draft_options[draft_index])
+			MatchConfig.season_advance()
+			get_tree().change_scene_to_file(MatchConfig.season_scene())
+		else:
+			MatchConfig.gauntlet_add_upgrade(draft_options[draft_index])
+			MatchConfig.gauntlet_next_wave()
+			get_tree().change_scene_to_file(MatchConfig.gauntlet_scene())
 
 func _clear_draft_cards() -> void:
 	for n in draft_nodes:

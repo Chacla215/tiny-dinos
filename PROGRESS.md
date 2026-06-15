@@ -1,5 +1,33 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-15 (SEASON MODE Phase 2 — identity + depth)
+
+Planned (plan mode) + built behind `feat/season-phase2`. Three sub-steps, each
+committed/validated, building on Phase 1.
+
+- **A — Named rival teams + home islands.** `MatchConfig.RIVAL_TEAMS` (5 themed
+  teams: BEACH BRAWLERS → TIDE RIDERS → SPRING STAMPEDE → FROST FANGS → MAGMA TYRANTS,
+  the lava boss). `_build_season` now draws one rival per matchday on its **home
+  island** in escalating order (fixed fixtures — no island pick; the campaign decides
+  where you play, so the select start-island line is gone for season). Banners +
+  NEXT lines name the rival ("MATCHDAY 2: KING OF THE HILL vs TIDE RIDERS").
+- **B — Standings / fixtures.** `_season_standings_text` renders the fixture list with
+  WON/▸/upcoming status; shown on the SEASON OVER / CHAMPION screens and (as the
+  next-up line) in the perk draft. Reads as a season.
+- **C — Between-matchday team perk draft.** Won a non-final matchday → the gauntlet
+  draft overlay (generalized via `draft_mode`) opens as "PICK A TEAM PERK" — 3 perks
+  from `season_draft_options()` (the `UPGRADES` set minus HP-carry-only heal perks).
+  Picks stack in `MatchConfig.season_perks` and apply to your WHOLE side via
+  `dino.gd _apply_run_upgrades` (refactored to share `_apply_upgrade_list` with the
+  gauntlet); foes get nothing. Pick advances the season.
+- **Validated:** `season_test` **31/31** (rivals + home islands + boss finale, draft
+  options exclude heal perks, perks boost your side / skip foes, matchday-win→advance);
+  perk-draft + setup snapshots clean; grab_test 20/20; headless boot clean.
+
+> Resume hint (Phase 2 done on `feat/season-phase2`): Phase 3 remains —
+> divisions/promotion, coin economy, trophy cabinet, persistent squad/fatigue, 3v3+
+> (needs new fighter nodes). STILL no human-played season — the deferred feel check.
+
 ## Session — 2026-06-15 (SEASON MODE — Arcade reborn as a couch campaign)
 
 Charlie: "arcade and versus seem the same no?" — they were. Arcade was a thin solo

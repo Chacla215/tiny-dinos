@@ -373,7 +373,15 @@ func _ready() -> void:
 # The human player gets every upgrade they've drafted (stacking); CPU foes get the
 # per-wave enemy scaling so the run keeps escalating past the HARD difficulty cap.
 func _apply_run_upgrades() -> void:
-	if not MatchConfig or not ("gauntlet" in MatchConfig) or not MatchConfig.gauntlet:
+	if not MatchConfig:
+		return
+	# SEASON: your whole side carries the drafted TEAM PERKS (stacking across
+	# matchdays); the foe side gets nothing. same_side covers both 1v1 and 2v2.
+	if "season" in MatchConfig and MatchConfig.season:
+		if MatchConfig.same_side(player_id, "p1"):
+			_apply_upgrade_list(MatchConfig.season_perks)
+		return
+	if not ("gauntlet" in MatchConfig) or not MatchConfig.gauntlet:
 		return
 	# The run belongs to the player slot (p1). Everyone else is a foe and scales per
 	# wave. Keying on the slot (not is_cpu) keeps real play identical while letting
@@ -389,7 +397,20 @@ func _apply_run_upgrades() -> void:
 		# ring-out arenas; on confined arenas the HP/dmg scaling already worked).
 		knockback_resist = MatchConfig.gauntlet_enemy_kb_resist()
 		return
-	for uid in MatchConfig.gauntlet_upgrades:
+	_apply_upgrade_list(MatchConfig.gauntlet_upgrades)
+	max_hp += MatchConfig.gauntlet_meta_hp_bonus  # HARDENED meta perk (0 if not unlocked)
+	# HP carryover: wounds persist between waves (not between rounds — respawn()
+	# still refills). A new wave heals back a breather; -1 means a fresh run = full.
+	var carry: int = MatchConfig.gauntlet_player_hp
+	if carry < 0:
+		_run_start_hp = max_hp
+	else:
+		_run_start_hp = clampi(carry + int(round(float(max_hp) * MatchConfig.gauntlet_wave_heal_frac())), 1, max_hp)
+
+# Apply a list of UPGRADES ids to self (stat mods + run_* effect flags). Shared by
+# the gauntlet draft (player) and the season team-perk draft (your whole side).
+func _apply_upgrade_list(ids: Array) -> void:
+	for uid in ids:
 		var up: Dictionary = MatchConfig.UPGRADES.get(uid, {})
 		for stat in up.get("mods", {}):
 			if not (stat in self):
@@ -404,14 +425,6 @@ func _apply_run_upgrades() -> void:
 		run_lifesteal += eff.get("lifesteal", 0.0)
 		run_thorns += eff.get("thorns", 0.0)
 		run_execute += eff.get("execute", 0.0)
-	max_hp += MatchConfig.gauntlet_meta_hp_bonus  # HARDENED meta perk (0 if not unlocked)
-	# HP carryover: wounds persist between waves (not between rounds — respawn()
-	# still refills). A new wave heals back a breather; -1 means a fresh run = full.
-	var carry: int = MatchConfig.gauntlet_player_hp
-	if carry < 0:
-		_run_start_hp = max_hp
-	else:
-		_run_start_hp = clampi(carry + int(round(float(max_hp) * MatchConfig.gauntlet_wave_heal_frac())), 1, max_hp)
 
 func _scale_stat(stat: String, mult: float) -> void:
 	if not (stat in self):

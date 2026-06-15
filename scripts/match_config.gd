@@ -513,35 +513,48 @@ var season_matchday: int = 0
 var season_schedule: Array = []      # [{foes:[dino,...], mode, difficulty, island}]
 var season_size: int = 2             # fighters PER SIDE (1 = 1v1, 2 = 2v2; engine caps at 4)
 var season_team: Array = []          # your side: [{dino: String, human: bool}], len == season_size
+var season_perks: Array = []         # TEAM PERK ids drafted between matchdays (stack, your side only)
 # Matchdays cycle the TEAM-COMPATIBLE modes (Beast + Bomb Tag are FFA, excluded), so
 # a season tours the game. Difficulty ramps to a BRUTAL finale.
 const SEASON_MODES := ["rounds", "koth", "eggs", "sumo", "flood"]
 const SEASON_DIFFS := ["easy", "normal", "normal", "hard", "brutal"]
+# Named rival teams, one per matchday, fought on their HOME island in escalating
+# order — the last is the BRUTAL boss. dinos[0] is used in a 1v1 season, both in 2v2.
+const RIVAL_TEAMS := [
+	{"name": "BEACH BRAWLERS", "island": "beauty_beach",      "dinos": ["ralph", "raptor"]},
+	{"name": "TIDE RIDERS",    "island": "white_water_falls", "dinos": ["pterry", "raptor"]},
+	{"name": "SPRING STAMPEDE", "island": "sunny_springs",    "dinos": ["bronto", "trike"]},
+	{"name": "FROST FANGS",    "island": "iciest_age",        "dinos": ["anky", "pterry"]},
+	{"name": "MAGMA TYRANTS",  "island": "laughing_lava",     "dinos": ["trike", "anky"]},
+]
 
 func start_season(team: Array, size: int, start_island: String = "") -> void:
 	season = true
 	season_size = clampi(size, 1, 2)
 	season_team = team
 	season_matchday = 0
+	season_perks = []
 	teams_enabled = season_size == 2
 	season_schedule = _build_season(start_island)
 	_apply_season_matchday()
 
-# One matchday per mode: mode + ramping difficulty + rotating island + escalating
-# foe dinos (two foes when 2v2). start_island opens the rotation.
-func _build_season(start_island: String = "") -> Array:
-	var offset: int = max(0, ISLAND_ORDER.find(start_island))
+# One matchday per RIVAL TEAM: a named foe team on its home island, a cycling mode,
+# and a ramping difficulty — fixed escalating fixtures (no island pick; the campaign
+# decides where you play). foes = the rival's dinos sliced to the team size.
+func _build_season(_start_island: String = "") -> Array:
 	var sched: Array = []
-	var n: int = ROSTER_ORDER.size()
 	for i in range(SEASON_MODES.size()):
-		var foes: Array = [ROSTER_ORDER[i % n]]
+		var rival: Dictionary = RIVAL_TEAMS[i % RIVAL_TEAMS.size()]
+		var rd: Array = rival["dinos"]
+		var foes: Array = [rd[0]]
 		if season_size == 2:
-			foes.append(ROSTER_ORDER[(i + 1) % n])
+			foes.append(rd[1] if rd.size() > 1 else rd[0])
 		sched.append({
 			"foes": foes,
 			"mode": SEASON_MODES[i],
 			"difficulty": SEASON_DIFFS[min(i, SEASON_DIFFS.size() - 1)],
-			"island": ISLAND_ORDER[(offset + i) % ISLAND_ORDER.size()],
+			"island": rival["island"],
+			"rival": rival["name"],
 		})
 	return sched
 
@@ -585,6 +598,23 @@ func season_scene() -> String:
 # True on the final matchday (the BRUTAL finale) — for the "CHAMPIONSHIP" banner.
 func season_is_final() -> bool:
 	return not season_schedule.is_empty() and season_matchday >= season_schedule.size() - 1
+
+# Team perks drafted between matchdays apply to your WHOLE side (dino.gd
+# _apply_run_upgrades). Reuse the gauntlet UPGRADES, minus the heal perks (they rely
+# on between-wave HP carry, which season doesn't have).
+func season_draft_options() -> Array:
+	var pool: Array = []
+	for id in UPGRADES:
+		var up: Dictionary = UPGRADES[id]
+		if up.has("heal_now") or up.has("wave_heal"):
+			continue
+		pool.append(id)
+	pool.shuffle()
+	return pool.slice(0, 3)
+
+func season_add_perk(id: String) -> void:
+	if UPGRADES.has(id):
+		season_perks.append(id)
 
 # --- Roguelike gauntlet (solo spine v2) ---
 # An endless, escalating run: win a wave, draft one of three upgrades that stack
