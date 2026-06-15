@@ -60,8 +60,11 @@ Godot binary: **`/opt/homebrew/bin/godot`** (4.6.3 stable).
   their track in `_ready` (`Audio.play_music("menu"/"battle")`; re-calling the
   current track is a no-op, changes crossfade). Menus call
   `Audio.ui("move"/"confirm"/"back")`. Buses (Master/Music/SFX) live in
-  `default_bus_layout.tres`; tracks come from `scripts/tools/gen_music.py`,
-  SFX from `gen_sfx.py` (all placeholder-synthesized, swappable in place).
+  `default_bus_layout.tres`. Music = real **CC0** loops (`assets/music/*.ogg`,
+  Juhani Junkala via OpenGameArt — see `assets/music/CREDITS.txt`); the Audio
+  autoload forces `loop=true` at load. SFX are still placeholder-synthesized by
+  `scripts/tools/gen_sfx.py` (swappable in place); `gen_music.py` remains as the
+  old chiptune generator but no longer feeds the game.
 
 ### The match
 - `scenes/main.tscn` + `scripts/main.gd`. The four fighters (`Player1`–`Player4`)
