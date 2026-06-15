@@ -117,6 +117,18 @@ func _ready() -> void:
 	_check("fatigue speed penalty is mild", MatchConfig.season_fatigue_speed_mult(1) > 0.9 and MatchConfig.season_fatigue_speed_mult(1) < 1.0)
 	_check("fatigue penalty is floored", MatchConfig.season_fatigue_speed_mult(99) >= 0.70)
 
+	# --- Phase 3: 3v3 seating (Feature 5) ---
+	MetaSave.best_division = 0
+	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": false}, {"dino": "trike", "human": false}], 3, 0, "bronto")
+	_check("3v3 fields six fighters", MatchConfig.player_count == 6)
+	_check("3v3 squad = 4 (three + reserve)", MatchConfig.season_squad.size() == 4)
+	_check("3v3 your side is A", MatchConfig.teams["p1"] == "a" and MatchConfig.teams["p2"] == "a" and MatchConfig.teams["p3"] == "a")
+	_check("3v3 foes are B", MatchConfig.teams["p4"] == "b" and MatchConfig.teams["p5"] == "b" and MatchConfig.teams["p6"] == "b")
+	_check("3v3 you pilot p1, allies are CPU", MatchConfig.cpu_players["p1"] == false and MatchConfig.cpu_players["p2"] and MatchConfig.cpu_players["p3"])
+	_check("3v3 all foes are CPU", MatchConfig.cpu_players["p4"] and MatchConfig.cpu_players["p5"] and MatchConfig.cpu_players["p6"])
+	var foe_dinos: Array = [MatchConfig.dino_choices["p4"], MatchConfig.dino_choices["p5"], MatchConfig.dino_choices["p6"]]
+	_check("3v3 seats three foes from the rival roster", foe_dinos == MatchConfig.RIVAL_TEAMS[0]["dinos"])
+
 	# --- main.gd matchday end flow + perk application + fatigue on a real arena ---
 	MetaSave.seasons_won = saved_seasons   # restore before the in-engine bit
 	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, 0)

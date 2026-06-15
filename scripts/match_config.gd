@@ -551,13 +551,14 @@ func season_champion_reward() -> int:
 const SEASON_MODES := ["rounds", "koth", "eggs", "sumo", "flood"]
 const SEASON_DIFFS := ["easy", "normal", "normal", "hard", "brutal"]
 # Named rival teams, one per matchday, fought on their HOME island in escalating
-# order — the last is the BRUTAL boss. dinos[0] is used in a 1v1 season, both in 2v2.
+# order — the last is the BRUTAL boss. dinos are sliced to the team size: [0] for
+# 1v1, [0..1] for 2v2, [0..2] for 3v3.
 const RIVAL_TEAMS := [
-	{"name": "BEACH BRAWLERS", "island": "beauty_beach",      "dinos": ["ralph", "raptor"]},
-	{"name": "TIDE RIDERS",    "island": "white_water_falls", "dinos": ["pterry", "raptor"]},
-	{"name": "SPRING STAMPEDE", "island": "sunny_springs",    "dinos": ["bronto", "trike"]},
-	{"name": "FROST FANGS",    "island": "iciest_age",        "dinos": ["anky", "pterry"]},
-	{"name": "MAGMA TYRANTS",  "island": "laughing_lava",     "dinos": ["trike", "anky"]},
+	{"name": "BEACH BRAWLERS", "island": "beauty_beach",      "dinos": ["ralph", "raptor", "trike"]},
+	{"name": "TIDE RIDERS",    "island": "white_water_falls", "dinos": ["pterry", "raptor", "bronto"]},
+	{"name": "SPRING STAMPEDE", "island": "sunny_springs",    "dinos": ["bronto", "trike", "ralph"]},
+	{"name": "FROST FANGS",    "island": "iciest_age",        "dinos": ["anky", "pterry", "raptor"]},
+	{"name": "MAGMA TYRANTS",  "island": "laughing_lava",     "dinos": ["trike", "anky", "bronto"]},
 ]
 
 # DIVISIONS (Phase 3): a campaign is played at a division (0 ROOKIE / 1 PRO / 2
@@ -573,7 +574,7 @@ func _bump_difficulty(diff: String, steps: int) -> String:
 
 func start_season(team: Array, size: int, division: int = 0, reserve: String = "") -> void:
 	season = true
-	season_size = clampi(size, 1, 2)
+	season_size = clampi(size, 1, 3)   # 1v1 / 2v2 / 3v3 (engine fields up to 6)
 	season_team = team
 	season_matchday = 0
 	season_perks = []
@@ -622,9 +623,9 @@ func _build_season() -> Array:
 	for i in range(SEASON_MODES.size()):
 		var rival: Dictionary = RIVAL_TEAMS[i % RIVAL_TEAMS.size()]
 		var rd: Array = rival["dinos"]
-		var foes: Array = [rd[0]]
-		if season_size == 2:
-			foes.append(rd[1] if rd.size() > 1 else rd[0])
+		var foes: Array = []
+		for j in range(season_size):
+			foes.append(rd[j] if j < rd.size() else rd[rd.size() - 1])
 		var base_diff: String = SEASON_DIFFS[min(i, SEASON_DIFFS.size() - 1)]
 		sched.append({
 			"foes": foes,
@@ -648,27 +649,22 @@ func _apply_season_matchday() -> void:
 	var fielded: Array = []
 	for idx in season_field:
 		fielded.append(season_squad[idx])
+	# Seat your side (A: p1..pN) and the foes (B: the next N), for any size 1/2/3.
+	# Pads fill the low your-side slots (season_humans); the rest of your side + all
+	# foes are CPU. Teams are off only in 1v1 (FFA). Works for 2 / 4 / 6 fighters.
 	season_field_fatigue = {}
-	if season_size == 2:
-		player_count = 4
-		teams_enabled = true
-		teams = {"p1": "a", "p2": "a", "p3": "b", "p4": "b"}
-		# Pads fill the low field slots: p1 is always you, p2 a 2nd pad if one joined
-		# (season_humans), else a CPU ally — independent of which dino sits there.
-		cpu_players = {"p1": false, "p2": season_humans < 2, "p3": true, "p4": true}
-		dino_choices["p1"] = fielded[0]["dino"]
-		dino_choices["p2"] = fielded[1]["dino"]
-		dino_choices["p3"] = foes[0]
-		dino_choices["p4"] = foes[1] if foes.size() > 1 else foes[0]
-		season_field_fatigue["p1"] = int(fielded[0]["fatigue"])
-		season_field_fatigue["p2"] = int(fielded[1]["fatigue"])
-	else:
-		player_count = 2
-		teams_enabled = false
-		cpu_players = {"p1": false, "p2": true, "p3": false, "p4": false}
-		dino_choices["p1"] = fielded[0]["dino"]
-		dino_choices["p2"] = foes[0]
-		season_field_fatigue["p1"] = int(fielded[0]["fatigue"])
+	player_count = season_size * 2
+	teams_enabled = season_size >= 2
+	for i in range(season_size):
+		var your_pid: String = "p%d" % (i + 1)
+		var foe_pid: String = "p%d" % (season_size + i + 1)
+		teams[your_pid] = "a"
+		teams[foe_pid] = "b"
+		cpu_players[your_pid] = i >= season_humans
+		cpu_players[foe_pid] = true
+		dino_choices[your_pid] = fielded[i]["dino"]
+		dino_choices[foe_pid] = foes[i] if i < foes.size() else foes[foes.size() - 1]
+		season_field_fatigue[your_pid] = int(fielded[i]["fatigue"])
 
 # Advance to the next matchday. Returns false when the season is cleared (champion).
 # By default ages the squad first (the fighters that just played tire, the bench
