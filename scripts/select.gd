@@ -40,6 +40,10 @@ var difficulty_label: Label
 # Built in code too: the match's game mode, on its own line under the island.
 var mode_label: Label
 var mode_idx: int = 0
+# Season-only: the SQUAD RESERVE picker (P1 RB cycles), on its own line. The reserve
+# is the squad's bench fighter you can rotate in to rest a tired starter.
+var reserve_label: Label
+var reserve_idx: int = 0
 # Teams line (also built in code): the chosen split, P1 cycles it with X.
 var teams_label: Label
 # Floppy-mode line (built in code): the Gang-Beasts physics toggle, P1 = Select.
@@ -105,6 +109,7 @@ func _ready() -> void:
 		mode_idx = 0
 	_build_mode_label()
 	_update_mode_label()
+	_build_reserve_label()   # season-only; hidden until _enter_season_setup shows it
 	MatchConfig.teams_enabled = false  # versus defaults to FFA until P1 picks a split
 	team_preset_idx = 0
 	_build_teams_label()
@@ -139,11 +144,21 @@ func _enter_solo_setup() -> void:
 func _enter_season_setup() -> void:
 	_apply_active_count(_season_size())
 	island_label.text = "SEASON  -  CLIMB THE MATCHDAYS"
-	hint_label.text = "A CONFIRM   B BACK   P1 PICK FIGHTER   X TEAM SIZE   UP/DOWN DIVISION   SELECT FLOPPY"
+	hint_label.text = "A CONFIRM  B BACK  P1 PICK FIGHTER  X SIZE  UP/DOWN DIVISION  RB RESERVE  SELECT FLOPPY"
 	# Default to the hardest division you've unlocked (you can cycle down to replay).
 	season_division_idx = MetaSave.unlocked_division()
+	# Default the reserve to the first roster dino that isn't a starter.
+	var starters: Array = []
+	for pid in active_players:
+		starters.append(indexes[pid])
+	reserve_idx = 0
+	for i in MatchConfig.ROSTER_ORDER.size():
+		if not (i in starters):
+			reserve_idx = i
+			break
 	_update_season_size_label()
 	_update_season_division_label()  # repurposes the (otherwise-hidden) mode label
+	_update_reserve_label()
 	_set_island_bg(MatchConfig.RIVAL_TEAMS[0]["island"])  # preview the opening matchday's home turf
 	_refresh_displays()
 	_refresh_start()
@@ -249,6 +264,9 @@ func _process(delta: float) -> void:
 			_cycle_season_division(1)    # UP = higher division
 		elif season and Input.is_action_just_pressed("p1_down"):
 			_cycle_season_division(-1)
+		# Season: RB cycles the SQUAD RESERVE (the bench fighter you can rotate in).
+		if season and Input.is_action_just_pressed("p1_swap"):
+			_cycle_reserve(1)
 		# Season only: X cycles TEAM SIZE (1v1 / 2v2), rebuilding your-team panels.
 		if season and Input.is_action_just_pressed("p1_attack"):
 			Audio.ui("move")
@@ -603,6 +621,41 @@ func _build_mode_label() -> void:
 	mode_label.add_theme_color_override("font_color", Color(0.45, 0.95, 0.6, 1))
 	add_child(mode_label)
 
+func _build_reserve_label() -> void:
+	reserve_label = Label.new()
+	reserve_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	reserve_label.offset_top = 162.0
+	reserve_label.offset_bottom = 186.0
+	reserve_label.offset_left = 0.0
+	reserve_label.offset_right = 1280.0
+	reserve_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reserve_label.add_theme_font_size_override("font_size", 18)
+	reserve_label.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0, 1))
+	reserve_label.visible = false
+	add_child(reserve_label)
+
+func _update_reserve_label() -> void:
+	if reserve_label == null:
+		return
+	reserve_label.visible = season
+	if season:
+		var rname: String = MatchConfig.DINOS[MatchConfig.ROSTER_ORDER[reserve_idx]].display_name
+		reserve_label.text = "RESERVE:  %s    (P1 RB)" % rname
+
+# The bench fighter cycles through the roster; skip any dino already picked as a
+# starter so the squad has three distinct dinos.
+func _cycle_reserve(step: int) -> void:
+	Audio.ui("move")
+	var n: int = MatchConfig.ROSTER_ORDER.size()
+	var starters: Array = []
+	for pid in active_players:
+		starters.append(indexes[pid])
+	for _i in n:
+		reserve_idx = (reserve_idx + step + n) % n
+		if not (reserve_idx in starters):
+			break
+	_update_reserve_label()
+
 func _update_mode_label() -> void:
 	if mode_label == null:
 		return
@@ -807,7 +860,8 @@ func _start_match() -> void:
 				"human": not cpu_states.get(pid, false),
 			})
 		MatchConfig.season_setup = false
-		MatchConfig.start_season(team, active_players.size(), season_division_idx)
+		var reserve: String = MatchConfig.ROSTER_ORDER[reserve_idx]
+		MatchConfig.start_season(team, active_players.size(), season_division_idx, reserve)
 		get_tree().change_scene_to_file(MatchConfig.season_scene())
 		return
 	for pid in MatchConfig.PLAYER_IDS:
