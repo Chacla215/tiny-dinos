@@ -1349,13 +1349,13 @@ func _end_round(winner_pid: String) -> void:
 	if in_season:
 		season_rival = MatchConfig.season_schedule[MatchConfig.season_matchday].get("rival", "")
 	if current_round == 1 and season_final:
-		# The BRUTAL finale of the season — the championship vs the boss rival team.
-		hud_win.text = "CHAMPIONSHIP  vs  %s" % season_rival
+		# The BRUTAL finale of the season — the division championship vs the boss team.
+		hud_win.text = "%s CHAMPIONSHIP  vs  %s" % [MetaSave.division_name(MatchConfig.season_division), season_rival]
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.5, 0.3))
 		intro_t = 1.6
 	elif current_round == 1 and in_season:
-		# Each matchday: which day, its mode, and the named rival team you face.
-		hud_win.text = "MATCHDAY %d:  %s  vs  %s" % [MatchConfig.season_matchday + 1, MatchConfig.MODE_NAMES.get(game_mode, "ROUNDS"), season_rival]
+		# Each matchday: division, which day, its mode, and the named rival team.
+		hud_win.text = "%s  -  MATCHDAY %d:  %s  vs  %s" % [MetaSave.division_name(MatchConfig.season_division), MatchConfig.season_matchday + 1, MatchConfig.MODE_NAMES.get(game_mode, "ROUNDS"), season_rival]
 		intro_t = 1.4
 	elif current_round == 1 and not is_special:
 		hud_win.text = MatchConfig.MODE_NAMES.get(game_mode, "BEST OF ROUNDS")
@@ -1491,7 +1491,7 @@ func _end_match_season(winner: Node) -> void:
 # is the upcoming one (>), the rest are pending. Reads as a standings table in the
 # HUD's hint label (no extra nodes — keeps the cleared/end screens simple).
 func _season_standings_text(cleared_through: int) -> String:
-	var lines: Array[String] = ["- SEASON STANDINGS -"]
+	var lines: Array[String] = ["- %s DIVISION STANDINGS -" % MetaSave.division_name(MatchConfig.season_division)]
 	var sched: Array = MatchConfig.season_schedule
 	for i in sched.size():
 		var md: Dictionary = sched[i]

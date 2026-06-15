@@ -541,20 +541,32 @@ const RIVAL_TEAMS := [
 	{"name": "MAGMA TYRANTS",  "island": "laughing_lava",     "dinos": ["trike", "anky"]},
 ]
 
-func start_season(team: Array, size: int, start_island: String = "") -> void:
+# DIVISIONS (Phase 3): a campaign is played at a division (0 ROOKIE / 1 PRO / 2
+# LEGEND). The division raises the whole season's difficulty floor and the coin
+# payouts; you keep promotions (MetaSave.best_division) and may replay any unlocked
+# division. The difficulty ladder each matchday's base difficulty is shifted along.
+const DIFF_LADDER := ["easy", "normal", "hard", "brutal"]
+func _bump_difficulty(diff: String, steps: int) -> String:
+	var i: int = DIFF_LADDER.find(diff)
+	if i < 0:
+		i = 1
+	return DIFF_LADDER[clampi(i + steps, 0, DIFF_LADDER.size() - 1)]
+
+func start_season(team: Array, size: int, division: int = 0) -> void:
 	season = true
 	season_size = clampi(size, 1, 2)
 	season_team = team
 	season_matchday = 0
 	season_perks = []
+	season_division = clampi(division, 0, MetaSave.unlocked_division())
 	teams_enabled = season_size == 2
-	season_schedule = _build_season(start_island)
+	season_schedule = _build_season()
 	_apply_season_matchday()
 
 # One matchday per RIVAL TEAM: a named foe team on its home island, a cycling mode,
-# and a ramping difficulty — fixed escalating fixtures (no island pick; the campaign
-# decides where you play). foes = the rival's dinos sliced to the team size.
-func _build_season(_start_island: String = "") -> Array:
+# and a ramping difficulty (shifted up by the division) — fixed escalating fixtures.
+# foes = the rival's dinos sliced to the team size.
+func _build_season() -> Array:
 	var sched: Array = []
 	for i in range(SEASON_MODES.size()):
 		var rival: Dictionary = RIVAL_TEAMS[i % RIVAL_TEAMS.size()]
@@ -562,10 +574,11 @@ func _build_season(_start_island: String = "") -> Array:
 		var foes: Array = [rd[0]]
 		if season_size == 2:
 			foes.append(rd[1] if rd.size() > 1 else rd[0])
+		var base_diff: String = SEASON_DIFFS[min(i, SEASON_DIFFS.size() - 1)]
 		sched.append({
 			"foes": foes,
 			"mode": SEASON_MODES[i],
-			"difficulty": SEASON_DIFFS[min(i, SEASON_DIFFS.size() - 1)],
+			"difficulty": _bump_difficulty(base_diff, season_division),
 			"island": rival["island"],
 			"rival": rival["name"],
 		})

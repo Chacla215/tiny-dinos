@@ -29,7 +29,7 @@ func _shot_setup() -> void:
 func _shot_perkdraft() -> void:
 	# Win a non-final matchday -> the team-perk draft overlay opens.
 	MatchConfig.season_setup = false
-	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, "")
+	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, 0)
 	var arena: Node = load("res://scenes/arena_beach.tscn").instantiate()
 	get_tree().root.add_child(arena)
 	get_tree().current_scene = arena

@@ -8,11 +8,13 @@ extends Node
 var _fails: Array = []
 
 func _ready() -> void:
-	# Don't pollute the real save: snapshot + restore seasons_won around the test.
+	# Don't pollute the real save: snapshot + restore the season meta around the test.
 	var saved_seasons: int = MetaSave.seasons_won
+	var saved_div: int = MetaSave.best_division
+	var saved_titles: Array = MetaSave.season_titles_by_division.duplicate()
 
 	# --- 2v2 season: schedule + seating ---
-	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, "")
+	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, 0)
 	_check("season flag set", MatchConfig.season)
 	_check("schedule has 5 matchdays", MatchConfig.season_schedule.size() == 5)
 	var modes: Array = []
@@ -50,13 +52,13 @@ func _ready() -> void:
 	_check("final matchday is the finale", MatchConfig.season_is_final())
 
 	# --- 1v1 season: solo seating ---
-	MatchConfig.start_season([{"dino": "anky", "human": true}], 1, "")
+	MatchConfig.start_season([{"dino": "anky", "human": true}], 1, 0)
 	_check("1v1 = 2 fighters", MatchConfig.player_count == 2)
 	_check("1v1 teams off", not MatchConfig.teams_enabled)
 	_check("1v1 foe is CPU", MatchConfig.cpu_players["p2"])
 
 	# --- CPU ally (human flag false) ---
-	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "trike", "human": false}], 2, "")
+	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "trike", "human": false}], 2, 0)
 	_check("CPU ally -> p2 is CPU", MatchConfig.cpu_players["p2"])
 
 	# --- unlock: winning a season grants the CHAMPION skin ---
@@ -81,9 +83,26 @@ func _ready() -> void:
 			no_heal = false
 	_check("draft excludes heal-only perks", no_heal)
 
+	# --- Phase 3: divisions raise the difficulty floor + record per-division titles ---
+	MetaSave.best_division = 2   # unlock LEGEND so we can start a campaign there
+	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, 2)
+	_check("season starts in the chosen division", MatchConfig.season_division == 2)
+	# SEASON_DIFFS base shifted +2 along DIFF_LADDER: matchday 0 "easy" -> "hard".
+	_check("division raises the difficulty floor", MatchConfig.season_schedule[0]["difficulty"] == "hard")
+	_check("finale stays brutal at the top division", MatchConfig.season_schedule[4]["difficulty"] == "brutal")
+	MetaSave.best_division = 1
+	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, 2)
+	_check("requested division clamps to what's unlocked", MatchConfig.season_division == 1)
+	MetaSave.best_division = 0
+	MetaSave.season_titles_by_division = [0, 0, 0]
+	MetaSave.seasons_won = 0
+	MetaSave.record_season(0)
+	_check("championship tallied in its division", MetaSave.season_titles_by_division[0] == 1)
+	_check("winning a division promotes you", MetaSave.best_division == 1)
+
 	# --- main.gd matchday end flow + perk application on a real arena ---
 	MetaSave.seasons_won = saved_seasons   # restore before the in-engine bit
-	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, "")
+	MatchConfig.start_season([{"dino": "ralph", "human": true}, {"dino": "raptor", "human": true}], 2, 0)
 	MatchConfig.season_perks = ["sharp_claws"]   # +25% attack dmg — your side only
 	var arena: Node = load("res://scenes/arena_beach.tscn").instantiate()
 	get_tree().root.add_child.call_deferred(arena)
@@ -99,6 +118,8 @@ func _ready() -> void:
 	_check("matchday win -> advance state", arena.season_end == "advance")
 
 	MetaSave.seasons_won = saved_seasons
+	MetaSave.best_division = saved_div
+	MetaSave.season_titles_by_division = saved_titles
 	MetaSave._save()
 
 	if _fails.is_empty():
