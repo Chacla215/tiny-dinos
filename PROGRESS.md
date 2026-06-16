@@ -1,5 +1,44 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-06-15 (FIRST hands-on playtest — feel fixes + real music)
+
+Charlie played the build on a controller (the long-deferred feel check) and fired
+rapid feedback; each item shipped as its own PR off master, all merged + boot-clean.
+
+- **Title menu overflow (PR #14, `3f46687`).** Phase 3 grew the menu to 8 items;
+  rows overlapped and the controls prompt covered HOW TO PLAY. `title.gd` now sizes
+  the menu to the item count (spacing fits the band under the subtitle, font/outline
+  derive from spacing — 36px when few, ~24px at 8) and parks the prompt below the
+  last row. Verified by an in-engine title snapshot.
+- **Floppy feel + dash (PR #15, `d7ba2cb`, commit `6200f13`).** "Ice-skating rink":
+  tightened floppy locomotion (accel 850→1500, friction 360→620; coast ~0.89s→~0.52s,
+  glide ~234→~137px). "Press B and fly off the map": self-dash lunges (dash_claw /
+  headbutt charge) now bleed at a FIXED rate (`DASH_DECEL`, new `dash_active` flag)
+  regardless of floppy — before, the lunge rode floppy's low friction ~1000px off the
+  stage; now a ~300px gap-closer, knockback overrides it. **These constants are a
+  first pass — still Charlie's ear/hands to confirm.**
+- **CPU auto-pick + team colours (PR #15, commit `5399555`).** Versus CPUs now pick a
+  random dino + colour and auto-ready ("CPU READY"); host only configures their own
+  fighter (season teammates stay host-picked). Team mode: the whole side wears its
+  team colour (RED/BLUE) in match so allies/teams read clearly. FFA untouched.
+- **Bomb Tag bug (PR #15, commit `ec05a56`).** `award_ko` had no `bombtag` case, so a
+  shove-off-the-edge fell through to the ROUNDS win path → premature "RALPH WINS". Now
+  neutral (bounty only); only the bomb costs lives. Bomb Tag was already the
+  elimination game (3 lives → out → rest fight on → last standing wins) — confirmed.
+- **Real music (PR #16, `6429835`).** The synthesized chiptune (esp. the intro) was
+  grating. Replaced both tracks with composed **CC0** loops by Juhani Junkala
+  (OpenGameArt): menu = "Sunshine Coast", battle = "Army Approaching". Audio autoload
+  loads `assets/music/*.ogg`, forces `loop=true`. Placeholder `.wav`s dropped;
+  `gen_music.py` kept as tooling but no longer feeds the game (CLAUDE.md updated).
+  **No one has HEARD it (headless = no audio)** — vibe/mix is Charlie's call; 5 more
+  tracks in those packs to swap from. SFX still synthesized (Charlie didn't ask to
+  change them this pass).
+
+> Resume hint: master clean, no open PRs. NEXT UP still the **chibi restyle** (blocked
+> on Charlie's 5 hero PNGs). Open feel calls now that it's been played once: confirm
+> the new floppy tightness + dash distance, and the music vibe/volume. See memory
+> [[audio-sourcing-pipeline]] for how the CC0 music got wired.
+
 ## Session — 2026-06-15 (Phase 3 merged + Season probes retired)
 
 - **PR #12 merged → master** (`2925da1`, fast-forward). Season Mode Phase 3 —
