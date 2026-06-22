@@ -80,6 +80,15 @@ const ANIM_LAYOUTS := {
 @export var floppy_accel: float = 1500.0       # ramp-up / reverse (~0.25s to reverse)
 @export var floppy_friction: float = 620.0     # friction AT the reference speed (below)
 @export var floppy_speed_mult: float = 1.10    # let momentum carry you a bit faster
+# Extra friction applied ONLY when you release the stick. Tightens the post-release
+# slide — the "ice-skating" symptom — without stiffening active drive/turn (those use
+# accel, not friction), so floppy stays loose to control but plants where you aim.
+@export var floppy_release_brake: float = 1.45
+# Ice / lava-centre friction as a FRACTION of floppy-ground friction. Keeps those
+# surfaces slippier than ground (still read distinct) without collapsing to the old
+# flat ice_friction=200 floor, which made fast dinos slide ~half the arena (a 484-top
+# dino: ~586px on ice vs ~125px on ground — the uniform-glide model breaking on ice).
+@export var floppy_ice_factor: float = 0.55
 # Floppy glide is v^2/(2*friction): with flat friction a 440-speed dino slid ~673px
 # (half the arena — it rang itself out of a centre sprint) while a 240 tank slid
 # ~135px (barely floppy). Scale friction with top speed so every dino coasts for the
@@ -936,7 +945,9 @@ func update_movement(delta: float) -> void:
 		# Friction scaled by top speed (see FLOPPY_REF_SPEED) → constant glide TIME, so
 		# fast dinos don't slide off the stage and slow ones still feel loose.
 		var fric: float = floppy_friction * (max_speed * floppy_speed_mult) / FLOPPY_REF_SPEED
-		friction = fric if current_surface == Surface.GROUND else minf(ice_friction, fric)
+		# Ice/lava slippier than ground but PROPORTIONALLY (see floppy_ice_factor) — the
+		# old minf(ice_friction, fric) floor collapsed fast dinos into an ice rink.
+		friction = fric if current_surface == Surface.GROUND else fric * floppy_ice_factor
 
 	var move_factor: float = 1.0
 	if defense_state == DefenseState.BLOCKING:
@@ -970,7 +981,10 @@ func update_movement(delta: float) -> void:
 	if direction != Vector2.ZERO:
 		velocity = velocity.move_toward(direction * max_speed * move_factor * powerup_speed_mult, accel * delta)
 	else:
-		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+		# Released the stick: in floppy, brake harder so you plant where you aimed
+		# instead of skating on (active drive above stays loose — it uses accel).
+		var brake := friction * floppy_release_brake if floppy else friction
+		velocity = velocity.move_toward(Vector2.ZERO, brake * delta)
 
 	move_and_slide()
 	_apply_current(delta)
