@@ -791,6 +791,10 @@ func _bomb_detonate() -> void:
 	if alive.size() <= 1:
 		if alive.size() == 1:
 			end_match(alive[0], _dino_name(alive[0].player_id))
+		elif holder != null:
+			# Mutual destruction (the last fighter blew themselves up): end on the
+			# holder rather than soft-hang with no living fighters and no end screen.
+			end_match(holder, _dino_name(bomb_holder))
 		return
 	_assign_bomb(alive[randi() % alive.size()].player_id)
 
@@ -822,6 +826,11 @@ func _crown_beast(pid: String) -> void:
 func _update_beast(delta: float) -> void:
 	var beast: Node = _player_node(beast_pid)
 	if beast == null:
+		return
+	# Don't bank crown time (or win) while the beast is tumbling off the edge — the
+	# crown transfers to the killer once the ring-out completes, so a falling beast
+	# must not cross BEAST_TARGET and win mid-fall.
+	if beast.is_falling:
 		return
 	mode_score[beast_pid] = mode_score.get(beast_pid, 0.0) + delta
 	if beast_crown:
