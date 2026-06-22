@@ -893,20 +893,23 @@ func _on_joy_connection_changed(device: int, connected: bool) -> void:
 		print("Joypad disconnected: device %d" % device)
 
 func _load_sfx() -> void:
-	sfx = {
-		"swing": $SFX/Swing,
-		"hit_chomp": $SFX/HitChomp,
-		"hit_claw": $SFX/HitClaw,
-		"block": $SFX/Block,
-		"guard_break": $SFX/GuardBreak,
-		"dodge": $SFX/Dodge,
-		"ko": $SFX/KO,
-		"win": $SFX/Win,
+	# Reuse the baked $SFX players when an arena scene has them; tolerate any that
+	# are missing (a new island scene without the node) by building a fallback
+	# below instead of crashing on a null node.
+	var baked := {
+		"swing": "SFX/Swing", "hit_chomp": "SFX/HitChomp", "hit_claw": "SFX/HitClaw",
+		"block": "SFX/Block", "guard_break": "SFX/GuardBreak", "dodge": "SFX/Dodge",
+		"ko": "SFX/KO", "win": "SFX/Win",
 	}
+	sfx = {}
+	for key in baked:
+		var node: Node = get_node_or_null(baked[key])
+		if node != null:
+			sfx[key] = node
 	for key in SFX_PATHS:
 		var path: String = SFX_PATHS[key]
 		if not sfx.has(key):
-			# Newer sounds have no baked $SFX node in the arena scenes; build one.
+			# Newer sounds (and any missing baked node) get a player built here.
 			var p := AudioStreamPlayer.new()
 			$SFX.add_child(p)
 			sfx[key] = p
@@ -1171,11 +1174,11 @@ func _separate_players() -> void:
 	var count := active_players.size()
 	for i in range(count):
 		var a: CharacterBody2D = active_players[i]
-		if a.is_falling:
+		if a.is_falling or eliminated.get(a.player_id, false):
 			continue
 		for j in range(i + 1, count):
 			var b: CharacterBody2D = active_players[j]
-			if b.is_falling:
+			if b.is_falling or eliminated.get(b.player_id, false):
 				continue
 			var diff := b.global_position - a.global_position
 			var dist := diff.length()
@@ -1353,7 +1356,8 @@ func on_ringout_complete(victim: Node) -> void:
 		return
 	if victim.has_method("respawn"):
 		victim.respawn()
-	if killer != null and killer != victim and killer in active_players:
+	if killer != null and killer != victim and killer in active_players \
+			and not eliminated.get(killer.player_id, false):
 		award_ko(killer, victim)
 
 # The dino mashed its way back onto the field — no KO, no respawn, keeps its HP.
@@ -1428,7 +1432,9 @@ func _award_ko_rounds(killer: Node) -> void:
 
 func _dino_name(pid: String) -> String:
 	var dino_id: String = MatchConfig.dino_choices.get(pid, "ralph")
-	return MatchConfig.DINOS[dino_id].display_name
+	# Guard a stale/removed roster id (dino.gd guards this too) so the HUD update
+	# loop can't crash on a hard DINOS index every frame.
+	return MatchConfig.DINOS.get(dino_id, {}).get("display_name", "?")
 
 func add_dp(pid: String, points: int) -> void:
 	if pid in dp:
@@ -1892,7 +1898,7 @@ func play_sfx(sound_name: String, pitch_var: float = 0.05) -> void:
 	if not sound_name in sfx:
 		return
 	var player: AudioStreamPlayer = sfx[sound_name]
-	if player.stream == null:
+	if player == null or player.stream == null:
 		return
 	player.pitch_scale = 1.0 + randf_range(-pitch_var, pitch_var)
 	player.play()

@@ -54,6 +54,11 @@ func _load() -> void:
 		best_division = int(cfg.get_value("season", "best_division", 0))
 		matchdays_won = int(cfg.get_value("season", "matchdays_won", 0))
 		season_titles_by_division = cfg.get_value("season", "titles_by_division", [0, 0, 0])
+		# A corrupt/old save could return a non-Array or a short one; downstream code
+		# (record_season, division displays) assumes length 3 and would crash on a
+		# negative/out-of-range index.
+		if typeof(season_titles_by_division) != TYPE_ARRAY or season_titles_by_division.size() < 3:
+			season_titles_by_division = [0, 0, 0]
 		owned_skins = cfg.get_value("cosmetics", "owned_skins", {})
 		skins = cfg.get_value("cosmetics", "skins", {})
 
