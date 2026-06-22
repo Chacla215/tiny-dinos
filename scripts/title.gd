@@ -199,6 +199,11 @@ func _refresh_menu() -> void:
 
 func _activate(action: String) -> void:
 	Audio.ui("confirm")
+	# Re-entering any title mode is a clean slate — clear the live solo-run flags.
+	# They're owned by main.gd's end-of-run code but escapable via a mid-run
+	# pause→EXIT, so a stale flag could mis-configure the next match.
+	MatchConfig.season = false
+	MatchConfig.gauntlet = false
 	match action:
 		"play":
 			MatchConfig.season_setup = false
