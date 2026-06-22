@@ -1915,9 +1915,13 @@ func hit_pause(duration: float, scale: float = 0.2) -> void:
 func on_hit_landed(damage: int) -> void:
 	var intensity: float = min(24.0, float(damage) * 0.45)
 	var duration: float = 0.12 + float(damage) * 0.004
-	var pause_dur: float = float(damage) * 0.002
+	# Freeze scales with the blow on BOTH axes: a jab gives a short shallow hitch,
+	# a haymaker a longer, deeper slow-mo bite — so weight reads through the pause.
+	var heavy: float = clampf((float(damage) - 10.0) / 35.0, 0.0, 1.0)
+	var pause_dur: float = 0.025 + float(damage) * 0.0022
+	var pause_scale: float = lerpf(0.45, 0.12, heavy)
 	shake(intensity, duration)
-	hit_pause(pause_dur, 0.25)
+	hit_pause(pause_dur, pause_scale)
 
 # Blocked hit: a firm thunk you feel, but no freeze — blocking shouldn't
 # interrupt the flow the way landing a clean hit does.

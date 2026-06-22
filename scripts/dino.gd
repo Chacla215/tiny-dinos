@@ -236,6 +236,7 @@ var dodge_velocity: Vector2 = Vector2.ZERO
 var guard_break_timer: float = 0.0
 var last_damaged_by: Node = null
 var hit_flash_timer: float = 0.0
+var hit_flash_strength: float = 0.0   # 0 = soft (jab/blocked) … 1 = white-out (haymaker)
 var afterimage_timer: float = 0.0
 var ice_overlap_count: int = 0
 var slow_overlap_count: int = 0
@@ -1716,7 +1717,10 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 
 	if source != null:
 		last_damaged_by = source
-	hit_flash_timer = 0.08
+	# Baseline flash for any connecting hit (blocked hits return before the clean
+	# path below, so they keep this soft version); a clean hit overrides it scaled.
+	hit_flash_timer = 0.07
+	hit_flash_strength = 0.0
 	# A connecting hit (dodge/invuln/falling already returned above) — let the scene
 	# react, e.g. BOMB TAG passes the bomb to whoever just got struck.
 	if source != null:
@@ -1768,6 +1772,10 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 		velocity += knockback
 		knockback_active = true
 	notify_hit(amount)
+	# Impact flash scales with the blow so a jab and a haymaker read differently:
+	# a clean hit flashes brighter + a touch longer the harder it lands.
+	hit_flash_timer = clampf(0.08 + float(amount) * 0.003, 0.08, 0.17)
+	hit_flash_strength = clampf((float(amount) - 10.0) / 35.0, 0.0, 1.0)
 	# Impact burst at the contact point (cosmetic): spray along the knockback.
 	var kdir: Vector2 = knockback.normalized() if knockback.length() > 1.0 else facing
 	_spawn_hit_burst(global_position - kdir * 16.0 + Vector2(0, sprite_offset_y * 0.5), kdir, amount, hp <= 0 and not ringout_only)
@@ -2114,7 +2122,8 @@ func update_visual() -> void:
 	if (slow_overlap_count > 0 or timed_slow_timer > 0.0) and defense_state == DefenseState.NORMAL:
 		color = Color(0.6, 0.85, 0.55, 1.0)
 	if hit_flash_timer > 0.0:
-		color = Color(1.6, 1.6, 1.6, 1.0)
+		var b := lerpf(1.35, 1.95, hit_flash_strength)   # soft jab → bright haymaker white-out
+		color = Color(b, b, b, 1.0)
 	elif invuln_timer > 0.0 and defense_state != DefenseState.DODGING:
 		var flash := int(invuln_timer * 30.0) % 2 == 0
 		if flash:
@@ -2247,6 +2256,7 @@ func respawn() -> void:
 	hitbox_visual.visible = false
 	last_damaged_by = null
 	hit_flash_timer = 0.0
+	hit_flash_strength = 0.0
 	if not initial_weapons.is_empty():
 		weapons = initial_weapons.duplicate()
 		active_weapon = 0
