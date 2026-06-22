@@ -266,7 +266,9 @@ var grab_escape: float = 0.0         # 0..1 struggle progress while I'm held
 const GRAB_RANGE := 96.0             # how far in front a grab reaches
 const GRAB_MAX_HOLD := 1.7           # seconds before a held foe slips free
 const GRAB_HOLD_DIST := 62.0         # how far in front the held foe is carried
-const GRAB_THROW_KB := 740.0         # launch power when you hurl them
+const GRAB_THROW_KB := 880.0         # launch power when you hurl them — a committed
+                                     # grab earns a decisive yeet (~245px slide vs ~185),
+                                     # so throw-off-the-edge is a real KO, not a soft toss
 const GRAB_COOLDOWN := 0.55
 const GRAB_ESCAPE_PER_MASH := 0.17   # struggle gained per button press (humans)
 const GRAB_ESCAPE_CPU_RATE := 0.62   # struggle/sec a held CPU builds automatically
@@ -1148,6 +1150,11 @@ func throw_grabbed() -> void:
 		dir = Vector2.RIGHT
 	foe._released(dir * GRAB_THROW_KB, true)
 	play_scene_sfx("throw", 0.12)
+	# The throw is the biggest, highest-commitment verb in floppy — give it a jolt
+	# so the yeet has weight (it was the only impact moment firing no screen shake).
+	var sr := get_tree().current_scene
+	if sr and sr.has_method("shake"):
+		sr.shake(15.0, 0.24)
 
 # Hold timer expired: just let go (no launch).
 func _drop_grab() -> void:
