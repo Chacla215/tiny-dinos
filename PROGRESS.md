@@ -1,5 +1,35 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-04 (video-gen animation pipeline — Seedance 2.0)
+
+Charlie greenlit using **Seedance 2.0** (image-to-video) to upgrade graphics +
+fluidity. Root insight: every in-match frame today is a bake-time transform of
+ONE still hero PNG (9 frames/dino: idle 2 / walk 4 / attack 3; block, dodge,
+hit, KO have **no art at all** — just code effects). Video-gen from the same
+heroes gives real motion and the missing states.
+
+- **Prompt kit** `scripts/tools/dino_motion_prompts.md`: framing block (locked
+  camera, in-place motion, flat keyable bg) + per-species look reminders + 8
+  motion blocks (`idle walk attack heavy hit ko dodge win`). 4s clips suffice.
+  Clips land at `assets/concept/<dino>/motion/<anim>.mp4`.
+- **Bake tool** `scripts/tools/gen_dino_motion.py`: ffmpeg frame extraction →
+  soft bg key (same ramp as the hero bake) → per-clip union bbox (keeps lunges/
+  bounces) → one global scale + shared feet baseline (no pop between anims) →
+  `assets/sprites/<dino>_motion.png` grid + printed ANIM_LAYOUTS block.
+  `--trim/--pick/--frames/--fps/--pixel` for hand-tuning. **Validated
+  end-to-end with synthetic clips** (fake Seedance footage built from the ralph
+  hero) — keying, alignment, and the printed Rect2 block all check out.
+- Engine side is nearly free: `dino.gd build_sprite_frames` already iterates
+  arbitrary layout keys, so new anims auto-build once rects exist; the code
+  change is *playing* hit/ko/dodge/win at the right moments (queued until real
+  frames exist).
+
+> Resume hint: **PILOT is blocked on Charlie** — generate ralph `walk` + `attack`
+> per the prompt kit, drop them in `assets/concept/ralph/motion/`, then bake +
+> wire + in-game check before batching the roster. Known open item: baked-in
+> contact shadows survive the key (may double with in-game shadow — check in
+> pilot; suppression can be added to the tool).
+
 ## Session — 2026-06-15 (FIRST hands-on playtest — feel fixes + real music)
 
 Charlie played the build on a controller (the long-deferred feel check) and fired
