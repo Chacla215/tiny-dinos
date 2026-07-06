@@ -49,15 +49,15 @@ const ANIM_LAYOUTS := {
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(332, 0, 166, 168), Rect2(498, 0, 166, 168), Rect2(664, 0, 166, 168), Rect2(830, 0, 166, 168)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(996, 0, 166, 168), Rect2(1162, 0, 166, 168), Rect2(1328, 0, 166, 168)]},
 	},
-	# Bronto as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py bronto (136x168 cells). New art faces
-	# right, so the old Goober faces_left flag is gone. Long neck eats the height
-	# budget by design — he reads tall and slender.
+	# Bronto as an in-match fighter — sheet baked from the chibi-restyled hero
+	# by scripts/tools/gen_ralph_fighter.py bronto --smooth (137x168 cells). Faces
+	# right (no faces_left flag). Long neck eats the height budget by design — he
+	# reads tall and slender.
 	"bronto": {
 		"sheet": SHEET_BRONTO,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 136, 168), Rect2(136, 0, 136, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(272, 0, 136, 168), Rect2(408, 0, 136, 168), Rect2(544, 0, 136, 168), Rect2(680, 0, 136, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(816, 0, 136, 168), Rect2(952, 0, 136, 168), Rect2(1088, 0, 136, 168)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 137, 168), Rect2(137, 0, 137, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(274, 0, 137, 168), Rect2(411, 0, 137, 168), Rect2(548, 0, 137, 168), Rect2(685, 0, 137, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(822, 0, 137, 168), Rect2(959, 0, 137, 168), Rect2(1096, 0, 137, 168)]},
 	},
 	# Anky as an in-match fighter — pixel sheet baked from the painterly hero
 	# by scripts/tools/gen_ralph_fighter.py anky (269x168 cells). Low and long,
