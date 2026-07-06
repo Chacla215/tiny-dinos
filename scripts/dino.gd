@@ -1501,6 +1501,10 @@ func try_hit(body: Node) -> void:
 		dmg = int(round(dmg * BEAST_DMG_MULT))
 		kb *= BEAST_KB_MULT
 	body.take_damage(dmg, kb, self)
+	# Attacker follow-through: our own torso lurches into the blow so a clean
+	# connect has weight on the giving end, not just the receiving one.
+	if rig != null:
+		rig.connect_recoil(float(dmg) / 24.0)
 	var root := get_tree().current_scene
 	if root and root.has_method("add_dp"):
 		root.add_dp(player_id, 10)
@@ -1849,8 +1853,10 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	var kdir: Vector2 = knockback.normalized() if knockback.length() > 1.0 else facing
 	_spawn_hit_burst(global_position - kdir * 16.0 + Vector2(0, sprite_offset_y * 0.5), kdir, amount, hp <= 0 and not ringout_only)
 	# Limb flail: kick the rig's springs so head/legs/tail react to the blow.
+	# Divisor is the single knob for how violently everyone reels — lower = more
+	# whip (per-dino weight still reads through each profile's own hit_* values).
 	if rig != null:
-		rig.hit(kdir, float(amount) / 18.0)
+		rig.hit(kdir, float(amount) / 14.0)
 	# FLOPPY stage 2: a hard enough shove takes your feet out from under you. (Not
 	# on a lethal hit — that path goes to die() below.)
 	var lethal := hp <= 0 and not ringout_only

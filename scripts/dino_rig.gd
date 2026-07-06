@@ -264,6 +264,19 @@ func hit(world_dir: Vector2, power: float) -> void:
 	# upright (low lean_damp = a few drunk oscillations before it recovers).
 	_lean_vel += _c("hit_stumble") * power * signf(world_dir.x)
 
+## Landing a blow: the ATTACKER's follow-through. The torso drives forward into
+## the impact and the head pecks after it, then both snap home fast — so a clean
+## hit reads with weight on the giving end too, not just the receiving one. Much
+## lighter than hit(); connecting shouldn't fling you around like being struck.
+func connect_recoil(power: float) -> void:
+	power = clampf(power, 0.2, 1.2)
+	# Forward lurch in the rig's facing frame (+x = the way it's facing). Take the
+	# stronger of any recoil already in flight so rapid hits keep punching forward.
+	_body_recoil.x = max(_body_recoil.x, _c("body_recoil") * 0.45 * power)
+	_body_recoil.y = min(_body_recoil.y, -1.5 * power)
+	if _limbs.has("head"):
+		_limbs["head"].vel += _c("hit_head") * 0.35 * power
+
 ## FLOPPY stage 3: grabbed and carried — hang limp with a faint dangle sway.
 func set_held(held: bool) -> void:
 	_held = held
