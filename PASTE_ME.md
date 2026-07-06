@@ -16,7 +16,8 @@ clipboard for you.
 detailed realistic scales, heavy texture, photorealistic, semi-realistic, 3d
 render, sharp teeth/claws menacing, gritty, dramatic harsh shadows, fine scale
 detail, aggressive, lanky/realistic proportions, small head, harsh black outline,
-text, watermark, multiple characters, extra limbs, deformed
+text, watermark, multiple characters, extra limbs, extra arms, fifth limb,
+separate hand on chest or belly, more than four limbs, deformed
 ```
 
 ## PASTE 1 — RAPTOR (Max)
@@ -70,7 +71,13 @@ Upload: `ralph_hero.png`. Save as: `assets/concept/pterry/pterry_hero.png`
 
 ```
 A cute chibi baby pterodactyl character. Lean chibi flyer body, small rounded
-torso, leathery WINGS half-spread for balance, tiny clawed feet, a short tail.
+torso, tiny clawed feet, a short tail. EXACTLY FOUR LIMBS — two wing-arms and
+two legs, NOTHING else. The wings ARE her arms (pterosaur anatomy): each wing-arm
+ends in a small THREE-CLAWED HAND at the leading wing joint, and that clawed
+wing-hand is her GRIPPING hand — able to hold a stick. Wings held half-folded so
+the hands read clearly; her NEAR (right) wing-hand is raised forward, open and
+ready to grip. Do NOT add any separate little arm or extra hand on the chest or
+belly — she has four limbs total.
 Long swept-back CREST peak rising from the back of the head, a narrow pointed
 BEAK (not a toothy snout). BURNT-ORANGE scales across the body and crest, a
 CREAM belly and throat, RUBY-RED leathery wing skin stretched on darker arm
