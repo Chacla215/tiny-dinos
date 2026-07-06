@@ -50,30 +50,10 @@ scene.view_settings.view_transform = "Standard"
 scene.view_settings.look = "None"
 # Storybook toon outline via Freestyle (clean black contour that reads on the
 # painterly islands, same silhouette-first language as the chibi heroes).
-scene.render.use_freestyle = True
-scene.render.line_thickness_mode = "ABSOLUTE"
-scene.render.line_thickness = 2.6
-vl = scene.view_layers[0]
-vl.use_freestyle = True
-# A fresh (factory-empty) view layer has no lineset/linestyle, which crashes the
-# Freestyle pass -- create them explicitly so the toon contour actually draws.
-fs = vl.freestyle_settings
-if not fs.linesets:
-    fs.linesets.new("ls")
-_ls = fs.linesets[0]
-if _ls.linestyle is None:
-    _ls.linestyle = bpy.data.linestyles.new("LineStyle")
-# Warm-dark contour (sampled from the island's rock/palm darks) reads softer and
-# more storybook than a cold pure black. See PALETTE below.
-_ls.linestyle.color = (0.13, 0.10, 0.08)
-_ls.linestyle.thickness = 2.6
-# Clean cartoon CONTOUR only -- a dense imported (Meshy) mesh otherwise gets
-# scribbled all over with crease/material interior lines.
-_ls.select_silhouette = True
-_ls.select_border = True
-_ls.select_crease = False
-_ls.select_edge_mark = False
-_ls.select_material_boundary = False
+# Outline is done with an inverted hull (see add_outline) rather than Freestyle:
+# Freestyle scribbles interior silhouette/crease lines all over a dense imported
+# mesh, whereas an inverted hull gives one clean outer contour at any poly count.
+scene.render.use_freestyle = False
 
 # ---------- palette sampled from assets/concept/islands/restyle/beach.png ----------
 # Warm golden key + WARM bounce (sand keeps shadows warm, R-B ~+117) + a cool
@@ -231,6 +211,7 @@ if MODEL and os.path.exists(MODEL):
         bpy.ops.mesh.select_all(action="SELECT")
         bpy.ops.mesh.normals_make_consistent(inside=False)
         bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.shade_smooth()
     for o in list(bpy.context.selected_objects):
         if o.parent is None:
             parent_keep(o, root)
@@ -293,6 +274,26 @@ else:
     sphere("bthigh", (-0.02, 0.16, 0.34), (0.15, 0.15, 0.26), LEAF,  bleg)
     sphere("bfoot",  (0.06, 0.16, 0.12), (0.17, 0.13, 0.09), LEAF,  bleg)
     HAS_JOINTS = True
+
+# ---------- clean toon outline: inverted hull ----------
+# A slightly-inflated dark shell with flipped normals + backface culling shows
+# only as a crisp outer contour behind the real mesh -- density-independent, so
+# no interior scribble on the dense Meshy geometry.
+_outline = bpy.data.materials.new("outline"); _outline.use_nodes = True
+_ont = _outline.node_tree; _ont.nodes.clear()
+_oo = _ont.nodes.new("ShaderNodeOutputMaterial"); _oe = _ont.nodes.new("ShaderNodeEmission")
+_oe.inputs[0].default_value = (0.13, 0.10, 0.08, 1)
+_ont.links.new(_oe.outputs[0], _oo.inputs["Surface"])
+_outline.use_backface_culling = True
+for _ob in [x for x in bpy.data.objects if x.type == "MESH"]:
+    if "outline" not in [m.name for m in _ob.data.materials if m]:
+        _ob.data.materials.append(_outline)
+    _idx = list(_ob.data.materials).index(_outline)
+    _sol = _ob.modifiers.new("outline", "SOLIDIFY")
+    _sol.thickness = 0.05; _sol.offset = 1.0
+    _sol.use_flip_normals = True
+    _sol.material_offset = _idx
+    _sol.use_rim = False
 
 # ---------- the 9 game frames (idle x2, walk x4, attack x3) ----------
 # deg values are joint rotations about Y (side-view pitch); body_z = upper-body
