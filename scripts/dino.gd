@@ -233,6 +233,7 @@ var facing: Vector2 = Vector2.RIGHT
 var hp: int
 var attack_phase: int = AttackPhase.IDLE
 var attack_timer: float = 0.0
+var attack_phase_dur: float = 0.001   # full length of the current phase, for swing progress (0..1)
 var invuln_timer: float = 0.0
 var hit_targets_this_swing: Array = []
 
@@ -670,8 +671,13 @@ func _physics_process(delta: float) -> void:
 	var current_offset := current_attack_hitbox_offset if attack_phase != AttackPhase.IDLE else attack_hitbox_offset
 	hitbox.position = facing * current_offset
 	if weapon_visual and weapon_visual.visible:
-		weapon_visual.rotation = facing.angle()
-		weapon_visual.position = facing * grip_offset.x + Vector2(0, grip_offset.y)
+		# Melee weapons SWING through the attack (cock back on windup, chop down on
+		# active, ease home on recovery) so a weapon hit reads as a real strike, not
+		# a static prop. Ranged weapons (bow) don't swing — they fire.
+		var fsign := 1.0 if facing.x >= 0.0 else -1.0
+		var sw := Vector2.ZERO if wpn_projectile else _weapon_swing()
+		weapon_visual.rotation = facing.angle() + deg_to_rad(sw.x) * fsign
+		weapon_visual.position = facing * (grip_offset.x + sw.y) + Vector2(0, grip_offset.y)
 		# Facing left rotates the sprite past 90°; un-mirror it so the blade's
 		# top edge stays up.
 		if weapon_visual is Sprite2D:
@@ -1276,6 +1282,7 @@ func start_attack(heavy: bool = false) -> void:
 	current_attack_recovery *= wpn_recovery
 	attack_timer *= wpn_windup
 	attack_phase = AttackPhase.WINDUP
+	attack_phase_dur = maxf(attack_timer, 0.001)
 	play_scene_sfx("swing", 0.08)
 
 func _refresh_weapon() -> void:
@@ -1411,7 +1418,26 @@ func start_special() -> void:
 		velocity = facing * special_self_dash
 		dash_active = true
 	attack_phase = AttackPhase.WINDUP
+	attack_phase_dur = maxf(attack_timer, 0.001)
 	play_scene_sfx("swing", 0.06)
+
+# Held-weapon swing pose for the current attack phase. Returns Vector2(angle_deg,
+# reach_px): angle is the offset added to the facing angle (+ = chopping forward/
+# down), reach is a small forward thrust on the active frame. Windup cocks it back
+# overhead, active whips it down through the arc, recovery eases it home.
+func _weapon_swing() -> Vector2:
+	var p := clampf(1.0 - attack_timer / attack_phase_dur, 0.0, 1.0)
+	match attack_phase:
+		AttackPhase.WINDUP:
+			var e := 1.0 - (1.0 - p) * (1.0 - p)         # ease-out: snap up, then hold cocked
+			return Vector2(-98.0 * e, -2.0 * e)
+		AttackPhase.ACTIVE:
+			return Vector2(lerpf(-98.0, 62.0, p), sin(p * PI) * 12.0)  # whip down + thrust
+		AttackPhase.RECOVERY:
+			var e := 1.0 - (1.0 - p) * (1.0 - p)
+			return Vector2(lerpf(62.0, 0.0, e), 0.0)     # settle back to the held rest pose
+		_:
+			return Vector2.ZERO
 
 func update_attack(delta: float) -> void:
 	if attack_phase == AttackPhase.ACTIVE:
@@ -1428,6 +1454,7 @@ func update_attack(delta: float) -> void:
 		AttackPhase.WINDUP:
 			attack_phase = AttackPhase.ACTIVE
 			attack_timer = current_attack_active
+			attack_phase_dur = maxf(current_attack_active, 0.001)
 			if current_is_special and (special_type == "screech" or special_type == "stomp"):
 				_do_screech()
 			elif current_is_special and special_type == "tail_smash":
@@ -1448,6 +1475,7 @@ func update_attack(delta: float) -> void:
 		AttackPhase.ACTIVE:
 			attack_phase = AttackPhase.RECOVERY
 			attack_timer = current_attack_recovery
+			attack_phase_dur = maxf(current_attack_recovery, 0.001)
 			hitbox_shape.disabled = true
 			hitbox_visual.visible = false
 		AttackPhase.RECOVERY:
