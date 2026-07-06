@@ -283,6 +283,9 @@ const GRAB_THROW_KB := 880.0         # launch power when you hurl them — a com
 const GRAB_COOLDOWN := 0.55
 const GRAB_ESCAPE_PER_MASH := 0.17   # struggle gained per button press (humans)
 const GRAB_ESCAPE_CPU_RATE := 0.62   # struggle/sec a held CPU builds automatically
+const GRAB_CARRY_SLOW := 0.72        # hauling a limp foe drags your own top speed down
+const GRAB_CARRY_LAG := 0.32         # how fast the carried foe closes to the hold point
+									 # (lower = it swings/trails behind you like dead weight)
 
 # Ring-out: shoved off the island, the dino either tumbles off the BOTTOM (sides
 # + low edge, a clean KO) or gets sucked UP and spirals into the sky off the TOP.
@@ -1002,6 +1005,9 @@ func update_movement(delta: float) -> void:
 		accel *= SLOW_ACCEL_FACTOR
 	if floppy:
 		move_factor *= floppy_speed_mult
+	# Lugging a limp foe is heavy — your top speed sags while you carry one.
+	if grabbing != null:
+		move_factor *= GRAB_CARRY_SLOW
 
 	# Bleed off knockback launch speed at a fixed rate so a big hit can't skate
 	# you across an ice map. Only the speed above max_speed is affected, so it
@@ -1166,7 +1172,9 @@ func _process_grabbed(delta: float) -> void:
 	# foe dangles from Steve's mouth (high) or is held low by Gus — matching where
 	# that dino grabs. Forward stays large (foes are bigger than weapons).
 	var hold: Vector2 = g.global_position + g.facing.normalized() * GRAB_HOLD_DIST + Vector2(0, g.grip_offset.y)
-	global_position = global_position.lerp(hold, 0.45)
+	# Trail toward the hold point instead of snapping to it, so the limp foe swings
+	# and drags behind the carrier like dead weight rather than riding rigidly.
+	global_position = global_position.lerp(hold, GRAB_CARRY_LAG)
 	velocity = Vector2.ZERO
 	if g.facing != Vector2.ZERO:
 		facing = (-g.facing).normalized()  # held foe faces its captor
@@ -1196,11 +1204,18 @@ func throw_grabbed() -> void:
 		dir = Vector2.RIGHT
 	foe._released(dir * GRAB_THROW_KB, true)
 	play_scene_sfx("throw", 0.12)
+	# The thrower heaves the whole body forward — a big follow-through lurch sells
+	# the effort of the yeet on the giving end.
+	if rig != null:
+		rig.connect_recoil(1.2)
 	# The throw is the biggest, highest-commitment verb in floppy — give it a jolt
 	# so the yeet has weight (it was the only impact moment firing no screen shake).
+	# A crisp freeze-frame at the release punctuates the heave before the foe skids.
 	var sr := get_tree().current_scene
 	if sr and sr.has_method("shake"):
 		sr.shake(15.0, 0.24)
+	if sr and sr.has_method("hit_pause"):
+		sr.hit_pause(0.07, 0.22)
 
 # Hold timer expired: just let go (no launch).
 func _drop_grab() -> void:
