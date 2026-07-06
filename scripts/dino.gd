@@ -31,13 +31,13 @@ const ANIM_LAYOUTS := {
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(252, 0, 126, 168), Rect2(378, 0, 126, 168), Rect2(504, 0, 126, 168), Rect2(630, 0, 126, 168)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(756, 0, 126, 168), Rect2(882, 0, 126, 168), Rect2(1008, 0, 126, 168)]},
 	},
-	# Trike as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py trike (155x168 cells).
+	# Trike as an in-match fighter — smooth sheet baked from the chibi-restyled
+	# hero by scripts/tools/gen_ralph_fighter.py trike (134x168 cells).
 	"trike": {
 		"sheet": SHEET_TRIKE,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 155, 168), Rect2(155, 0, 155, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(310, 0, 155, 168), Rect2(465, 0, 155, 168), Rect2(620, 0, 155, 168), Rect2(775, 0, 155, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(930, 0, 155, 168), Rect2(1085, 0, 155, 168), Rect2(1240, 0, 155, 168)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 134, 168), Rect2(134, 0, 134, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(268, 0, 134, 168), Rect2(402, 0, 134, 168), Rect2(536, 0, 134, 168), Rect2(670, 0, 134, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(804, 0, 134, 168), Rect2(938, 0, 134, 168), Rect2(1072, 0, 134, 168)]},
 	},
 	# Pterry as an in-match fighter — pixel sheet baked from the painterly hero
 	# by scripts/tools/gen_ralph_fighter.py pterry (168x168 cells).

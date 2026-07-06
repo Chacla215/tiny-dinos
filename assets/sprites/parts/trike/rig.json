@@ -1,6 +1,6 @@
 {
   "core_size": [
-    119,
+    98,
     132
   ],
   "order": [
@@ -21,44 +21,44 @@
     "back_leg": {
       "tex": "res://assets/sprites/parts/trike/back_leg.png",
       "center": [
-        -14.0,
+        -11.0,
         39.5
       ],
       "pivot": [
-        -17.85,
+        -14.7,
         31.68
       ]
     },
     "tail": {
       "tex": "res://assets/sprites/parts/trike/tail.png",
       "center": [
-        -40.0,
-        6.0
+        -32.0,
+        5.5
       ],
       "pivot": [
-        -30.94,
+        -25.48,
         2.64
       ]
     },
     "front_leg": {
       "tex": "res://assets/sprites/parts/trike/front_leg.png",
       "center": [
-        23.5,
+        20.5,
         39.5
       ],
       "pivot": [
-        28.56,
+        23.52,
         31.68
       ]
     },
     "head": {
       "tex": "res://assets/sprites/parts/trike/head.png",
       "center": [
-        27.5,
+        21.5,
         -9.0
       ],
       "pivot": [
-        9.52,
+        7.84,
         7.92
       ]
     }
