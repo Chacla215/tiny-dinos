@@ -112,6 +112,7 @@ const DINOS := {
 		"sprite_role": "trike",
 		"sprite_scale": 0.64,
 		"sprite_offset_y": -35.0,
+		"grip_offset": Vector2(30.0, -14.0),   # mouth, low & forward (quadruped)
 		"hit_sfx_name": "hit_chomp",
 		"max_speed": 300.0,
 		"ground_accel": 2500.0,
@@ -158,6 +159,7 @@ const DINOS := {
 		"sprite_role": "pterry",
 		"sprite_scale": 0.55,
 		"sprite_offset_y": -29.0,
+		"grip_offset": Vector2(22.0, -18.0),   # near wing-claw hand, mid-height
 		"hit_sfx_name": "hit_chomp",
 		"max_speed": 280.0,
 		"ground_accel": 2000.0,
@@ -203,6 +205,7 @@ const DINOS := {
 		"sprite_role": "raptor",
 		"sprite_scale": 0.52,
 		"sprite_offset_y": -27.0,
+		"grip_offset": Vector2(20.0, -20.0),   # hands, mid-height (biped)
 		"hit_sfx_name": "hit_claw",
 		"max_speed": 440.0,
 		"ground_accel": 5000.0,
@@ -249,6 +252,7 @@ const DINOS := {
 		"sprite_role": "bronto",
 		"sprite_scale": 0.72,
 		"sprite_offset_y": -40.0,
+		"grip_offset": Vector2(26.0, -78.0),   # mouth, HIGH at the top of the long neck
 		"hit_sfx_name": "hit_chomp",
 		"max_speed": 250.0,
 		"ground_accel": 1700.0,
@@ -294,6 +298,7 @@ const DINOS := {
 		"sprite_role": "anky",
 		"sprite_scale": 0.63,
 		"sprite_offset_y": -34.0,
+		"grip_offset": Vector2(32.0, -10.0),   # mouth, low & forward (wide quadruped)
 		"hit_sfx_name": "hit_chomp",
 		"max_speed": 260.0,
 		"ground_accel": 2000.0,
@@ -344,6 +349,7 @@ const DINOS := {
 		"sprite_role": "ralph",
 		"sprite_scale": 0.6,
 		"sprite_offset_y": -32.0,
+		"grip_offset": Vector2(18.0, -14.0),   # tiny T-rex arms, low hand height
 		"hit_sfx_name": "hit_chomp",
 		"max_speed": 240.0,
 		"ground_accel": 1500.0,

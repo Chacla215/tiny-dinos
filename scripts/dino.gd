@@ -203,6 +203,12 @@ var ai: RefCounted = null
 @export var sprite_role: String = "raptor"
 @export var sprite_scale: float = 2.5
 @export var sprite_offset_y: float = -10.0
+## Where a held weapon / carried foe anchors on THIS dino's body, so the grab
+## reads as anatomically true: x = distance forward along facing, y = vertical
+## (negative = up). Hand-grabbers (Ralph/Max) sit near hand height; the wing-claw
+## (Jessie) a touch higher; mouth-grabbers (Gus/Frank low, Steve high on his neck)
+## anchor up at the snout. DINOS overrides this per dino; default = old hand anchor.
+@export var grip_offset: Vector2 = Vector2(18.0, -6.0)
 # Global visual-scale multiplier on every fighter (readability on the busy arenas).
 const FIGHTER_SCALE_BOOST := 1.25
 ## True when the source sprite art faces left by default (e.g. bronto/Goober).
@@ -665,7 +671,7 @@ func _physics_process(delta: float) -> void:
 	hitbox.position = facing * current_offset
 	if weapon_visual and weapon_visual.visible:
 		weapon_visual.rotation = facing.angle()
-		weapon_visual.position = facing * 18.0 + Vector2(0, -6)
+		weapon_visual.position = facing * grip_offset.x + Vector2(0, grip_offset.y)
 		# Facing left rotates the sprite past 90°; un-mirror it so the blade's
 		# top edge stays up.
 		if weapon_visual is Sprite2D:
@@ -1150,7 +1156,10 @@ func _process_grabbed(delta: float) -> void:
 	if not is_instance_valid(g) or g.grabbing != self:
 		_clear_grabbed()
 		return
-	var hold: Vector2 = g.global_position + g.facing.normalized() * GRAB_HOLD_DIST + Vector2(0, -8)
+	# Carried at arm's/neck's length in front, but at the HOLDER's grip height, so a
+	# foe dangles from Steve's mouth (high) or is held low by Gus — matching where
+	# that dino grabs. Forward stays large (foes are bigger than weapons).
+	var hold: Vector2 = g.global_position + g.facing.normalized() * GRAB_HOLD_DIST + Vector2(0, g.grip_offset.y)
 	global_position = global_position.lerp(hold, 0.45)
 	velocity = Vector2.ZERO
 	if g.facing != Vector2.ZERO:
