@@ -25,11 +25,21 @@ him — his words: the current five dinos don't capture it) that doubles as the
   `assets/video/opening.ogv` when it exists (gamepad-skippable), boots straight
   to title until then (verified headless).
 
-> Resume hint: everything is now blocked on Charlie generations, in priority
-> order: (1) the 5 restyled heroes (fixes roster + casts trailer), (2) trailer
-> shots per `trailer_prompts.md` (Claude assembles + converts to opening.ogv),
-> (3) fighter motion clips per `dino_motion_prompts.md` (bake tool + engine
-> support both ready and validated).
+Later same session: a research sweep (GitHub + web) hardened the pipeline —
+`gen_dino_motion.py` bg key is now connected-region flood-fill (FrameKit's
+smart-chroma idea; protects bg-colored bellies) and `trailer_prompts.md`
+gained proven Seedance consistency rules (never paraphrase character lines,
+stress-test heroes on 3 bgs, first/end-frame chaining). Party Animals logged
+as the closest commercial reference (cute physics brawler with a chibi dino).
+Charlie then extended the restyle to the ISLANDS: `arena_bg_restyle_prompts.md`
+(image-to-image, same composition so collisions survive, Beauty Beach pilot
+first) + `CHARLIE_TODO.md` at root — his 4-step art-program checklist (dinos →
+one island → trailer → motion clips).
+
+> Resume hint: everything is now blocked on Charlie generations, in the order
+> of `CHARLIE_TODO.md`: (1) 5 restyled heroes, (2) Beauty Beach restyle pilot,
+> (3) trailer shots, (4) motion clips. All Claude-side tooling is built and
+> validated; when Charlie says "I did step N", pick up from that kit.
 
 ## Session — 2026-07-04 (video-gen animation pipeline — Seedance 2.0)
 
