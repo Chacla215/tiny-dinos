@@ -1926,6 +1926,11 @@ func _spawn_projectile() -> void:
 
 # Stegosaurus Shooting Spikes: a 3-spike fan.
 func _spawn_spike_volley() -> void:
+	# Muzzle flash + a light kick so loosing the volley reads as a firm launch.
+	_spawn_hit_burst(global_position + facing * 42.0 + Vector2(0, sprite_offset_y * 0.5), facing, 10, false)
+	var sr := get_tree().current_scene
+	if sr and sr.has_method("shake"):
+		sr.shake(6.0, 0.10)
 	for ang in [-0.26, 0.0, 0.26]:
 		_make_spike(facing.rotated(ang), special_damage, special_knockback)
 
@@ -1985,6 +1990,14 @@ func _do_radial_special(slow_duration: float, ring_color: Color) -> void:
 			other.take_damage(special_damage, dir * special_knockback, self)
 		if slow_duration > 0.0 and other.has_method("apply_screech"):
 			other.apply_screech(slow_duration)
+	# The AOE boom lands with weight whether or not it caught anyone: a solid
+	# shake + a crisp freeze-frame punctuate the shockwave.
+	var sr := get_tree().current_scene
+	if sr:
+		if sr.has_method("shake"):
+			sr.shake(16.0, 0.28)
+		if sr.has_method("hit_pause"):
+			sr.hit_pause(0.06, 0.32)
 	_spawn_radial_ring(ring_color)
 
 # Called on a dino caught in a screech: slows it + locks dodge for the duration.
@@ -1992,21 +2005,61 @@ func apply_screech(duration: float) -> void:
 	timed_slow_timer = maxf(timed_slow_timer, duration)
 
 func _spawn_radial_ring(color: Color) -> void:
-	var ring := Polygon2D.new()
+	var root := get_tree().current_scene
+	if root == null:
+		return
+	var center := global_position
+	# 1) Coloured shock FILL disc that snaps out to full radius and fades.
+	var fill := Polygon2D.new()
 	var pts := PackedVector2Array()
-	for i in range(28):
-		var a := TAU * i / 28.0
+	for i in range(32):
+		var a := TAU * i / 32.0
 		pts.append(Vector2(cos(a), sin(a)) * special_radius)
-	ring.polygon = pts
-	ring.color = color
-	ring.global_position = global_position
-	ring.scale = Vector2(0.15, 0.15)
-	ring.z_index = -1
-	get_tree().current_scene.add_child(ring)
-	var tw := ring.create_tween()
-	tw.tween_property(ring, "scale", Vector2(1, 1), 0.25)
-	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.3)
-	tw.chain().tween_callback(ring.queue_free)
+	fill.polygon = pts
+	fill.color = color
+	fill.global_position = center
+	fill.scale = Vector2(0.15, 0.15)
+	fill.z_index = -1
+	root.add_child(fill)
+	var ft := fill.create_tween()
+	ft.tween_property(fill, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	ft.parallel().tween_property(fill, "modulate:a", 0.0, 0.28)
+	ft.tween_callback(fill.queue_free)
+	# 2) Bright leading-edge RING snapping outward (tapering Line2D) -- the crack.
+	var edge := Line2D.new()
+	var ep := PackedVector2Array()
+	for i in range(41):
+		var a := TAU * i / 40.0
+		ep.append(Vector2(cos(a), sin(a)) * special_radius)
+	edge.points = ep
+	edge.closed = true
+	edge.width = 7.0
+	edge.default_color = Color(1, 1, 1, 0.9)
+	edge.global_position = center
+	edge.scale = Vector2(0.15, 0.15)
+	edge.z_index = 30
+	root.add_child(edge)
+	var et := edge.create_tween()
+	et.tween_property(edge, "scale", Vector2.ONE, 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	et.parallel().tween_property(edge, "modulate:a", 0.0, 0.30)
+	et.parallel().tween_property(edge, "width", 1.5, 0.24)
+	et.tween_callback(edge.queue_free)
+	# 3) Grit: dust shards flung outward around the perimeter for weight.
+	for i in range(10):
+		var a := TAU * i / 10.0 + randf_range(-0.15, 0.15)
+		var d := Vector2(cos(a), sin(a))
+		var shard := Polygon2D.new()
+		shard.polygon = PackedVector2Array([Vector2(-3, -2), Vector2(7, 0), Vector2(-3, 2)])
+		shard.color = Color(color.r, color.g, color.b, 0.9)
+		shard.global_position = center + d * (special_radius * 0.35)
+		shard.rotation = a
+		shard.z_index = 31
+		root.add_child(shard)
+		var st := shard.create_tween()
+		st.tween_property(shard, "global_position", center + d * special_radius, 0.26).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		st.parallel().tween_property(shard, "scale", Vector2.ZERO, 0.26)
+		st.parallel().tween_property(shard, "modulate:a", 0.0, 0.26)
+		st.tween_callback(shard.queue_free)
 
 # A sweeping slash arc when a melee attack goes active. Shape/size/colour/speed
 # differ by attack kind so light, heavy, and each special read distinctly.
