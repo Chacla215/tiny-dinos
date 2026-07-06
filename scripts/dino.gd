@@ -7,66 +7,63 @@ enum DefenseState { NORMAL, BLOCKING, DODGING, GUARD_BROKEN }
 const SHEET_PLAYER := "res://assets/sprites/playersprites_revision.png"
 const SHEET_REF := "res://assets/sprites/rynosaurlandcharacters.png"
 const SHEET_ENEMY := "res://assets/sprites/enemysprites_revision.png"
-const SHEET_RALPH := "res://assets/sprites/ralph_fighter.png"
-const SHEET_RAPTOR := "res://assets/sprites/raptor_fighter.png"
-const SHEET_TRIKE := "res://assets/sprites/trike_fighter.png"
-const SHEET_PTERRY := "res://assets/sprites/pterry_fighter.png"
-const SHEET_BRONTO := "res://assets/sprites/bronto_fighter.png"
-const SHEET_ANKY := "res://assets/sprites/anky_fighter.png"
+# 3D-baked fighter sheets (Meshy model -> Blender toon bake, see scripts/tools/
+# blender_render_dino.py). Each carries "motion": true so the game plays these
+# frames via AnimatedSprite2D instead of the procedural rig. Old box-sliced
+# sheets (*_fighter.png) remain on disk as history.
+const SHEET_RALPH := "res://assets/sprites/ralph_fighter_3d.png"
+const SHEET_RAPTOR := "res://assets/sprites/raptor_fighter_3d.png"
+const SHEET_TRIKE := "res://assets/sprites/trike_fighter_3d.png"
+const SHEET_PTERRY := "res://assets/sprites/pterry_fighter_3d.png"
+const SHEET_BRONTO := "res://assets/sprites/bronto_fighter_3d.png"
+const SHEET_ANKY := "res://assets/sprites/anky_fighter_3d.png"
 
 const ANIM_LAYOUTS := {
-	# Raptor as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py raptor (173x168 cells).
+	# Every fighter below is a 3D-baked sheet (Meshy model -> Blender toon bake,
+	# scripts/tools/blender_render_dino.py + pack_dino_sheet.py). "motion": true =>
+	# wants_rig=false, so the AnimatedSprite2D plays these idle/walk/attack frames
+	# (squash-and-stretch animation baked in) instead of the procedural limb rig.
 	"raptor": {
 		"sheet": SHEET_RAPTOR,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 133, 168), Rect2(133, 0, 133, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(266, 0, 133, 168), Rect2(399, 0, 133, 168), Rect2(532, 0, 133, 168), Rect2(665, 0, 133, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(798, 0, 133, 168), Rect2(931, 0, 133, 168), Rect2(1064, 0, 133, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 130, 168), Rect2(130, 0, 130, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(260, 0, 130, 168), Rect2(390, 0, 130, 168), Rect2(520, 0, 130, 168), Rect2(650, 0, 130, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(780, 0, 130, 168), Rect2(910, 0, 130, 168), Rect2(1040, 0, 130, 168)]},
 	},
-	# Ralph the mascot as an in-match fighter — pixel-art sheet baked from the
-	# existing painterly hero by scripts/tools/gen_ralph_fighter.py (126x168 cells).
 	"ralph": {
 		"sheet": SHEET_RALPH,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 126, 168), Rect2(126, 0, 126, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(252, 0, 126, 168), Rect2(378, 0, 126, 168), Rect2(504, 0, 126, 168), Rect2(630, 0, 126, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(756, 0, 126, 168), Rect2(882, 0, 126, 168), Rect2(1008, 0, 126, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 138, 168), Rect2(138, 0, 138, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(276, 0, 138, 168), Rect2(414, 0, 138, 168), Rect2(552, 0, 138, 168), Rect2(690, 0, 138, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(828, 0, 138, 168), Rect2(966, 0, 138, 168), Rect2(1104, 0, 138, 168)]},
 	},
-	# Trike as an in-match fighter — smooth sheet baked from the chibi-restyled
-	# hero by scripts/tools/gen_ralph_fighter.py trike (134x168 cells).
 	"trike": {
 		"sheet": SHEET_TRIKE,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 134, 168), Rect2(134, 0, 134, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(268, 0, 134, 168), Rect2(402, 0, 134, 168), Rect2(536, 0, 134, 168), Rect2(670, 0, 134, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(804, 0, 134, 168), Rect2(938, 0, 134, 168), Rect2(1072, 0, 134, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 169, 168), Rect2(169, 0, 169, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(338, 0, 169, 168), Rect2(507, 0, 169, 168), Rect2(676, 0, 169, 168), Rect2(845, 0, 169, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1014, 0, 169, 168), Rect2(1183, 0, 169, 168), Rect2(1352, 0, 169, 168)]},
 	},
-	# Pterry as an in-match fighter — sheet baked from the chibi four-limb hero
-	# by scripts/tools/gen_ralph_fighter.py pterry --smooth (166x168 cells). She's
-	# a pterosaur: wings ARE her arms, and the near wing-hand's claws grip weapons
-	# (four limbs, no stray fifth arm), so she plays like the rest of the roster.
 	"pterry": {
 		"sheet": SHEET_PTERRY,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 166, 168), Rect2(166, 0, 166, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(332, 0, 166, 168), Rect2(498, 0, 166, 168), Rect2(664, 0, 166, 168), Rect2(830, 0, 166, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(996, 0, 166, 168), Rect2(1162, 0, 166, 168), Rect2(1328, 0, 166, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 155, 168), Rect2(155, 0, 155, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(310, 0, 155, 168), Rect2(465, 0, 155, 168), Rect2(620, 0, 155, 168), Rect2(775, 0, 155, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(930, 0, 155, 168), Rect2(1085, 0, 155, 168), Rect2(1240, 0, 155, 168)]},
 	},
-	# Bronto as an in-match fighter — sheet baked from the chibi-restyled hero
-	# by scripts/tools/gen_ralph_fighter.py bronto --smooth (137x168 cells). Faces
-	# right (no faces_left flag). Long neck eats the height budget by design — he
-	# reads tall and slender.
 	"bronto": {
 		"sheet": SHEET_BRONTO,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 137, 168), Rect2(137, 0, 137, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(274, 0, 137, 168), Rect2(411, 0, 137, 168), Rect2(548, 0, 137, 168), Rect2(685, 0, 137, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(822, 0, 137, 168), Rect2(959, 0, 137, 168), Rect2(1096, 0, 137, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 143, 168), Rect2(143, 0, 143, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(286, 0, 143, 168), Rect2(429, 0, 143, 168), Rect2(572, 0, 143, 168), Rect2(715, 0, 143, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(858, 0, 143, 168), Rect2(1001, 0, 143, 168), Rect2(1144, 0, 143, 168)]},
 	},
-	# Anky as an in-match fighter — sheet baked from the chibi-restyled hero
-	# by scripts/tools/gen_ralph_fighter.py anky --smooth (196x168 cells). Low and
-	# wide (armor + tail club), so the cell is wide; height-normalized like the rest.
 	"anky": {
 		"sheet": SHEET_ANKY,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 196, 168), Rect2(196, 0, 196, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(392, 0, 196, 168), Rect2(588, 0, 196, 168), Rect2(784, 0, 196, 168), Rect2(980, 0, 196, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1176, 0, 196, 168), Rect2(1372, 0, 196, 168), Rect2(1568, 0, 196, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 191, 168), Rect2(191, 0, 191, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(382, 0, 191, 168), Rect2(573, 0, 191, 168), Rect2(764, 0, 191, 168), Rect2(955, 0, 191, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1146, 0, 191, 168), Rect2(1337, 0, 191, 168), Rect2(1528, 0, 191, 168)]},
 	},
 }
 
