@@ -80,23 +80,53 @@ def extract(clip, fps, outdir):
 
 
 def key_alpha(im, bg):
-    """Full-frame RGBA: soft distance-ramp key against the flat studio bg
-    (same KEY_LO/KEY_HI band as the hero bake, uncropped so frame coordinates
-    stay meaningful for alignment)."""
+    """Full-frame RGBA: CONNECTED-background key. Flood-fill from the frame
+    borders through pixels near the studio bg color, so only the background
+    region keys out — bg-colored details INSIDE the dino (cream belly on a
+    grey-blue studio) survive. Soft KEY_LO..KEY_HI ramp on the boundary ring.
+    (Connected-region idea borrowed from FrameKit's smart chroma key.)"""
     im = im.convert("RGB")
     w, h = im.size
     src = im.load()
+    span = KEY_HI - KEY_LO
+
+    def dist(x, y):
+        r, g, b = src[x, y]
+        return ((r - bg[0]) ** 2 + (g - bg[1]) ** 2 + (b - bg[2]) ** 2) ** 0.5
+
+    # BFS the bg-connected region: seeds = border pixels within the key band.
+    is_bg = bytearray(w * h)
+    queue = []
+    for x in range(w):
+        for y in (0, h - 1):
+            if not is_bg[y * w + x] and dist(x, y) < KEY_HI:
+                is_bg[y * w + x] = 1
+                queue.append((x, y))
+    for y in range(h):
+        for x in (0, w - 1):
+            if not is_bg[y * w + x] and dist(x, y) < KEY_HI:
+                is_bg[y * w + x] = 1
+                queue.append((x, y))
+    while queue:
+        x, y = queue.pop()
+        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+            if 0 <= nx < w and 0 <= ny < h and not is_bg[ny * w + nx] \
+                    and dist(nx, ny) < KEY_HI:
+                is_bg[ny * w + nx] = 1
+                queue.append((nx, ny))
+
     out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     dst = out.load()
-    span = KEY_HI - KEY_LO
     for y in range(h):
+        row = y * w
         for x in range(w):
             r, g, b = src[x, y]
-            d = ((r - bg[0]) ** 2 + (g - bg[1]) ** 2 + (b - bg[2]) ** 2) ** 0.5
-            if d <= KEY_LO:
+            if not is_bg[row + x]:
+                dst[x, y] = (r, g, b, 255)
                 continue
-            a = 255 if d >= KEY_HI else int(round((d - KEY_LO) / span * 255))
-            dst[x, y] = (r, g, b, a)
+            d = ((r - bg[0]) ** 2 + (g - bg[1]) ** 2 + (b - bg[2]) ** 2) ** 0.5
+            if d > KEY_LO:  # soft edge ring of the bg region
+                dst[x, y] = (r, g, b, int(round((d - KEY_LO) / span * 255)))
     return out
 
 

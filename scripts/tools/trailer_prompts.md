@@ -114,6 +114,15 @@ feather drifting down).
 
 - Re-state "chibi baby dinosaur, oversized head, cute" in EVERY prompt — video
   models drift toward realistic dinos fast, especially in action shots.
+- **Never paraphrase a character description between shots.** Even tiny wording
+  changes ("green chibi T-rex" vs "little green dino") cause measurable visual
+  drift in Seedance — copy the exact same line every time.
+- **Stress-test the cast before shooting.** Run each restyled hero against ~3
+  different backgrounds first; if a character drifts between backgrounds, it
+  will drift across the whole trailer. Fix the hero, then shoot.
+- If the tool exposes **first-frame / end-frame** controls, use them: set the
+  previous shot's final frame as the next shot's first frame — the strongest
+  continuity anchor available (stronger than reference images alone).
 - The brawl shot will try to show clear characters — push the DUST CLOUD
   wording; the gag reads better and hides consistency errors.
 - Keep the camera language simple (one move per shot). Multi-move prompts
