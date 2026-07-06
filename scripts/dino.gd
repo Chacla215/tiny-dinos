@@ -59,14 +59,14 @@ const ANIM_LAYOUTS := {
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(274, 0, 137, 168), Rect2(411, 0, 137, 168), Rect2(548, 0, 137, 168), Rect2(685, 0, 137, 168)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(822, 0, 137, 168), Rect2(959, 0, 137, 168), Rect2(1096, 0, 137, 168)]},
 	},
-	# Anky as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py anky (269x168 cells). Low and long,
-	# so the cell is wide; height-normalized like the rest of the roster.
+	# Anky as an in-match fighter — sheet baked from the chibi-restyled hero
+	# by scripts/tools/gen_ralph_fighter.py anky --smooth (196x168 cells). Low and
+	# wide (armor + tail club), so the cell is wide; height-normalized like the rest.
 	"anky": {
 		"sheet": SHEET_ANKY,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 269, 168), Rect2(269, 0, 269, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(538, 0, 269, 168), Rect2(807, 0, 269, 168), Rect2(1076, 0, 269, 168), Rect2(1345, 0, 269, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1614, 0, 269, 168), Rect2(1883, 0, 269, 168), Rect2(2152, 0, 269, 168)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 196, 168), Rect2(196, 0, 196, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(392, 0, 196, 168), Rect2(588, 0, 196, 168), Rect2(784, 0, 196, 168), Rect2(980, 0, 196, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1176, 0, 196, 168), Rect2(1372, 0, 196, 168), Rect2(1568, 0, 196, 168)]},
 	},
 }
 
