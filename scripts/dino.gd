@@ -39,13 +39,15 @@ const ANIM_LAYOUTS := {
 		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(268, 0, 134, 168), Rect2(402, 0, 134, 168), Rect2(536, 0, 134, 168), Rect2(670, 0, 134, 168)]},
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(804, 0, 134, 168), Rect2(938, 0, 134, 168), Rect2(1072, 0, 134, 168)]},
 	},
-	# Pterry as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py pterry (168x168 cells).
+	# Pterry as an in-match fighter — sheet baked from the chibi four-limb hero
+	# by scripts/tools/gen_ralph_fighter.py pterry --smooth (166x168 cells). She's
+	# a pterosaur: wings ARE her arms, and the near wing-hand's claws grip weapons
+	# (four limbs, no stray fifth arm), so she plays like the rest of the roster.
 	"pterry": {
 		"sheet": SHEET_PTERRY,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 168, 168), Rect2(168, 0, 168, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(336, 0, 168, 168), Rect2(504, 0, 168, 168), Rect2(672, 0, 168, 168), Rect2(840, 0, 168, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1008, 0, 168, 168), Rect2(1176, 0, 168, 168), Rect2(1344, 0, 168, 168)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 166, 168), Rect2(166, 0, 166, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(332, 0, 166, 168), Rect2(498, 0, 166, 168), Rect2(664, 0, 166, 168), Rect2(830, 0, 166, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(996, 0, 166, 168), Rect2(1162, 0, 166, 168), Rect2(1328, 0, 166, 168)]},
 	},
 	# Bronto as an in-match fighter — pixel sheet baked from the painterly hero
 	# by scripts/tools/gen_ralph_fighter.py bronto (136x168 cells). New art faces
