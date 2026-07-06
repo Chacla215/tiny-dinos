@@ -19,7 +19,7 @@ SAME pose table a real model's bones would be, so swapping the model in is the
 only change.
 """
 import bpy, sys, math, os
-from mathutils import Vector
+from mathutils import Vector, Matrix
 
 # ---------- args (after the '--') ----------
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
@@ -28,6 +28,8 @@ def argval(flag, default=None):
 DINO  = argval("--dino", "ralph")
 OUT   = argval("--out", "/tmp/dino3d")
 MODEL = argval("--model", None)
+YAW   = float(argval("--yaw", "270"))   # deg to spin an imported model to face screen-right (3/4)
+TARGET_H = 2.1                          # imported model is scaled to this height (units)
 os.makedirs(OUT, exist_ok=True)
 
 # ---------- clean scene ----------
@@ -65,6 +67,13 @@ if _ls.linestyle is None:
 # more storybook than a cold pure black. See PALETTE below.
 _ls.linestyle.color = (0.13, 0.10, 0.08)
 _ls.linestyle.thickness = 2.6
+# Clean cartoon CONTOUR only -- a dense imported (Meshy) mesh otherwise gets
+# scribbled all over with crease/material interior lines.
+_ls.select_silhouette = True
+_ls.select_border = True
+_ls.select_crease = False
+_ls.select_edge_mark = False
+_ls.select_material_boundary = False
 
 # ---------- palette sampled from assets/concept/islands/restyle/beach.png ----------
 # Warm golden key + WARM bounce (sand keeps shadows warm, R-B ~+117) + a cool
@@ -152,17 +161,17 @@ def mat(name, rgb):
 # import when --model is given.
 def toonify_imported():
     for m in bpy.data.materials:
-        if not m.use_nodes:
-            continue
+        if not m.use_nodes or m.name in PLACEHOLDER_MATS:
+            continue  # never touch our own already-toon placeholder materials
+        # grab the base-colour texture (if any) BEFORE _toon_nodes clears the graph
         tex = next((n for n in m.node_tree.nodes if n.type == "TEX_IMAGE"), None)
-        base = tex.outputs["Color"] if tex else (0.7, 0.7, 0.7)
-        # keep the tex node alive: rebuild graph, then relink if we had one
         img = tex.image if tex else None
-        _toon_nodes(m, (0.7, 0.7, 0.7) if img is None else base)
+        print("MAT %-24s tex=%s img=%s" % (m.name, bool(tex), img.name if img else None))
+        _toon_nodes(m, (0.72, 0.72, 0.72))   # flat grey base if the material is untextured
         if img is not None:
             nt = m.node_tree
-            newtex = nt.nodes.new("ShaderNodeTexImage"); newtex.image = img
             mul = next(n for n in nt.nodes if n.type == "MIX_RGB" and n.blend_type == "MULTIPLY")
+            newtex = nt.nodes.new("ShaderNodeTexImage"); newtex.image = img
             nt.links.new(newtex.outputs["Color"], mul.inputs[2])
 
 GREEN = mat("green", (0.42, 0.72, 0.34))   # fresh saturated grass green (matches island foliage)
@@ -170,6 +179,9 @@ LEAF  = mat("leaf",  (0.34, 0.61, 0.29))
 CREAM = mat("cream", (0.97, 0.90, 0.70))
 WHITE = mat("white", (0.98, 0.98, 0.98))
 BLACK = mat("black", (0.05, 0.05, 0.06))
+# Our own toon materials -- toonify_imported() must skip these so it only reskins
+# the model's imported materials (never our placeholder green/etc).
+PLACEHOLDER_MATS = {"green", "leaf", "cream", "white", "black"}
 
 def empty(name, loc, parent=None):
     e = bpy.data.objects.new(name, None); e.empty_display_size = 0.1
@@ -207,9 +219,48 @@ if MODEL and os.path.exists(MODEL):
         bpy.ops.import_scene.gltf(filepath=MODEL)
     elif ext == ".fbx":
         bpy.ops.import_scene.fbx(filepath=MODEL)
-    for o in bpy.context.selected_objects:
+    # Bake the facing rotation into the MESH DATA (glTF sets rotation_mode=
+    # QUATERNION, so object-level rotation_euler silently no-ops) and recalculate
+    # normals (Meshy meshes import inverted, which renders the toon shader black).
+    Rz = Matrix.Rotation(math.radians(YAW), 4, "Z")
+    for o in [o for o in bpy.data.objects if o.type == "MESH"]:
+        o.data.transform(Rz)
+        bpy.context.view_layer.objects.active = o
+        o.select_set(True)
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_all(action="SELECT")
+        bpy.ops.mesh.normals_make_consistent(inside=False)
+        bpy.ops.object.mode_set(mode="OBJECT")
+    for o in list(bpy.context.selected_objects):
         if o.parent is None:
             parent_keep(o, root)
+    # Auto-fit: scale to TARGET_H, centre in X, drop the feet to the ground so
+    # the fixed game camera frames the dino.
+    def _wbbox():
+        mn = [1e9, 1e9, 1e9]; mx = [-1e9, -1e9, -1e9]
+        for o in bpy.data.objects:
+            if o.type != "MESH":
+                continue
+            for c in o.bound_box:
+                w = o.matrix_world @ Vector(c)
+                for i in range(3):
+                    mn[i] = min(mn[i], w[i]); mx[i] = max(mx[i], w[i])
+        return Vector(mn), Vector(mx)
+    bpy.context.view_layer.update()
+    mn, mx = _wbbox(); h = mx.z - mn.z
+    if h > 0:
+        s = TARGET_H / h
+        root.scale = (s, s, s)
+        bpy.context.view_layer.update()
+        mn, mx = _wbbox()
+        root.location.x += 0.10 - (mn.x + mx.x) / 2
+        root.location.z += 0.05 - mn.z
+        bpy.context.view_layer.update()
+    # Meshy's untextured base mesh has no materials at all -- drop a flat toon
+    # green on so the SHAPE reads in-palette until the textured export lands.
+    for o in bpy.data.objects:
+        if o.type == "MESH" and len(o.data.materials) == 0:
+            o.data.materials.append(GREEN)
     toonify_imported()  # re-skin Meshy's textured materials with the island toon look
     torso = neck = jaw = fleg = bleg = tail = root  # no primitive joints to pose
     HAS_JOINTS = False
