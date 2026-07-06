@@ -237,6 +237,7 @@ var guard_break_timer: float = 0.0
 var last_damaged_by: Node = null
 var hit_flash_timer: float = 0.0
 var hit_flash_strength: float = 0.0   # 0 = soft (jab/blocked) … 1 = white-out (haymaker)
+var hit_anim_timer: float = 0.0       # motion-sheet "hit" flinch clip (only when the sheet has one)
 var afterimage_timer: float = 0.0
 var ice_overlap_count: int = 0
 var slow_overlap_count: int = 0
@@ -268,8 +269,8 @@ const GRAB_RANGE := 96.0             # how far in front a grab reaches
 const GRAB_MAX_HOLD := 1.7           # seconds before a held foe slips free
 const GRAB_HOLD_DIST := 62.0         # how far in front the held foe is carried
 const GRAB_THROW_KB := 880.0         # launch power when you hurl them — a committed
-                                     # grab earns a decisive yeet (~245px slide vs ~185),
-                                     # so throw-off-the-edge is a real KO, not a soft toss
+									 # grab earns a decisive yeet (~245px slide vs ~185),
+									 # so throw-off-the-edge is a real KO, not a soft toss
 const GRAB_COOLDOWN := 0.55
 const GRAB_ESCAPE_PER_MASH := 0.17   # struggle gained per button press (humans)
 const GRAB_ESCAPE_CPU_RATE := 0.62   # struggle/sec a held CPU builds automatically
@@ -527,7 +528,7 @@ static func build_sprite_frames(role: String, only: PackedStringArray = PackedSt
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim_name in layout:
-		if anim_name == "sheet" or anim_name == "faces_left":
+		if anim_name == "sheet" or anim_name == "faces_left" or anim_name == "motion":
 			continue
 		if not only.is_empty() and not (anim_name in only):
 			continue
@@ -581,20 +582,25 @@ func _setup_sprite() -> void:
 		skin_idx = MetaSave.get_skin(sprite_role)
 	var skin_mat := MatchConfig.skin_material(skin_idx)
 	sprite.material = skin_mat
-	sprite.play("idle")
+	sprite.play("idle" if sf.has_animation("idle") else "walk")
 	polygon.visible = false
 	# Prefer the live limb rig; the baked sheet stays as the fallback if a dino's
 	# parts haven't been exported yet (gen_ralph_fighter.py <dino> --parts).
-	var r := DinoRig.new()
-	r.scale = Vector2(sprite_scale, sprite_scale)
-	r.position.y = sprite_offset_y
-	if r.build_for(sprite_role, skin_mat):
-		rig = r
-		add_child(rig)
-		rig.set_facing(true)
-		sprite.visible = false
-	else:
-		r.free()
+	# EXCEPT when the dino's layout is a video-baked motion sheet ("motion": true,
+	# from gen_dino_motion.py): real animation frames replace the procedural rig
+	# for that dino, so the two looks can be A/B'd per-dino during the rollout.
+	var wants_rig: bool = not ANIM_LAYOUTS.get(sprite_role, {}).get("motion", false)
+	if wants_rig:
+		var r := DinoRig.new()
+		r.scale = Vector2(sprite_scale, sprite_scale)
+		r.position.y = sprite_offset_y
+		if r.build_for(sprite_role, skin_mat):
+			rig = r
+			add_child(rig)
+			rig.set_facing(true)
+			sprite.visible = false
+		else:
+			r.free()
 	_add_contact_shadow()
 
 # A grounded CONTACT SHADOW: a soft dark oval cast on the floor at the feet (the
@@ -829,11 +835,33 @@ func update_sprite_animation() -> void:
 		sprite.flip_h = sprite_faces_left
 	elif facing.x < -0.05:
 		sprite.flip_h = not sprite_faces_left
+	# Motion-sheet states (video-baked sheets carry ko/hit/dodge/heavy clips the
+	# 3-anim fallback sheets don't). Priority: downed > flinch > dodge > attack.
+	# Every branch requires the clip to exist, so old sheets behave exactly as
+	# before and a partial sheet (pilot = walk+attack only) degrades per-state.
+	var sf := sprite.sprite_frames
+	if is_downed and sf.has_animation("ko"):
+		if sprite.animation != "ko":
+			sprite.play("ko")
+		return
+	if hit_anim_timer > 0.0 and not attacking and sf.has_animation("hit"):
+		if sprite.animation != "hit":
+			sprite.play("hit")
+		return
+	if defense_state == DefenseState.DODGING and sf.has_animation("dodge"):
+		if sprite.animation != "dodge":
+			sprite.play("dodge")
+		return
 	if attacking:
-		if sprite.animation != "attack":
-			sprite.play("attack")
+		var atk := "heavy" if current_is_heavy and sf.has_animation("heavy") else "attack"
+		if sprite.animation != atk:
+			sprite.play(atk)
 		return
 	var target := "walk" if moving else "idle"
+	if not sf.has_animation(target):
+		target = "idle" if moving else "walk"   # partial pilot sheet: best available
+		if not sf.has_animation(target):
+			return
 	if sprite.animation != target:
 		sprite.play(target)
 
@@ -1776,6 +1804,8 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	# a clean hit flashes brighter + a touch longer the harder it lands.
 	hit_flash_timer = clampf(0.08 + float(amount) * 0.003, 0.08, 0.17)
 	hit_flash_strength = clampf((float(amount) - 10.0) / 35.0, 0.0, 1.0)
+	# Motion-sheet flinch: long enough to read as a stagger, harder hits hold longer.
+	hit_anim_timer = clampf(0.18 + float(amount) * 0.004, 0.18, 0.32)
 	# Impact burst at the contact point (cosmetic): spray along the knockback.
 	var kdir: Vector2 = knockback.normalized() if knockback.length() > 1.0 else facing
 	_spawn_hit_burst(global_position - kdir * 16.0 + Vector2(0, sprite_offset_y * 0.5), kdir, amount, hp <= 0 and not ringout_only)
@@ -2097,6 +2127,8 @@ func update_timers(delta: float) -> void:
 		knockdown_immune_timer -= delta
 	if hit_flash_timer > 0.0:
 		hit_flash_timer -= delta
+	if hit_anim_timer > 0.0:
+		hit_anim_timer -= delta
 	if special_cooldown_timer > 0.0:
 		special_cooldown_timer -= delta
 	if timed_slow_timer > 0.0:
@@ -2257,6 +2289,7 @@ func respawn() -> void:
 	last_damaged_by = null
 	hit_flash_timer = 0.0
 	hit_flash_strength = 0.0
+	hit_anim_timer = 0.0
 	if not initial_weapons.is_empty():
 		weapons = initial_weapons.duplicate()
 		active_weapon = 0
