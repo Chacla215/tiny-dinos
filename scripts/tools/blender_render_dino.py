@@ -41,6 +41,11 @@ scene.render.resolution_x = 640
 scene.render.resolution_y = 640
 scene.render.image_settings.file_format = "PNG"
 scene.render.image_settings.color_mode = "RGBA"
+# Blender 5 defaults to the AgX view transform, which desaturates on output and
+# greys the flat stylized colours -- Standard renders them as-authored, matching
+# the island's vivid storybook saturation.
+scene.view_settings.view_transform = "Standard"
+scene.view_settings.look = "None"
 # Storybook toon outline via Freestyle (clean black contour that reads on the
 # painterly islands, same silhouette-first language as the chibi heroes).
 scene.render.use_freestyle = True
@@ -56,23 +61,37 @@ if not fs.linesets:
 _ls = fs.linesets[0]
 if _ls.linestyle is None:
     _ls.linestyle = bpy.data.linestyles.new("LineStyle")
-_ls.linestyle.color = (0.10, 0.11, 0.12)
+# Warm-dark contour (sampled from the island's rock/palm darks) reads softer and
+# more storybook than a cold pure black. See PALETTE below.
+_ls.linestyle.color = (0.13, 0.10, 0.08)
 _ls.linestyle.thickness = 2.6
 
-# ---------- world (soft ambient fill) ----------
+# ---------- palette sampled from assets/concept/islands/restyle/beach.png ----------
+# Warm golden key + WARM bounce (sand keeps shadows warm, R-B ~+117) + a cool
+# cyan sky rim, so the dino sits in the island's exact light logic.
+KEY_COLOR    = (1.00, 0.90, 0.70)   # warm sunlight
+BOUNCE_COLOR = (1.00, 0.84, 0.60)   # warm sand bounce into the shadow side
+SKY_COLOR    = (0.60, 0.80, 0.98)   # cool sky fill
+RIM_COLOR    = (0.62, 0.88, 1.00)   # cool cyan rim (matches sea/sky), pops silhouette
+AMBIENT      = (1.00, 0.95, 0.86)   # warm-cream world bounce
+CEL_SHADOW   = 0.74                 # shadow band stays bright -- island reads light + saturated, not muddy
+
+# ---------- world (warm ambient bounce) ----------
 world = bpy.data.worlds.new("W"); scene.world = world
 world.use_nodes = True
 bg = world.node_tree.nodes["Background"]
-bg.inputs[0].default_value = (1.0, 0.98, 0.95, 1.0)
-bg.inputs[1].default_value = 0.95   # flatter, storybook fill (less gradient)
+bg.inputs[0].default_value = (*AMBIENT, 1.0)
+bg.inputs[1].default_value = 0.55
 
-# ---------- key + fill light ----------
-sun_d = bpy.data.lights.new("Sun", "SUN"); sun_d.energy = 2.3
-sun = bpy.data.objects.new("Sun", sun_d); scene.collection.objects.link(sun)
-sun.rotation_euler = (math.radians(52), 0, math.radians(35))
-fill_d = bpy.data.lights.new("Fill", "SUN"); fill_d.energy = 1.1
-fill = bpy.data.objects.new("Fill", fill_d); scene.collection.objects.link(fill)
-fill.rotation_euler = (math.radians(70), 0, math.radians(-120))
+# ---------- 3-light rig matching the island: warm key + warm bounce + cool sky ----------
+def sun(name, color, energy, elev, azim):
+    d = bpy.data.lights.new(name, "SUN"); d.energy = energy; d.color = color
+    o = bpy.data.objects.new(name, d); scene.collection.objects.link(o)
+    o.rotation_euler = (math.radians(elev), 0, math.radians(azim))
+    return o
+sun("Key",    KEY_COLOR,    3.0, 52, 35)     # warm sun, upper front
+sun("Bounce", BOUNCE_COLOR, 0.9, 118, 20)    # warm sand bounce from below -> warm shadows
+sun("Sky",    SKY_COLOR,    0.8, 8, -110)    # cool sky fill from the side
 
 # ---------- camera: right-facing, slight 3/4, orthographic ----------
 cam_d = bpy.data.cameras.new("Cam"); cam_d.type = "ORTHO"; cam_d.ortho_scale = 3.4
@@ -82,19 +101,75 @@ cam.location = (0.35, -6.0, 1.25)
 _look = (Vector((0.1, 0.0, 1.05)) - cam.location)
 cam.rotation_euler = _look.to_track_quat("-Z", "Y").to_euler()
 
-# ---------- helpers ----------
-def mat(name, rgb, rough=0.85):
-    m = bpy.data.materials.new(name); m.use_nodes = True
-    b = m.node_tree.nodes.get("Principled BSDF")
-    b.inputs["Base Color"].default_value = (*rgb, 1.0)
-    b.inputs["Roughness"].default_value = rough
-    return m
+# ---------- toon material ----------
+# Cel look: the scene lights drive a Diffuse BSDF, Shader-to-RGB reads that
+# lit value, a stepped ColorRamp crushes it into a soft 2-band shadow/light
+# mask, that mask multiplies the base colour, and a Fresnel rim adds a cool sky
+# edge -- so the dino reads hand-painted-flat like the island, not photographic.
+# `base` is an RGB tuple (placeholder) or a texture node's Color output socket
+# (imported model), so the SAME look applies to Meshy's textured Ralph.
+def _toon_nodes(m, base_socket_or_rgb):
+    m.use_nodes = True
+    nt = m.node_tree; nt.nodes.clear()
+    out  = nt.nodes.new("ShaderNodeOutputMaterial")
+    emit = nt.nodes.new("ShaderNodeEmission")
+    diff = nt.nodes.new("ShaderNodeBsdfDiffuse")
+    s2r  = nt.nodes.new("ShaderNodeShaderToRGB")
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    mul  = nt.nodes.new("ShaderNodeMixRGB");  mul.blend_type = "MULTIPLY"; mul.inputs[0].default_value = 1.0
+    fres = nt.nodes.new("ShaderNodeFresnel"); fres.inputs["IOR"].default_value = 1.35
+    frmp = nt.nodes.new("ShaderNodeValToRGB")
+    rim  = nt.nodes.new("ShaderNodeMixRGB");  rim.blend_type = "ADD"
+    # cel ramp: soft 2-band (shadow -> light)
+    cr = ramp.color_ramp
+    cr.elements[0].position = 0.22; cr.elements[0].color = (CEL_SHADOW, CEL_SHADOW, CEL_SHADOW, 1)
+    cr.elements[1].position = 0.44; cr.elements[1].color = (1, 1, 1, 1)
+    # rim mask: only the grazing edge
+    fr = frmp.color_ramp
+    fr.elements[0].position = 0.55; fr.elements[0].color = (0, 0, 0, 1)
+    fr.elements[1].position = 0.92; fr.elements[1].color = (*RIM_COLOR, 1)
+    # base colour source
+    if isinstance(base_socket_or_rgb, tuple):
+        base = nt.nodes.new("ShaderNodeRGB"); base.outputs[0].default_value = (*base_socket_or_rgb, 1)
+        base_out = base.outputs[0]
+    else:
+        base_out = base_socket_or_rgb
+    nt.links.new(diff.outputs["BSDF"], s2r.inputs["Shader"])
+    nt.links.new(s2r.outputs["Color"], ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], mul.inputs[1])
+    nt.links.new(base_out, mul.inputs[2])
+    nt.links.new(fres.outputs["Fac"], frmp.inputs["Fac"])
+    nt.links.new(mul.outputs["Color"], rim.inputs[1])
+    nt.links.new(frmp.outputs["Color"], rim.inputs[2])
+    nt.links.new(rim.outputs["Color"], emit.inputs["Color"])
+    nt.links.new(emit.outputs["Emission"], out.inputs["Surface"])
 
-GREEN = mat("green", (0.34, 0.60, 0.30))
-LEAF  = mat("leaf",  (0.28, 0.52, 0.26))
-CREAM = mat("cream", (0.92, 0.87, 0.68))
+def mat(name, rgb):
+    m = bpy.data.materials.new(name); _toon_nodes(m, rgb); return m
+
+# Re-skin an imported (Meshy) model's materials with the toon look, reusing each
+# material's own base-colour texture so Ralph keeps his markings. Called after
+# import when --model is given.
+def toonify_imported():
+    for m in bpy.data.materials:
+        if not m.use_nodes:
+            continue
+        tex = next((n for n in m.node_tree.nodes if n.type == "TEX_IMAGE"), None)
+        base = tex.outputs["Color"] if tex else (0.7, 0.7, 0.7)
+        # keep the tex node alive: rebuild graph, then relink if we had one
+        img = tex.image if tex else None
+        _toon_nodes(m, (0.7, 0.7, 0.7) if img is None else base)
+        if img is not None:
+            nt = m.node_tree
+            newtex = nt.nodes.new("ShaderNodeTexImage"); newtex.image = img
+            mul = next(n for n in nt.nodes if n.type == "MIX_RGB" and n.blend_type == "MULTIPLY")
+            nt.links.new(newtex.outputs["Color"], mul.inputs[2])
+
+GREEN = mat("green", (0.42, 0.72, 0.34))   # fresh saturated grass green (matches island foliage)
+LEAF  = mat("leaf",  (0.34, 0.61, 0.29))
+CREAM = mat("cream", (0.97, 0.90, 0.70))
 WHITE = mat("white", (0.98, 0.98, 0.98))
-BLACK = mat("black", (0.03, 0.03, 0.03), rough=0.4)
+BLACK = mat("black", (0.05, 0.05, 0.06))
 
 def empty(name, loc, parent=None):
     e = bpy.data.objects.new(name, None); e.empty_display_size = 0.1
@@ -135,6 +210,7 @@ if MODEL and os.path.exists(MODEL):
     for o in bpy.context.selected_objects:
         if o.parent is None:
             parent_keep(o, root)
+    toonify_imported()  # re-skin Meshy's textured materials with the island toon look
     torso = neck = jaw = fleg = bleg = tail = root  # no primitive joints to pose
     HAS_JOINTS = False
 else:
