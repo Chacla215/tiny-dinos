@@ -41,6 +41,8 @@ DITHER_AMP = 12       # Bayer stipple strength (islands use ~16)
 # painterly heroes have mixed native facings — only flip the ones drawn facing
 # left. (The old unconditional flip shipped raptor/trike/pterry/bronto facing
 # LEFT, so those four walked backwards in-match.)
+# 2026-07-06: the chibi-restyled raptor faces RIGHT natively (white feather on
+# his LEFT ear shows viewer-left) — no flip, unlike the old raptor art.
 HERO_FACES_LEFT = {"ralph": True, "bronto": True}
 
 # 8x8 Bayer matrix (same as gen_island_bgs.py) for ordered dithering.
@@ -139,12 +141,9 @@ PART_DEFS_BY_DINO = {
         "tail":      {"box": (0.00, 0.22, 0.28, 0.72), "pivot": (0.28, 0.50)},
         "head":      {"box": (0.52, 0.00, 1.00, 0.44), "pivot": (0.58, 0.42)},
     },
-    "raptor": {
-        "back_leg":  {"box": (0.20, 0.55, 0.55, 1.00), "pivot": (0.40, 0.60)},
-        "front_leg": {"box": (0.55, 0.55, 0.92, 1.00), "pivot": (0.70, 0.60)},
-        "tail":      {"box": (0.00, 0.05, 0.38, 0.60), "pivot": (0.38, 0.35)},
-        "head":      {"box": (0.58, 0.00, 1.00, 0.52), "pivot": (0.62, 0.48)},
-    },
+    # raptor: the 2026-07-06 chibi restyle made him an upright biped like Ralph
+    # (the old horizontal-lean boxes cut his FACE as the "tail"); the default
+    # chibi cut fits the new art, so no override.
     "trike": {
         "back_leg":  {"box": (0.22, 0.68, 0.55, 1.00), "pivot": (0.35, 0.74)},
         "front_leg": {"box": (0.55, 0.68, 0.95, 1.00), "pivot": (0.74, 0.74)},

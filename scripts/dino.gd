@@ -19,9 +19,9 @@ const ANIM_LAYOUTS := {
 	# by scripts/tools/gen_ralph_fighter.py raptor (173x168 cells).
 	"raptor": {
 		"sheet": SHEET_RAPTOR,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 173, 168), Rect2(173, 0, 173, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(346, 0, 173, 168), Rect2(519, 0, 173, 168), Rect2(692, 0, 173, 168), Rect2(865, 0, 173, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1038, 0, 173, 168), Rect2(1211, 0, 173, 168), Rect2(1384, 0, 173, 168)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 133, 168), Rect2(133, 0, 133, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(266, 0, 133, 168), Rect2(399, 0, 133, 168), Rect2(532, 0, 133, 168), Rect2(665, 0, 133, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(798, 0, 133, 168), Rect2(931, 0, 133, 168), Rect2(1064, 0, 133, 168)]},
 	},
 	# Ralph the mascot as an in-match fighter — pixel-art sheet baked from the
 	# existing painterly hero by scripts/tools/gen_ralph_fighter.py (126x168 cells).
