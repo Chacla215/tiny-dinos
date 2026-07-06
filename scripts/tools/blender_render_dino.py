@@ -190,6 +190,8 @@ def cone(name, loc, scale, rot, m, parent):
 
 # ---------- build placeholder chibi (or import real model) ----------
 root = empty("root", (0, 0, 0))
+FIT_SCALE = Vector((1, 1, 1))   # imported model's fit transform, so per-frame
+FIT_LOC = Vector((0, 0, 0))     # squash/lean stacks ON TOP of the fit (set below)
 
 if MODEL and os.path.exists(MODEL):
     # Real path: import the rigged model, parent it under root. (Bone-driven
@@ -237,6 +239,7 @@ if MODEL and os.path.exists(MODEL):
         root.location.x += 0.10 - (mn.x + mx.x) / 2
         root.location.z += 0.05 - mn.z
         bpy.context.view_layer.update()
+    FIT_SCALE = root.scale.copy(); FIT_LOC = root.location.copy()
     # Meshy's untextured base mesh has no materials at all -- drop a flat toon
     # green on so the SHAPE reads in-palette until the textured export lands.
     for o in bpy.data.objects:
@@ -296,34 +299,54 @@ for _ob in [x for x in bpy.data.objects if x.type == "MESH"]:
     _sol.use_rim = False
 
 # ---------- the 9 game frames (idle x2, walk x4, attack x3) ----------
-# deg values are joint rotations about Y (side-view pitch); body_z = upper-body
-# bob; rootx/rooty = whole-body lunge/lean for the attack.
-FRAMES = [
-    # idle
+# PLACEHOLDER poses articulate the primitive joints (deg about Y, body_z bob).
+PLACEHOLDER_FRAMES = [
     dict(body_z=0.00, neck=3,  tail=0),
     dict(body_z=0.05, neck=6,  tail=8),
-    # walk (leg scissor + bob + counter tail)
     dict(body_z=0.03, fleg=26, bleg=-22, neck=4, tail=9),
     dict(body_z=0.00, fleg=0,  bleg=0,   neck=2, tail=0),
     dict(body_z=0.03, fleg=-22, bleg=26, neck=4, tail=-9),
     dict(body_z=0.00, fleg=0,  bleg=0,   neck=2, tail=0),
-    # attack (windup lean-back -> lunge + mouth open -> recover)
     dict(rooty=-14, neck=16, jaw=0,  tail=-12),
     dict(rootx=0.20, rooty=18, neck=-14, jaw=40, tail=22, fleg=-16, bleg=22),
     dict(rootx=0.07, rooty=6,  neck=-4, jaw=14, tail=8),
 ]
+# IMPORTED models are one solid mesh, so they're animated with whole-body
+# SQUASH-AND-STRETCH + bob + lean/lunge (the chibi-mobile way to read as alive
+# without a skeleton). sy/sx = vertical/horizontal scale (volume-preserving:
+# tall+thin or short+wide), bob = rise, lean = pitch deg, lunge = forward slide.
+IMPORT_FRAMES = [
+    # idle: a soft breath
+    dict(sy=1.00, sx=1.00),
+    dict(sy=1.035, sx=0.985, bob=0.04, lean=2),
+    # walk: bouncy squash on contact, stretch through the passing pose, tiny sway
+    dict(sy=0.93, sx=1.06, bob=0.00, lean=-5),
+    dict(sy=1.06, sx=0.96, bob=0.11, lean=0),
+    dict(sy=0.93, sx=1.06, bob=0.00, lean=5),
+    dict(sy=1.06, sx=0.96, bob=0.11, lean=0),
+    # attack: anticipation crouch-back -> stretched lunge -> settle
+    dict(sy=0.88, sx=1.10, lean=-15, bob=-0.03),
+    dict(sy=1.10, sx=0.93, lean=22, lunge=0.28, bob=0.05),
+    dict(sy=1.00, sx=1.00, lean=7,  lunge=0.09),
+]
+FRAMES = PLACEHOLDER_FRAMES if HAS_JOINTS else IMPORT_FRAMES
 
 def apply(p):
-    root.location = Vector((p.get("rootx", 0.0), 0.0, 0.0))
-    root.rotation_euler = (0.0, math.radians(p.get("rooty", 0.0)), 0.0)
-    if not HAS_JOINTS:
-        return
-    torso.location = Vector((0.0, 0.0, p.get("body_z", 0.0)))
-    neck.rotation_euler = (0.0, math.radians(p.get("neck", 0.0)), 0.0)
-    jaw.rotation_euler  = (0.0, math.radians(p.get("jaw", 0.0)), 0.0)
-    fleg.rotation_euler = (0.0, math.radians(p.get("fleg", 0.0)), 0.0)
-    bleg.rotation_euler = (0.0, math.radians(p.get("bleg", 0.0)), 0.0)
-    tail.rotation_euler = (0.0, math.radians(p.get("tail", 0.0)), 0.0)
+    if HAS_JOINTS:
+        root.location = Vector((p.get("rootx", 0.0), 0.0, 0.0))
+        root.rotation_euler = (0.0, math.radians(p.get("rooty", 0.0)), 0.0)
+        torso.location = Vector((0.0, 0.0, p.get("body_z", 0.0)))
+        neck.rotation_euler = (0.0, math.radians(p.get("neck", 0.0)), 0.0)
+        jaw.rotation_euler  = (0.0, math.radians(p.get("jaw", 0.0)), 0.0)
+        fleg.rotation_euler = (0.0, math.radians(p.get("fleg", 0.0)), 0.0)
+        bleg.rotation_euler = (0.0, math.radians(p.get("bleg", 0.0)), 0.0)
+        tail.rotation_euler = (0.0, math.radians(p.get("tail", 0.0)), 0.0)
+    else:
+        sx, sy = p.get("sx", 1.0), p.get("sy", 1.0)
+        root.scale = (FIT_SCALE.x * sx, FIT_SCALE.y * sy, FIT_SCALE.z * sx)
+        root.location = Vector((FIT_LOC.x + p.get("lunge", 0.0), FIT_LOC.y,
+                                FIT_LOC.z + p.get("bob", 0.0)))
+        root.rotation_euler = (0.0, math.radians(p.get("lean", 0.0)), 0.0)
 
 # ---------- render each frame ----------
 for i, p in enumerate(FRAMES):

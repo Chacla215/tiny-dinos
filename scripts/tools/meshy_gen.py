@@ -89,8 +89,18 @@ def generate(dino, key):
 
 
 if __name__ == "__main__":
-    which = sys.argv[1] if len(sys.argv) > 1 else "ralph"
+    args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    force = "--force" in sys.argv
     key = api_key()
-    dinos = ROSTER if which == "all" else [which]
-    done = [d for d in dinos if generate(d, key)]
-    print("\nDONE: %s" % ", ".join(done) if done else "\nnothing generated")
+    dinos = ROSTER if (not args or args == ["all"]) else args
+    done = []
+    for d in dinos:
+        out = os.path.join(ROOT, "assets", "concept", d, "%s_model.glb" % d)
+        # A textured model is >10MB; the untextured base mesh is ~8MB. Only skip
+        # when we already have a textured one (unless --force).
+        if not force and os.path.exists(out) and os.path.getsize(out) > 10e6:
+            print("[%s] already have a textured model -- skipping (use --force)" % d)
+            done.append(d); continue
+        if generate(d, key):
+            done.append(d)
+    print("\nDONE: %s" % (", ".join(done) if done else "nothing generated"))
