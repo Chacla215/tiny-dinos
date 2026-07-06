@@ -1,6 +1,13 @@
 extends Node2D
 class_name DinoRig
 
+# Global amplitude boost on ALL ambient/idle motion (head/tail/leg sway, wing
+# flap, body teeter). The per-dino idle_* values stay tuned relative to each
+# other; this just makes the whole roster read as clearly alive at gameplay zoom
+# instead of near-frozen. Tune here, not per-profile.
+const IDLE_LIFE := 1.8
+const BREATHE_AMP := 0.055   # body vertical breathing swell (was 0.035)
+
 ## Runtime limb skeleton for the in-match fighters.
 ##
 ## Replaces the single baked AnimatedSprite2D with body + 4 limb sprites
@@ -337,20 +344,24 @@ func _resolve_targets(delta: float) -> void:
 		if tail: tail.target = _c("walk_tail") * s
 		if head: head.target = _c("walk_head") * sin(_walk_phase * 2.0)
 	else:
-		# idle sway/breathe
+		# idle sway/breathe. IDLE_LIFE scales every ambient amplitude up so the dinos
+		# visibly live standing still (near-frozen at gameplay zoom otherwise) —
+		# proportional, so a tank stays planted and raptor stays twitchy. The head
+		# gets a second faster nod harmonic so it bobs like it's breathing/looking
+		# around, not just tilting.
 		var w := _t * TAU * _c("idle_hz")
-		if tail: tail.target = _c("idle_tail") * sin(w)
-		if head: head.target = _c("idle_head") * sin(w + 0.6)
+		if tail: tail.target = _c("idle_tail") * IDLE_LIFE * sin(w)
+		if head: head.target = _c("idle_head") * IDLE_LIFE * (sin(w + 0.6) + 0.35 * sin(w * 2.3 + 1.0))
 		# pterry's wings idle with a slow flap so he never looks frozen.
 		if gait == "wing":
-			var flap := _c("idle_wing") * sin(w)
+			var flap := _c("idle_wing") * IDLE_LIFE * sin(w)
 			if fl: fl.target = flap
 			if bl: bl.target = -flap
 		else:
 			# Standing weight-shift: legs rock slowly (slower than the breath, phase-
 			# offset) so even a planted tank visibly lives instead of freezing.
 			var lw := sin(w * 0.6 + 1.1)
-			var leg_idle := _c("idle_leg")
+			var leg_idle := _c("idle_leg") * IDLE_LIFE
 			if fl: fl.target = leg_idle * lw
 			if bl: bl.target = -leg_idle * lw * 0.6
 
@@ -399,7 +410,7 @@ func _integrate_lean(delta: float) -> void:
 		stiff = 40.0
 		damp = 6.0
 	else:
-		var teeter := _c("idle_teeter") * sin(_t * TAU * _c("teeter_hz"))
+		var teeter := _c("idle_teeter") * IDLE_LIFE * sin(_t * TAU * _c("teeter_hz"))
 		var momentum := clampf(_motion_x * _c("lean_per_speed"), -_c("lean_max"), _c("lean_max"))
 		target = momentum + teeter
 	_lean_vel += (target - _lean) * stiff * delta
@@ -420,7 +431,7 @@ func _apply_body(delta: float) -> void:
 	if _state == "walk":
 		bounce = -absf(sin(_walk_phase)) * _c("bounce")
 	else:
-		breathe = 0.035 * sin(_t * TAU * _c("idle_hz"))
+		breathe = BREATHE_AMP * sin(_t * TAU * _c("idle_hz"))
 	# _flip sits _feet_y above the lean pivot; bounce/recoil ride on top of that.
 	_flip.position.y = -_feet_y + bounce + _body_recoil.y
 	_flip.position.x = _body_recoil.x * (1.0 if _facing_right else -1.0)
