@@ -1,5 +1,28 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-06 (chibi restyle rolling: raptor + trike integrated)
+
+The art program is live and Charlie is generating. Driven by `PASTE_ME.md`
+(14 assembled prompts) — Charlie pastes each winner into chat, Claude saves +
+bakes + wires + screenshots + commits per dino.
+
+- **Raptor "Max" (`9b26ba3`).** Chibi restyle integrated. The restyle turned
+  him from a horizontal-lean body into an upright chibi biped, so the old
+  `PART_DEFS_BY_DINO["raptor"]` rig override (which now sliced his FACE as the
+  "tail") was removed — default chibi cut fits. Faces right natively; smooth
+  sheet cell 133x168.
+- **Trike "Gus" (`dd0b8f1`).** Chibi restyle integrated. Chunky quadruped,
+  sage frill, chipped right brow horn; smooth sheet cell 134x168, faces right.
+- Both verified via in-match beach screenshots next to Ralph. Learned:
+  fighter sheets are baked **--smooth** (painterly, ~1400 colors/patch), NOT
+  --pixel; re-check the rig part-cut after each restyle in case the body plan
+  changed.
+
+> Resume hint: `PASTE_ME.md` order — done: raptor(1), trike(2). NEXT: pterry(3,
+> clipboard was left here), bronto(4), anky(5), Beauty Beach island(6), trailer
+> shots(7-12), ralph motion pilot(13-14). Per-dino recipe in memory
+> [[seedance-motion-pipeline]].
+
 ## Session — 2026-07-05 (Seedance pilot: engine half + trailer spine)
 
 Continued the Seedance work while clips are still pending, and Charlie added a
