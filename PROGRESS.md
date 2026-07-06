@@ -1,5 +1,36 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-05 (Seedance pilot: engine half + trailer spine)
+
+Continued the Seedance work while clips are still pending, and Charlie added a
+new goal: a **full trailer** (Ralph + a cast that's ACTUALLY cute-cuddly like
+him — his words: the current five dinos don't capture it) that doubles as the
+**opening cutscene**.
+
+- **Motion-sheet engine support (`6d5c898`).** `dino.gd`: `"motion": true`
+  layout flag switches a dino from the DinoRig to its video-baked sheet
+  (per-dino A/B); state-priority anim chooser (ko > hit flinch > dodge >
+  heavy/attack > walk/idle), every state guarded by `has_animation` so old
+  3-anim sheets and partial pilot sheets degrade cleanly; `hit_anim_timer`
+  armed in `take_damage`. Validated: synthetic ralph motion sheet wired temp,
+  10+ min of headless CPU matches error-free + arena screenshot confirmed
+  sheet render/scale/flip; temp art then reverted (code is inert until a real
+  motion layout is pasted).
+- **Trailer spine (`88c2ba4`).** `scripts/tools/trailer_prompts.md`: 6-shot
+  storyboard (~45s) — island push-in, Ralph entrance, friends arrive, coconut
+  bonk, cartoon brawl-cloud, freeze-frame gag — shots 1-4 + logo = the ~20s
+  opening cut. **Phase 0 = the chibi restyle** (`dino_chibi_restyle_prompts.md`):
+  the restyled heroes are the trailer cast AND fix the roster brand.
+  `scenes/opening.tscn`+`opening.gd` is now the boot scene: plays
+  `assets/video/opening.ogv` when it exists (gamepad-skippable), boots straight
+  to title until then (verified headless).
+
+> Resume hint: everything is now blocked on Charlie generations, in priority
+> order: (1) the 5 restyled heroes (fixes roster + casts trailer), (2) trailer
+> shots per `trailer_prompts.md` (Claude assembles + converts to opening.ogv),
+> (3) fighter motion clips per `dino_motion_prompts.md` (bake tool + engine
+> support both ready and validated).
+
 ## Session — 2026-07-04 (video-gen animation pipeline — Seedance 2.0)
 
 Charlie greenlit using **Seedance 2.0** (image-to-video) to upgrade graphics +
