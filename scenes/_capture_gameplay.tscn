@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8capgameplay01"]
+
+[ext_resource type="Script" uid="uid://dc6t816y8gbxn" path="res://scripts/tools/capture_gameplay.gd" id="1_cap"]
+
+[node name="CaptureGameplay" type="Node2D"]
+script = ExtResource("1_cap")
