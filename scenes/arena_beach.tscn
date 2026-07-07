@@ -6,20 +6,17 @@
 [ext_resource type="Texture2D" path="res://assets/props/rock_a.png" id="4_rocka"]
 [ext_resource type="Texture2D" path="res://assets/props/rock_b.png" id="5_rockb"]
 
+[sub_resource type="CircleShape2D" id="ob_Rock1"]
+radius = 37.9
+
+[sub_resource type="CircleShape2D" id="ob_Rock2"]
+radius = 41.3
+
 [sub_resource type="RectangleShape2D" id="dino_shape"]
 size = Vector2(48, 48)
 
 [sub_resource type="RectangleShape2D" id="hitbox_placeholder"]
 size = Vector2(1, 1)
-
-[sub_resource type="CircleShape2D" id="rock_a_col"]
-radius = 74.0
-
-[sub_resource type="CircleShape2D" id="rock_b_col"]
-radius = 52.0
-
-[sub_resource type="CircleShape2D" id="rock_c_col"]
-radius = 58.0
 
 [node name="Main" type="Node2D"]
 script = ExtResource("2_main")
@@ -46,48 +43,34 @@ texture = ExtResource("3_bg")
 
 [node name="Obstacles" type="Node2D" parent="."]
 
-[node name="RockA" type="StaticBody2D" parent="Obstacles"]
-position = Vector2(620, 430)
+[node name="Rock1" type="StaticBody2D" parent="Obstacles"]
+position = Vector2(478, 360)
 collision_layer = 2
 collision_mask = 0
 
-[node name="Sprite" type="Sprite2D" parent="Obstacles/RockA"]
+[node name="Sprite" type="Sprite2D" parent="Obstacles/Rock1"]
 texture_filter = 2
-scale = Vector2(0.3, 0.3)
+scale = Vector2(0.1706, 0.1706)
 texture = ExtResource("4_rocka")
 
-[node name="Col" type="CollisionShape2D" parent="Obstacles/RockA"]
-position = Vector2(0, 52)
-shape = SubResource("rock_a_col")
+[node name="Col" type="CollisionShape2D" parent="Obstacles/Rock1"]
+position = Vector2(0, 26.5)
+shape = SubResource("ob_Rock1")
 
-[node name="RockB" type="StaticBody2D" parent="Obstacles"]
-position = Vector2(380, 500)
+[node name="Rock2" type="StaticBody2D" parent="Obstacles"]
+position = Vector2(822, 570)
 collision_layer = 2
 collision_mask = 0
 
-[node name="Sprite" type="Sprite2D" parent="Obstacles/RockB"]
-texture_filter = 2
-scale = Vector2(0.22, 0.22)
-texture = ExtResource("5_rockb")
-
-[node name="Col" type="CollisionShape2D" parent="Obstacles/RockB"]
-position = Vector2(0, 38)
-shape = SubResource("rock_b_col")
-
-[node name="RockC" type="StaticBody2D" parent="Obstacles"]
-position = Vector2(890, 350)
-collision_layer = 2
-collision_mask = 0
-
-[node name="Sprite" type="Sprite2D" parent="Obstacles/RockC"]
+[node name="Sprite" type="Sprite2D" parent="Obstacles/Rock2"]
 texture_filter = 2
 flip_h = true
-scale = Vector2(0.245, 0.245)
-texture = ExtResource("5_rockb")
+scale = Vector2(0.1857, 0.1857)
+texture = ExtResource("4_rocka")
 
-[node name="Col" type="CollisionShape2D" parent="Obstacles/RockC"]
-position = Vector2(0, 42)
-shape = SubResource("rock_c_col")
+[node name="Col" type="CollisionShape2D" parent="Obstacles/Rock2"]
+position = Vector2(0, 28.8)
+shape = SubResource("ob_Rock2")
 
 [node name="Player1" type="CharacterBody2D" parent="."]
 position = Vector2(300, 385)
