@@ -325,6 +325,11 @@ var current_attack_hitbox_size: Vector2 = Vector2.ZERO
 var current_attack_hitbox_offset: float = 0.0
 var current_is_heavy: bool = false
 var current_is_special: bool = false
+# Visible-swing duration (windup+active) of the current attack. The motion sheets'
+# attack clip plays only across WINDUP+ACTIVE, so update_sprite_animation stretches
+# the (fixed-frame) clip to exactly this window — otherwise a fast dino's short
+# window truncates the swing before its strike/follow-through frames land.
+var swing_anim_dur: float = 0.001
 var special_cooldown_timer: float = 0.0
 var timed_slow_timer: float = 0.0  # screech-applied slow on this dino
 
@@ -876,6 +881,9 @@ func update_sprite_animation() -> void:
 	# Every branch requires the clip to exist, so old sheets behave exactly as
 	# before and a partial sheet (pilot = walk+attack only) degrades per-state.
 	var sf := sprite.sprite_frames
+	# Default to natural clip pacing; the attack branch overrides this to fit the
+	# swing into its windup+active window (see swing_anim_dur).
+	sprite.speed_scale = 1.0
 	if is_downed and sf.has_animation("ko"):
 		if sprite.animation != "ko":
 			sprite.play("ko")
@@ -892,6 +900,13 @@ func update_sprite_animation() -> void:
 		var atk := "heavy" if current_is_heavy and sf.has_animation("heavy") else "attack"
 		if sprite.animation != atk:
 			sprite.play(atk)
+		# Stretch the fixed-frame swing clip to span this attack's windup+active so
+		# the strike/follow-through frames always land on the live hitbox — a fast
+		# dino's short window no longer truncates the swing to its first frames.
+		var fc: int = sf.get_frame_count(atk)
+		var base_fps: float = sf.get_animation_speed(atk)
+		if fc > 0 and base_fps > 0.0 and swing_anim_dur > 0.01:
+			sprite.speed_scale = (float(fc) / swing_anim_dur) / base_fps
 		return
 	var target := "walk" if moving else "idle"
 	if not sf.has_animation(target):
@@ -1326,6 +1341,7 @@ func start_attack(heavy: bool = false) -> void:
 		var cut: float = minf(COMBO_KING_PER_HIT * float(combo_count), COMBO_KING_MAX_CUT)
 		attack_timer *= (1.0 - cut)
 		current_attack_recovery *= (1.0 - cut)
+	swing_anim_dur = maxf(attack_timer + current_attack_active, 0.001)
 	attack_phase = AttackPhase.WINDUP
 	attack_phase_dur = maxf(attack_timer, 0.001)
 	play_scene_sfx("swing", 0.08)
@@ -1462,6 +1478,7 @@ func start_special() -> void:
 	if special_self_dash > 0.0:
 		velocity = facing * special_self_dash
 		dash_active = true
+	swing_anim_dur = maxf(attack_timer + current_attack_active, 0.001)
 	attack_phase = AttackPhase.WINDUP
 	attack_phase_dur = maxf(attack_timer, 0.001)
 	play_scene_sfx("swing", 0.06)
