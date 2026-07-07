@@ -49,4 +49,10 @@ func _ready() -> void:
 	get_tree().current_scene = arena
 
 	await get_tree().create_timer(secs).timeout
+	# --shot: save a single PNG screenshot (run WINDOWED, no --write-movie) — tiny file,
+	# for quickly eyeballing arena layout without a giant uncompressed movie.
+	if "--shot" in OS.get_cmdline_user_args():
+		await RenderingServer.frame_post_draw
+		var img := get_tree().root.get_texture().get_image()
+		img.save_png("/tmp/td_capture/shot_%s.png" % arena_key)
 	get_tree().quit()
