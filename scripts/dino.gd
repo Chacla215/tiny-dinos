@@ -75,6 +75,11 @@ const ANIM_LAYOUTS := {
 	},
 }
 
+# Global tempo knob: every dino's top speed scales by this so the whole match reads
+# slower and more legible (pairs with hitstun — slower + hits that stick = combat you
+# can actually follow). Per-dino speed RATIOS are preserved; applied once in
+# _apply_config_preset so locomotion AND the knockback-decel threshold slow together.
+const GAME_SPEED_MULT := 0.8
 @export var max_speed: float = 320.0
 @export var ground_accel: float = 3000.0
 @export var ground_friction: float = 3000.0
@@ -121,6 +126,16 @@ const FLOPPY_REF_SPEED := 320.0
 @export var attack_hitbox_offset: float = 52.0
 @export var invuln_duration: float = 0.8
 @export var hitstun_invuln: float = 0.15
+# HITSTUN: a clean (unblocked, non-super-armored) hit briefly locks the victim out
+# of acting AND steering — this is what makes offense earn tempo. The window scales
+# with the blow (a jab gives a sliver, a haymaker a real opening) and sits just
+# above the post-hit i-frame window (hitstun_invuln = 0.15) so a fast poke can
+# SOMETIMES re-connect for a single follow-up, but a 4-way pile-on never turns into
+# helpless stunlock. Party feel first: tempo, not true combos.
+const HITSTUN_BASE := 0.10
+const HITSTUN_PER_DMG := 0.006
+const HITSTUN_MIN := 0.12
+const HITSTUN_MAX := 0.34
 
 @export_group("Heavy Attack")
 @export var heavy_damage: int = 30
@@ -266,6 +281,7 @@ var last_damaged_by: Node = null
 var hit_flash_timer: float = 0.0
 var hit_flash_strength: float = 0.0   # 0 = soft (jab/blocked) … 1 = white-out (haymaker)
 var hit_anim_timer: float = 0.0       # motion-sheet "hit" flinch clip (only when the sheet has one)
+var hitstun_timer: float = 0.0        # clean-hit control lockout: can't act or steer while > 0
 var afterimage_timer: float = 0.0
 var ice_overlap_count: int = 0
 var slow_overlap_count: int = 0
@@ -523,6 +539,8 @@ func _apply_config_preset() -> void:
 	for key in preset:
 		if key in self:
 			set(key, preset[key])
+	# Global tempo: slow every dino's top speed by the same factor (ratios preserved).
+	max_speed *= GAME_SPEED_MULT
 	# READABILITY: fighters read too small on the busy painterly arenas (4-player
 	# couch legibility is the priority). Bump the VISUAL scale a notch — look-only,
 	# the Hitbox/CharacterBody2D use their own exports, so balance is untouched. Feet
@@ -730,16 +748,46 @@ func _physics_process(delta: float) -> void:
 func _action(name: String) -> String:
 	return "%s_%s" % [player_id, name]
 
+# Input buffer: a core press that can't fire yet (you're in recovery, in hitstun,
+# mid-dodge) is remembered for this long and re-fired the instant it's legal — so
+# fast exchanges feel responsive instead of eating inputs on the edge of a window.
+const INPUT_BUFFER := 0.12
+var _buffered_action: String = ""
+var _buffer_timer: float = 0.0
+
+func _buffer(action: String) -> void:
+	_buffered_action = action
+	_buffer_timer = INPUT_BUFFER
+
+# Attempt one buffered/just-pressed core action. Returns true if it fired.
+func _try_action(action: String) -> bool:
+	match action:
+		"attack":
+			if can_attack():
+				start_attack(false)
+				return true
+		"heavy":
+			if can_attack():
+				start_attack(true)
+				return true
+		"special":
+			if can_special():
+				start_special()
+				return true
+		"dodge":
+			if can_dodge():
+				start_dodge()
+				return true
+	return false
+
 func _process_input_actions() -> void:
 	if is_cpu and ai != null:
 		_process_cpu_actions()
 		return
-	if Input.is_action_just_pressed(_action("attack")) and can_attack():
-		start_attack(false)
-	if Input.is_action_just_pressed(_action("heavy")) and can_attack():
-		start_attack(true)
-	if Input.is_action_just_pressed(_action("special")) and can_special():
-		start_special()
+	# Core actions route through the buffer: fire now if legal, else remember it.
+	for act in ["attack", "heavy", "special"]:
+		if Input.is_action_just_pressed(_action(act)) and not _try_action(act):
+			_buffer(act)
 	if Input.is_action_just_pressed(_action("swap")):
 		_swap_weapon()
 	# RT: hurl a held foe if you have one, else throw your weapon.
@@ -758,10 +806,14 @@ func _process_input_actions() -> void:
 		start_block()
 	elif Input.is_action_just_released(_action("block")) and defense_state == DefenseState.BLOCKING:
 		end_block()
-	if Input.is_action_just_pressed(_action("dodge")) and can_dodge():
-		start_dodge()
+	if Input.is_action_just_pressed(_action("dodge")) and not _try_action("dodge"):
+		_buffer("dodge")
 	if Input.is_action_just_pressed(_action("emote")):
 		play_emote()
+	# Re-fire a still-pending buffered action the moment its gate opens.
+	if _buffer_timer > 0.0 and _buffered_action != "" and _try_action(_buffered_action):
+		_buffered_action = ""
+		_buffer_timer = 0.0
 
 func _process_cpu_actions() -> void:
 	# FLOPPY: hurl a held foe, or reach out and grab one.
@@ -981,35 +1033,37 @@ func _update_motion_anim(delta: float) -> void:
 # --- Capability checks ---
 
 func can_attack() -> bool:
-	return not is_downed and grabbing == null and grabbed_by == null \
+	return not is_downed and hitstun_timer <= 0.0 and grabbing == null and grabbed_by == null \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_start_block() -> bool:
-	return not is_downed and grabbing == null and grabbed_by == null \
+	return not is_downed and hitstun_timer <= 0.0 and grabbing == null and grabbed_by == null \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_special() -> bool:
-	return not is_downed and grabbing == null and grabbed_by == null \
+	return not is_downed and hitstun_timer <= 0.0 and grabbing == null and grabbed_by == null \
 		and special_type != "none" \
 		and special_cooldown_timer <= 0.0 \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_throw() -> bool:
-	return not is_downed and grabbed_by == null \
+	return not is_downed and hitstun_timer <= 0.0 and grabbed_by == null \
 		and _active_weapon_id() != "fists" \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_pickup() -> bool:
-	return not is_downed and grabbed_by == null \
+	return not is_downed and hitstun_timer <= 0.0 and grabbed_by == null \
 		and defense_state != DefenseState.DODGING \
 		and defense_state != DefenseState.GUARD_BROKEN
 
 func can_dodge() -> bool:
 	if is_downed or grabbed_by != null:
+		return false
+	if hitstun_timer > 0.0:
 		return false
 	if dodge_cooldown_timer > 0.0:
 		return false
@@ -1079,7 +1133,10 @@ func update_movement(delta: float) -> void:
 		_apply_current(delta)
 		return
 
-	var movement_locked := attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE
+	# Can't steer mid-swing (windup/active) or while in hitstun — you keep the blow's
+	# momentum and bleed to a stop, but you can't drive out of it until it ends.
+	var movement_locked := attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE \
+		or hitstun_timer > 0.0
 	var direction := Vector2.ZERO
 	if not movement_locked:
 		direction = get_input_direction()
@@ -1192,6 +1249,7 @@ func knock_down(dir: Vector2, power: float) -> void:
 func get_up() -> void:
 	is_downed = false
 	down_timer = 0.0
+	hitstun_timer = 0.0                                   # a knockdown supersedes any lingering stun
 	invuln_timer = maxf(invuln_timer, DOWN_GETUP_INVULN)  # brief grace as you rise
 	knockdown_immune_timer = DOWN_IMMUNE_AFTER           # can't be juggled straight back down
 
@@ -1199,7 +1257,7 @@ func get_up() -> void:
 
 func can_grab() -> bool:
 	return MatchConfig.floppy_mode \
-		and not is_downed and grabbing == null and grabbed_by == null \
+		and not is_downed and hitstun_timer <= 0.0 and grabbing == null and grabbed_by == null \
 		and grab_cooldown <= 0.0 \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
@@ -1543,6 +1601,7 @@ func start_special() -> void:
 	swing_anim_dur = maxf(attack_timer + current_attack_active, 0.001)
 	attack_phase = AttackPhase.WINDUP
 	attack_phase_dur = maxf(attack_timer, 0.001)
+	_spawn_special_charge(maxf(attack_timer, 0.08))  # wind-up telegraph
 	play_scene_sfx("swing", 0.06)
 
 # Held-weapon swing pose for the current attack phase. Returns Vector2(angle_deg,
@@ -1579,6 +1638,8 @@ func update_attack(delta: float) -> void:
 			attack_phase = AttackPhase.ACTIVE
 			attack_timer = current_attack_active
 			attack_phase_dur = maxf(current_attack_active, 0.001)
+			if current_is_special:
+				_spawn_special_flash()  # release "pop" (also clears the telegraph)
 			if current_is_special and (special_type == "screech" or special_type == "stomp"):
 				_do_screech()
 			elif current_is_special and special_type == "tail_smash":
@@ -1992,6 +2053,12 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	# lands but the titan doesn't react, selling the super-armor.
 	if poise_heavy or bulwark_soft:
 		hit_anim_timer = 0.0
+	# HITSTUN: lock the victim out of acting/steering for a window that scales with the
+	# blow, so a clean hit earns tempo. Gated on `shoved` — anything armored enough to
+	# ignore the knockback (poise heavy / bulwark / mid-charge headbutt) also shrugs
+	# off the stun and keeps acting.
+	if shoved:
+		hitstun_timer = clampf(HITSTUN_BASE + float(amount) * HITSTUN_PER_DMG, HITSTUN_MIN, HITSTUN_MAX)
 	# Impact burst at the contact point (cosmetic): spray along the knockback.
 	var kdir: Vector2 = knockback.normalized() if knockback.length() > 1.0 else facing
 	_spawn_hit_burst(global_position - kdir * 16.0 + Vector2(0, sprite_offset_y * 0.5), kdir, amount, hp <= 0 and not ringout_only)
@@ -2192,28 +2259,123 @@ func _spawn_radial_ring(color: Color) -> void:
 		st.parallel().tween_property(shard, "modulate:a", 0.0, 0.26)
 		st.tween_callback(shard.queue_free)
 
-# A sweeping slash arc when a melee attack goes active. Shape/size/colour/speed
-# differ by attack kind so light, heavy, and each special read distinctly.
+# --- Special telegraph + flash (juice, no art) --------------------------------
+
+# Per-special signature colour, shared by the telegraph, flash, and swipe so each
+# dino's signature reads as one consistent hue.
+func _special_color() -> Color:
+	match special_type:
+		"dash_claw": return Color(0.5, 0.95, 1.0)
+		"chomp": return Color(1.0, 0.45, 0.4)
+		"headbutt": return Color(1.0, 0.9, 0.5)
+		"neck_whip": return Color(0.55, 0.9, 0.55)
+		"tail_smash", "stomp": return Color(0.82, 0.62, 0.35)
+		"screech": return Color(0.75, 0.55, 1.0)
+		"spikes": return Color(0.95, 0.85, 0.4)
+		_: return Color(0.85, 0.7, 1.0)
+
+func _circle_points(r: float, steps: int = 28) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in range(steps):
+		var a := TAU * i / steps
+		pts.append(Vector2(cos(a), sin(a)) * r)
+	return pts
+
+# WINDUP telegraph: a charging glow that swells + brightens under the dino over the
+# windup, plus sparks converging inward — so a special reads as a wound-up BEAT you
+# can see coming, not a silent poke. Auto-frees when the flash fires (or on timeout).
+var _special_charge: Node2D = null
+func _spawn_special_charge(dur: float) -> void:
+	if is_instance_valid(_special_charge):
+		_special_charge.queue_free()
+	var col := _special_color()
+	var root := Node2D.new()
+	root.global_position = global_position + Vector2(0, sprite_offset_y * 0.4)
+	root.z_index = 2
+	get_tree().current_scene.add_child(root)
+	_special_charge = root
+	# Growing glow disc.
+	var glow := Polygon2D.new()
+	glow.polygon = _circle_points(38.0)
+	glow.color = Color(col.r, col.g, col.b, 0.0)
+	glow.scale = Vector2(0.2, 0.2)
+	root.add_child(glow)
+	var gt := glow.create_tween()
+	gt.tween_property(glow, "scale", Vector2(1.15, 1.15), dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	gt.parallel().tween_property(glow, "color:a", 0.5, dur).set_trans(Tween.TRANS_SINE)
+	# Sparks converging inward toward the charge point.
+	for i in range(6):
+		var a := TAU * i / 6.0
+		var d := Vector2(cos(a), sin(a))
+		var spark := Polygon2D.new()
+		spark.polygon = PackedVector2Array([Vector2(-2, -2), Vector2(6, 0), Vector2(-2, 2)])
+		spark.color = Color(col.r, col.g, col.b, 0.95)
+		spark.position = d * 64.0
+		spark.rotation = a + PI  # point toward centre
+		root.add_child(spark)
+		var st := spark.create_tween()
+		st.tween_property(spark, "position", d * 10.0, dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		st.parallel().tween_property(spark, "scale", Vector2(0.3, 0.3), dur)
+
+# RELEASE flash: a bright rim-ring + white core that snaps outward the instant the
+# special fires — the "pop" that punctuates the wind-up. Also frees the telegraph.
+func _spawn_special_flash() -> void:
+	if is_instance_valid(_special_charge):
+		_special_charge.queue_free()
+		_special_charge = null
+	var col := _special_color()
+	var center := global_position + facing * 24.0 + Vector2(0, sprite_offset_y * 0.4)
+	var root := get_tree().current_scene
+	if root == null:
+		return
+	# White-hot core pops and fades fast.
+	var core := Polygon2D.new()
+	core.polygon = _circle_points(30.0)
+	core.color = Color(1, 1, 1, 0.9)
+	core.global_position = center
+	core.scale = Vector2(0.3, 0.3)
+	core.z_index = 33
+	root.add_child(core)
+	var ct := core.create_tween()
+	ct.tween_property(core, "scale", Vector2(1.4, 1.4), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	ct.parallel().tween_property(core, "modulate:a", 0.0, 0.16)
+	ct.tween_callback(core.queue_free)
+	# Coloured rim ring snapping outward behind the core.
+	var rim := Line2D.new()
+	rim.points = _circle_points(34.0, 32)
+	rim.closed = true
+	rim.width = 6.0
+	rim.default_color = Color(col.r, col.g, col.b, 0.95)
+	rim.global_position = center
+	rim.scale = Vector2(0.3, 0.3)
+	rim.z_index = 32
+	root.add_child(rim)
+	var rt := rim.create_tween()
+	rt.tween_property(rim, "scale", Vector2(1.8, 1.8), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	rt.parallel().tween_property(rim, "width", 1.0, 0.22)
+	rt.parallel().tween_property(rim, "modulate:a", 0.0, 0.22)
+	rt.tween_callback(rim.queue_free)
+
+# A sweeping slash arc when a melee attack goes active. Only SPECIALS draw one now —
+# the fat light/heavy bands read as clutter, so those sell the swing through the
+# sprite animation + weapon swing + hit-burst instead. Each special stays distinct.
 func _spawn_attack_swipe() -> void:
-	if current_is_special:
-		match special_type:
-			"dash_claw":  # three fanned claw rakes
-				for k in range(3):
-					_spawn_swipe(Color(0.5, 0.95, 1.0, 0.85), 48.0, 6.0, 55.0, 0.18, 42.0, (k - 1) * 18.0)
-			"chomp":
-				_spawn_swipe(Color(1.0, 0.45, 0.4, 0.85), 60.0, 22.0, 95.0, 0.20, 70.0)
-			"headbutt":
-				_spawn_swipe(Color(1.0, 0.9, 0.5, 0.85), 72.0, 26.0, 110.0, 0.24, 88.0)
-			"neck_whip":  # long, wide green sweep
-				_spawn_swipe(Color(0.55, 0.9, 0.55, 0.85), 80.0, 18.0, 150.0, 0.28, 120.0)
-			"tail_smash":  # big brown close smash
-				_spawn_swipe(Color(0.82, 0.62, 0.35, 0.9), 64.0, 30.0, 130.0, 0.22, 100.0)
-			_:
-				_spawn_swipe(Color(0.85, 0.7, 1.0, 0.8), 60.0, 18.0, 90.0, 0.20, 70.0)
-	elif current_is_heavy:  # big slow wind-up swing
-		_spawn_swipe(Color(1.0, 0.78, 0.35, 0.8), 72.0, 24.0, 108.0, 0.26, 88.0)
-	else:  # quick light flick
-		_spawn_swipe(Color(0.95, 0.97, 1.0, 0.75), 50.0, 14.0, 70.0, 0.15, 55.0)
+	if not current_is_special:
+		return
+	match special_type:
+		"dash_claw":  # three fanned claw rakes
+			for k in range(3):
+				_spawn_swipe(Color(0.5, 0.95, 1.0, 0.85), 48.0, 6.0, 55.0, 0.18, 42.0, (k - 1) * 18.0)
+		"chomp":
+			_spawn_swipe(Color(1.0, 0.45, 0.4, 0.85), 60.0, 22.0, 95.0, 0.20, 70.0)
+		"headbutt":
+			_spawn_swipe(Color(1.0, 0.9, 0.5, 0.85), 72.0, 26.0, 110.0, 0.24, 88.0)
+		"neck_whip":  # long, wide green sweep
+			_spawn_swipe(Color(0.55, 0.9, 0.55, 0.85), 80.0, 18.0, 150.0, 0.28, 120.0)
+		"tail_smash":  # big brown close smash
+			_spawn_swipe(Color(0.82, 0.62, 0.35, 0.9), 64.0, 30.0, 130.0, 0.22, 100.0)
+		_:
+			_spawn_swipe(Color(0.85, 0.7, 1.0, 0.8), 60.0, 18.0, 90.0, 0.20, 70.0)
 
 func _spawn_swipe(color: Color, radius: float, thickness: float, span_deg: float, dur: float, sweep_deg: float, offset_deg: float = 0.0) -> void:
 	var arc := Polygon2D.new()
@@ -2370,6 +2532,12 @@ func update_timers(delta: float) -> void:
 		hit_flash_timer -= delta
 	if hit_anim_timer > 0.0:
 		hit_anim_timer -= delta
+	if hitstun_timer > 0.0:
+		hitstun_timer -= delta
+	if _buffer_timer > 0.0:
+		_buffer_timer -= delta
+		if _buffer_timer <= 0.0:
+			_buffered_action = ""
 	if special_cooldown_timer > 0.0:
 		special_cooldown_timer -= delta
 	if timed_slow_timer > 0.0:
@@ -2531,6 +2699,12 @@ func respawn() -> void:
 	hit_flash_timer = 0.0
 	hit_flash_strength = 0.0
 	hit_anim_timer = 0.0
+	hitstun_timer = 0.0
+	_buffered_action = ""
+	_buffer_timer = 0.0
+	if is_instance_valid(_special_charge):
+		_special_charge.queue_free()
+		_special_charge = null
 	if not initial_weapons.is_empty():
 		weapons = initial_weapons.duplicate()
 		active_weapon = 0
