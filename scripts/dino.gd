@@ -7,21 +7,17 @@ enum DefenseState { NORMAL, BLOCKING, DODGING, GUARD_BROKEN }
 const SHEET_PLAYER := "res://assets/sprites/playersprites_revision.png"
 const SHEET_REF := "res://assets/sprites/rynosaurlandcharacters.png"
 const SHEET_ENEMY := "res://assets/sprites/enemysprites_revision.png"
-# 3D-baked fighter sheets (Meshy model -> Blender toon bake, see scripts/tools/
-# blender_render_dino.py). Each carries "motion": true so the game plays these
-# frames via AnimatedSprite2D instead of the procedural rig. Old box-sliced
-# sheets (*_fighter.png) remain on disk as history.
-# Ralph is the painterly-chibi prototype: real Seedance motion clips
-# (assets/concept/ralph/motion/{idle,walk,attack}.mp4) sliced + cut out + packed
-# by scripts/tools/gen_dino_motion.py, so in-match Ralph matches the TRAILER look
-# (smooth/LINEAR, no dither). The other 5 are still the older 3D toon bakes until
-# the same motion pipeline rolls out to them.
+# Painterly-chibi fighter sheets: all 6 are real Seedance motion clips
+# (assets/concept/<dino>/motion/{idle,walk,attack}.mp4) sliced + cut out + packed
+# by scripts/tools/gen_dino_motion.py, so in-match dinos match the TRAILER look
+# (smooth/LINEAR, no dither). The older 3D toon bakes (*_fighter_3d.png) and the
+# 2D dither sheets (*_fighter.png) stay on disk as history.
 const SHEET_RALPH := "res://assets/sprites/ralph_motion.png"
-const SHEET_RAPTOR := "res://assets/sprites/raptor_fighter_3d.png"
-const SHEET_TRIKE := "res://assets/sprites/trike_fighter_3d.png"
-const SHEET_PTERRY := "res://assets/sprites/pterry_fighter_3d.png"
-const SHEET_BRONTO := "res://assets/sprites/bronto_fighter_3d.png"
-const SHEET_ANKY := "res://assets/sprites/anky_fighter_3d.png"
+const SHEET_RAPTOR := "res://assets/sprites/raptor_motion.png"
+const SHEET_TRIKE := "res://assets/sprites/trike_motion.png"
+const SHEET_PTERRY := "res://assets/sprites/pterry_motion.png"
+const SHEET_BRONTO := "res://assets/sprites/bronto_motion.png"
+const SHEET_ANKY := "res://assets/sprites/anky_motion.png"
 
 const ANIM_LAYOUTS := {
 	# Every fighter below is a 3D-baked sheet (Meshy model -> Blender toon bake,
@@ -29,11 +25,12 @@ const ANIM_LAYOUTS := {
 	# wants_rig=false, so the AnimatedSprite2D plays these idle/walk/attack frames
 	# (squash-and-stretch animation baked in) instead of the procedural limb rig.
 	"raptor": {
+		# Painterly motion sheet (156x154 cells) from gen_dino_motion.py.
 		"sheet": SHEET_RAPTOR,
 		"motion": true,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 130, 168), Rect2(130, 0, 130, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(260, 0, 130, 168), Rect2(390, 0, 130, 168), Rect2(520, 0, 130, 168), Rect2(650, 0, 130, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(780, 0, 130, 168), Rect2(910, 0, 130, 168), Rect2(1040, 0, 130, 168)]},
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 156, 154), Rect2(156, 0, 156, 154), Rect2(312, 0, 156, 154), Rect2(468, 0, 156, 154)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 154, 156, 154), Rect2(156, 154, 156, 154), Rect2(312, 154, 156, 154), Rect2(468, 154, 156, 154), Rect2(624, 154, 156, 154), Rect2(780, 154, 156, 154), Rect2(936, 154, 156, 154), Rect2(1092, 154, 156, 154)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 308, 156, 154), Rect2(156, 308, 156, 154), Rect2(312, 308, 156, 154), Rect2(468, 308, 156, 154), Rect2(624, 308, 156, 154)]},
 	},
 	"ralph": {
 		# Painterly motion sheet (135x153 cells, one row per anim) from
@@ -45,32 +42,36 @@ const ANIM_LAYOUTS := {
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 306, 135, 153), Rect2(135, 306, 135, 153), Rect2(270, 306, 135, 153), Rect2(405, 306, 135, 153), Rect2(540, 306, 135, 153)]},
 	},
 	"trike": {
+		# Painterly motion sheet (131x156 cells) from gen_dino_motion.py.
 		"sheet": SHEET_TRIKE,
 		"motion": true,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 169, 168), Rect2(169, 0, 169, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(338, 0, 169, 168), Rect2(507, 0, 169, 168), Rect2(676, 0, 169, 168), Rect2(845, 0, 169, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1014, 0, 169, 168), Rect2(1183, 0, 169, 168), Rect2(1352, 0, 169, 168)]},
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 131, 156), Rect2(131, 0, 131, 156), Rect2(262, 0, 131, 156), Rect2(393, 0, 131, 156)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 156, 131, 156), Rect2(131, 156, 131, 156), Rect2(262, 156, 131, 156), Rect2(393, 156, 131, 156), Rect2(524, 156, 131, 156), Rect2(655, 156, 131, 156), Rect2(786, 156, 131, 156), Rect2(917, 156, 131, 156)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 312, 131, 156), Rect2(131, 312, 131, 156), Rect2(262, 312, 131, 156), Rect2(393, 312, 131, 156), Rect2(524, 312, 131, 156)]},
 	},
 	"pterry": {
+		# Painterly motion sheet (244x157 cells — wide for the wings) from gen_dino_motion.py.
 		"sheet": SHEET_PTERRY,
 		"motion": true,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 155, 168), Rect2(155, 0, 155, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(310, 0, 155, 168), Rect2(465, 0, 155, 168), Rect2(620, 0, 155, 168), Rect2(775, 0, 155, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(930, 0, 155, 168), Rect2(1085, 0, 155, 168), Rect2(1240, 0, 155, 168)]},
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 244, 157), Rect2(244, 0, 244, 157), Rect2(488, 0, 244, 157), Rect2(732, 0, 244, 157)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 157, 244, 157), Rect2(244, 157, 244, 157), Rect2(488, 157, 244, 157), Rect2(732, 157, 244, 157), Rect2(976, 157, 244, 157), Rect2(1220, 157, 244, 157), Rect2(1464, 157, 244, 157), Rect2(1708, 157, 244, 157)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 314, 244, 157), Rect2(244, 314, 244, 157), Rect2(488, 314, 244, 157), Rect2(732, 314, 244, 157), Rect2(976, 314, 244, 157)]},
 	},
 	"bronto": {
+		# Painterly motion sheet (237x155 cells — wide for the neck-whip) from gen_dino_motion.py.
 		"sheet": SHEET_BRONTO,
 		"motion": true,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 143, 168), Rect2(143, 0, 143, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(286, 0, 143, 168), Rect2(429, 0, 143, 168), Rect2(572, 0, 143, 168), Rect2(715, 0, 143, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(858, 0, 143, 168), Rect2(1001, 0, 143, 168), Rect2(1144, 0, 143, 168)]},
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 237, 155), Rect2(237, 0, 237, 155), Rect2(474, 0, 237, 155), Rect2(711, 0, 237, 155)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 155, 237, 155), Rect2(237, 155, 237, 155), Rect2(474, 155, 237, 155), Rect2(711, 155, 237, 155), Rect2(948, 155, 237, 155), Rect2(1185, 155, 237, 155), Rect2(1422, 155, 237, 155), Rect2(1659, 155, 237, 155)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 310, 237, 155), Rect2(237, 310, 237, 155), Rect2(474, 310, 237, 155), Rect2(711, 310, 237, 155), Rect2(948, 310, 237, 155)]},
 	},
 	"anky": {
+		# Painterly motion sheet (231x161 cells) from gen_dino_motion.py.
 		"sheet": SHEET_ANKY,
 		"motion": true,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 191, 168), Rect2(191, 0, 191, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(382, 0, 191, 168), Rect2(573, 0, 191, 168), Rect2(764, 0, 191, 168), Rect2(955, 0, 191, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1146, 0, 191, 168), Rect2(1337, 0, 191, 168), Rect2(1528, 0, 191, 168)]},
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 231, 161), Rect2(231, 0, 231, 161), Rect2(462, 0, 231, 161), Rect2(693, 0, 231, 161)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 161, 231, 161), Rect2(231, 161, 231, 161), Rect2(462, 161, 231, 161), Rect2(693, 161, 231, 161), Rect2(924, 161, 231, 161), Rect2(1155, 161, 231, 161), Rect2(1386, 161, 231, 161), Rect2(1617, 161, 231, 161)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 322, 231, 161), Rect2(231, 322, 231, 161), Rect2(462, 322, 231, 161), Rect2(693, 322, 231, 161), Rect2(924, 322, 231, 161)]},
 	},
 }
 
