@@ -141,6 +141,7 @@ const DINOS := {
 		"dodge_cooldown": 0.6,
 		"dodge_distance": 150.0,
 		"dodge_block_cost": 32.0,
+		"signature": "charger",   # super-armor through his heavy — plows through trades
 		"special_type": "headbutt",
 		"special_damage": 30,
 		"special_knockback": 650.0,
@@ -188,6 +189,7 @@ const DINOS := {
 		"dodge_cooldown": 0.6,
 		"dodge_distance": 120.0,
 		"dodge_block_cost": 35.0,
+		"signature": "flighty",   # landing a hit refunds her dodge — endless hit-and-run
 		"special_type": "screech",
 		"special_damage": 14,
 		"special_knockback": 250.0,
@@ -234,6 +236,7 @@ const DINOS := {
 		"dodge_cooldown": 0.5,
 		"dodge_distance": 200.0,
 		"dodge_block_cost": 22.0,
+		"signature": "dash_cancel",   # can cancel attack recovery into a dodge
 		"special_type": "dash_claw",
 		"special_damage": 30,
 		"special_knockback": 350.0,
@@ -281,6 +284,7 @@ const DINOS := {
 		"dodge_cooldown": 0.75,
 		"dodge_distance": 120.0,
 		"dodge_block_cost": 38.0,
+		"signature": "bulwark",   # jabs can't stagger the titan — only real blows
 		"special_type": "neck_whip",
 		"special_damage": 22,
 		"special_knockback": 520.0,
@@ -327,6 +331,7 @@ const DINOS := {
 		"dodge_cooldown": 0.7,
 		"dodge_distance": 120.0,
 		"dodge_block_cost": 36.0,
+		"signature": "spikeback",   # reflects a share of BLOCKED damage at the attacker
 		"special_type": "tail_smash",
 		"special_damage": 18,
 		"special_knockback": 520.0,
@@ -378,6 +383,7 @@ const DINOS := {
 		"dodge_cooldown": 0.7,
 		"dodge_distance": 110.0,
 		"dodge_block_cost": 40.0,
+		"signature": "combo_king",   # light chains speed up his next light — rushdown
 		"special_type": "chomp",
 		"special_damage": 24,
 		"special_knockback": 300.0,

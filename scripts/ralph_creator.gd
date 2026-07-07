@@ -59,6 +59,7 @@ const PROFILES := {
 		"bio": "A tiny dino with a big heart and an even bigger attitude. Ralph may be small, but his courage is larger than life.",
 		"personality": "BRAVE • CURIOUS • LOYAL",
 		"move_name": "CHOMP",
+		"passive": "COMBO KING — light chains speed up his next hit",
 		"move_desc": "Ralph lunges with jaws wide. Each bite heals him for part of the damage dealt — the more the tiny king feasts, the longer he reigns.",
 		"move_type": "PHYSICAL",
 		"hero": RALPH_HERO,
@@ -71,6 +72,7 @@ const PROFILES := {
 		"bio": "Quick as a sneeze and twice as messy. Max the raptor strikes before you've finished the thought of dodging.",
 		"personality": "SWIFT • CLEVER • MISCHIEVOUS",
 		"move_name": "DASH CLAW",
+		"passive": "DASH CANCEL — cancel attack recovery into a dodge",
 		"move_desc": "Max rockets forward with sickle claws raised. A clean hit renews the hunt — the cooldown almost fully refunds.",
 		"move_type": "PHYSICAL",
 		"hero": "res://assets/concept/raptor/raptor_hero.png",
@@ -83,6 +85,7 @@ const PROFILES := {
 		"bio": "Three horns and zero patience for picking a way around. Gus the trike's frill is for show. The headbutt is not.",
 		"personality": "STUBBORN • LOYAL • GROUNDED",
 		"move_name": "HEADBUTT CHARGE",
+		"passive": "UNSTOPPABLE — super-armor through his heavy",
 		"move_desc": "Gus lowers his horns and barrels forward, knocking enemies clear off the island. Nothing shoves Gus off course mid-charge.",
 		"move_type": "PHYSICAL",
 		"hero": "res://assets/concept/trike/trike_hero.png",
@@ -95,6 +98,7 @@ const PROFILES := {
 		"bio": "Jessie the pterodactyl, self-proclaimed sky ace. Every landing is on purpose, every wing-bandage is a story.",
 		"personality": "COCKY • BREEZY • AERIAL",
 		"move_name": "SCREECH",
+		"passive": "HIT & RUN — landing a hit refunds her dodge",
 		"move_desc": "A piercing wail that slows every enemy caught in range. Jessie's favorite icebreaker.",
 		"move_type": "SONIC",
 		"hero": "res://assets/concept/pterry/pterry_hero.png",
@@ -107,6 +111,7 @@ const PROFILES := {
 		"bio": "The slowest bronto to anger and the sweetest to share. Steve keeps a flower in his mouth and a cloud in his step.",
 		"personality": "DREAMY • KIND • PATIENT",
 		"move_name": "NECK WHIP",
+		"passive": "IMMOVABLE — jabs can't stagger the titan",
 		"move_desc": "Steve sweeps his long neck in a wide arc, scooping every enemy along the way. Raised guards crumble — blocking the whip drains far more.",
 		"move_type": "PHYSICAL",
 		"hero": "res://assets/concept/bronto/bronto_hero.png",
@@ -119,6 +124,7 @@ const PROFILES := {
 		"bio": "An old anky survivor with a plant in his armor and a grudge for breakfast. Get behind Frank before he turns around.",
 		"personality": "GRUMPY • LOYAL • DEPENDABLE",
 		"move_name": "TAIL SMASH",
+		"passive": "SPIKED SHELL — reflects damage you block",
 		"move_desc": "Frank brings his club tail crashing down, sending a shockwave through the ground in every direction. There is no safe side.",
 		"move_type": "PHYSICAL",
 		"hero": "res://assets/concept/anky/anky_hero.png",
@@ -508,11 +514,14 @@ func _build_move_panel() -> void:
 	move_icon_holder.size = Vector2(120, 104)
 	move_panel.add_child(move_icon_holder)
 	move_name_label = _text(move_panel, "", 160, 26, 26, GOLD)
+	move_cooldown_label = _text(move_panel, "COOLDOWN: —", 470, 34, 16, TEXT_DIM)
 	move_desc_label = _text(move_panel, "", 160, 58, 16, TEXT)
-	move_desc_label.size = Vector2(510, 60)
+	move_desc_label.size = Vector2(512, 54)
 	move_desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	move_type_label = _text(move_panel, "TYPE: PHYSICAL", 160, 118, 16, TEXT_DIM)
-	move_cooldown_label = _text(move_panel, "COOLDOWN: —", 420, 118, 16, TEXT_DIM)
+	# Passive-trait line (repurposed from the old TYPE flavor): names + one-line
+	# summary of the dino's signature passive so the depth is discoverable here.
+	move_type_label = _text(move_panel, "", 160, 116, 15, GOLD)
+	move_type_label.size = Vector2(512, 22)
 
 
 func _build_customization_panel() -> void:
@@ -573,8 +582,8 @@ func _refresh_profile(dino_id: String) -> void:
 	# Move card.
 	move_name_label.text = profile.get("move_name", "")
 	move_desc_label.text = profile.get("move_desc", "")
-	move_type_label.text = "TYPE: %s" % profile.get("move_type", "PHYSICAL")
-	move_cooldown_label.text = "COOLDOWN: %s" % _cooldown_text(dino_id)
+	move_type_label.text = "◆ %s" % profile.get("passive", "")
+	move_cooldown_label.text = "CD: %s" % _cooldown_text(dino_id)
 	_clear_children(move_icon_holder)
 	_add_portrait(move_icon_holder, dino_id, Rect2(6, 6, 108, 92))
 	# Skins (every dino) + weapons; emotes are still a teaser.

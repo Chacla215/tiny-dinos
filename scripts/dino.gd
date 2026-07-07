@@ -191,6 +191,20 @@ const BEAST_TINT := Color(1.5, 1.2, 0.5)
 @export var dodge_distance: float = 160.0
 @export var dodge_block_cost: float = 30.0
 
+@export_group("Signature")
+# Each dino's persistent signature passive — its systemic identity beyond stats
+# and its one special move. Set per-dino in MatchConfig.DINOS; the CPU inherits
+# every one for FREE because they hook the shared input/damage code, not a
+# player-only path. Values (see the hooks): combo_king (RALPH) / dash_cancel
+# (MAX) / charger (GUS) / bulwark (STEVE) / flighty (JESSIE) / spikeback (FRANK).
+@export var signature: String = "none"
+const COMBO_KING_PER_HIT := 0.12   # RALPH: windup+recovery cut per live combo hit…
+const COMBO_KING_MAX_CUT := 0.36   # …capped here (3-hit chain = -36%, a real ramp)
+const BULWARK_POISE_DMG := 24      # STEVE: hits at/under this can't stagger or shove him
+const BULWARK_KB_FACTOR := 0.0     # …and their knockback is nullified (he stays planted)
+const FLIGHTY_DODGE_REFUND := 0.6  # JESSIE: landing a hit refunds this much of her dodge cd
+const SPIKEBACK_REFLECT := 0.35    # FRANK: reflects this share of BLOCKED damage at attacker
+
 @export_group("Input")
 @export var player_id: String = "p1"
 ## When true this dino is driven by dino_ai.gd instead of player input.
@@ -928,6 +942,11 @@ func can_dodge() -> bool:
 		return false
 	if attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE:
 		return false
+	# Recovery is normally a locked commitment window (see is_recovering — the CPU
+	# treats it as a free punish). MAX's dash_cancel signature is the sole exception:
+	# he can cancel his attack recovery into a dodge for hit-and-run pressure.
+	if attack_phase == AttackPhase.RECOVERY and signature != "dash_cancel":
+		return false
 	if block_durability < dodge_block_cost:
 		return false
 	return true
@@ -1301,6 +1320,12 @@ func start_attack(heavy: bool = false) -> void:
 	current_attack_hitbox_offset += wpn_range
 	current_attack_recovery *= wpn_recovery
 	attack_timer *= wpn_windup
+	# RALPH combo_king: a live light chain speeds up his next light — windup and
+	# recovery shrink as the combo climbs, so staying on offense snowballs.
+	if signature == "combo_king" and not heavy and combo_count > 0:
+		var cut: float = minf(COMBO_KING_PER_HIT * float(combo_count), COMBO_KING_MAX_CUT)
+		attack_timer *= (1.0 - cut)
+		current_attack_recovery *= (1.0 - cut)
 	attack_phase = AttackPhase.WINDUP
 	attack_phase_dur = maxf(attack_timer, 0.001)
 	play_scene_sfx("swing", 0.08)
@@ -1538,6 +1563,10 @@ func try_hit(body: Node) -> void:
 	# DASH CLAW: landing the rake renews the hunt — most of the cooldown refunds.
 	if current_is_special and special_type == "dash_claw":
 		special_cooldown_timer = minf(special_cooldown_timer, special_cooldown * 0.35)
+	# JESSIE flighty: landing a blow refunds most of her dodge cooldown, so she can
+	# immediately dart back out — a relentless hit-and-run flyer.
+	if signature == "flighty" and dodge_cooldown_timer > 0.0:
+		dodge_cooldown_timer *= (1.0 - FLIGHTY_DODGE_REFUND)
 
 # --- Defense actions ---
 
@@ -1828,6 +1857,11 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 		play_scene_sfx(sfx_name, 0.1)
 
 	if defense_state == DefenseState.BLOCKING:
+		# FRANK spikeback: his armored shell punishes a blocked blow, reflecting a
+		# share of it straight back at the attacker (chip only — see take_reflect,
+		# which carries no knockback/recursion so it can't loop).
+		if signature == "spikeback" and source != null and source != self and source.has_method("take_reflect"):
+			source.take_reflect(int(round(float(amount) * SPIKEBACK_REFLECT)))
 		# NECK WHIP guard-crush: the whip chews through block durability, so
 		# turtling against Steve cracks the guard open fast.
 		var crush := 1.0
@@ -1857,8 +1891,14 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 
 	if not ringout_only:
 		hp -= amount
+	# GUS charger: super-armor through his own heavy — takes the damage but keeps his
+	# footing so the charge plows through a trade (headbutt armor, extended to heavy).
+	var poise_heavy: bool = signature == "charger" and current_is_heavy and attack_phase != AttackPhase.IDLE
+	# STEVE bulwark: jabs (weak hits) can't move the titan — only real blows stagger him.
+	var bulwark_soft: bool = signature == "bulwark" and amount <= BULWARK_POISE_DMG
 	# HEADBUTT armor: mid-charge Gus takes the damage but can't be shoved off course.
-	var shoved := not (current_is_special and special_type == "headbutt" and attack_phase != AttackPhase.IDLE)
+	var shoved := not poise_heavy and not bulwark_soft \
+		and not (current_is_special and special_type == "headbutt" and attack_phase != AttackPhase.IDLE)
 	if shoved:
 		velocity += knockback
 		knockback_active = true
@@ -1869,6 +1909,10 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 	hit_flash_strength = clampf((float(amount) - 10.0) / 35.0, 0.0, 1.0)
 	# Motion-sheet flinch: long enough to read as a stagger, harder hits hold longer.
 	hit_anim_timer = clampf(0.18 + float(amount) * 0.004, 0.18, 0.32)
+	# Poise (GUS charging heavy / STEVE shrugging a jab): no stagger flinch — the blow
+	# lands but the titan doesn't react, selling the super-armor.
+	if poise_heavy or bulwark_soft:
+		hit_anim_timer = 0.0
 	# Impact burst at the contact point (cosmetic): spray along the knockback.
 	var kdir: Vector2 = knockback.normalized() if knockback.length() > 1.0 else facing
 	_spawn_hit_burst(global_position - kdir * 16.0 + Vector2(0, sprite_offset_y * 0.5), kdir, amount, hp <= 0 and not ringout_only)
