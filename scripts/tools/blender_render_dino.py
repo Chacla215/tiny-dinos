@@ -31,7 +31,7 @@ MODEL = argval("--model", None)
 # Meshy orients each model differently, so the yaw that makes it face screen-right
 # (which our attack-lunge animation assumes) varies per dino. Default 270; override
 # per dino here as we eyeball them, or pass --yaw explicitly.
-YAW_BY_DINO = {"trike": 90, "pterry": 90}
+YAW_BY_DINO = {"trike": 90, "pterry": 90, "bronto": 90, "anky": 90}
 YAW   = float(argval("--yaw", str(YAW_BY_DINO.get(DINO, 270))))
 TARGET_H = 2.1                          # imported model is scaled to this height (units)
 os.makedirs(OUT, exist_ok=True)
