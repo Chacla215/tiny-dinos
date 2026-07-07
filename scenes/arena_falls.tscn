@@ -1,16 +1,9 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/dino.gd" id="1_dino"]
 [ext_resource type="Script" path="res://scripts/main.gd" id="2_main"]
 [ext_resource type="Texture2D" path="res://assets/tilesets/white_water_falls_bg.png" id="3_bg"]
 
-[ext_resource type="Texture2D" path="res://assets/props/rock_falls.png" id="9_rockprop"]
-
-[sub_resource type="CircleShape2D" id="ob_Rock1"]
-radius = 37.9
-
-[sub_resource type="CircleShape2D" id="ob_Rock2"]
-radius = 41.3
 
 [sub_resource type="RectangleShape2D" id="dino_shape"]
 size = Vector2(48, 48)
@@ -83,37 +76,6 @@ polygon = PackedVector2Array(-16, -10, 16, -10, 0, 12)
 position = Vector2(760, 540)
 color = Color(0.85, 0.95, 1, 0.18)
 polygon = PackedVector2Array(-16, -10, 16, -10, 0, 12)
-
-[node name="Obstacles" type="Node2D" parent="."]
-
-[node name="Rock1" type="StaticBody2D" parent="Obstacles"]
-position = Vector2(484, 248)
-collision_layer = 2
-collision_mask = 0
-
-[node name="Sprite" type="Sprite2D" parent="Obstacles/Rock1"]
-texture_filter = 2
-scale = Vector2(0.2138, 0.2138)
-texture = ExtResource("9_rockprop")
-
-[node name="Col" type="CollisionShape2D" parent="Obstacles/Rock1"]
-position = Vector2(0, 21.6)
-shape = SubResource("ob_Rock1")
-
-[node name="Rock2" type="StaticBody2D" parent="Obstacles"]
-position = Vector2(818, 497)
-collision_layer = 2
-collision_mask = 0
-
-[node name="Sprite" type="Sprite2D" parent="Obstacles/Rock2"]
-texture_filter = 2
-flip_h = true
-scale = Vector2(0.2327, 0.2327)
-texture = ExtResource("9_rockprop")
-
-[node name="Col" type="CollisionShape2D" parent="Obstacles/Rock2"]
-position = Vector2(0, 23.5)
-shape = SubResource("ob_Rock2")
 
 [node name="Player1" type="CharacterBody2D" parent="."]
 position = Vector2(293, 283)
