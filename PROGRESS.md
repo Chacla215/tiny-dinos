@@ -1,5 +1,33 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-07 (gameplay QA + animation fix + audio SFX)
+
+Charlie's plan: make gameplay good → then build a REAL-gameplay trailer (cutscenes
+flowing together) + improve audio. Progress this session, all on `feat/feel-sweep`:
+
+- **Gameplay QA pass.** Captured real 4-CPU matches on beach/lava/floes via a new
+  capture harness (`0398fc5`: `_capture_gameplay.tscn` + `capture_gameplay.gd`,
+  `--arena X`, Godot Movie Maker). Verdict: gameplay is solid — fighters legible on
+  every restyled floor, combat/grabs/weapons/specials/ring-outs all working, HUD +
+  per-player ▽ markers clean. (mp4s in /tmp/td_capture/, not committed.)
+- **Animation fix (`4bb01d9`).** Diagnosed: the motion sheets' idle/walk rows were
+  sliced from Seedance in-place clips (not leg-cycles) → morphed/jittered in play.
+  Fix = hold ONE clean pose for grounded states + procedural feet-anchored squash
+  bob (breathing idle / bouncy waddle when moving) in `dino.gd _update_motion_anim`;
+  baked attack/hit/dodge/ko clips still play. Verified numerically.
+- **Audio SFX (`ed3ff2d`).** Charlie picked: combat SFX, cute & cartoony. Replaced
+  the 10 placeholder-synth combat sounds with CC0 Kenney (Impact Sounds + RPG Audio)
+  — soft/wood thuds, comedic bell bonk for KO, glass tink for guard-break, cloth
+  whooshes. Drop-in (same filenames). UI SFX left as-is. Credits added.
+
+> **PENDING Charlie's audition (next session):** both the bob AMPLITUDE and the SFX
+> picks await his in-person feel/ear check — bob knob = the COMBO consts in
+> `_update_motion_anim`; each SFX is a one-file swap/pitch-up. THEN build the real
+> trailer: capture with `capture_gameplay.gd`, hand-pick action beats (AI clusters,
+> so choose frames with a clear hit/launch/AoE), cut so shots flow together. Concept
+> trailer (`assets/concept/trailer/*.mp4`, incl. trailer_roughcut.mp4) still
+> uncommitted — Charlie's external edit assets.
+
 ## Session — 2026-07-06 (islands restyled + per-dino depth + attack sync)
 
 Three themes landed on `feat/feel-sweep`, each atomically committed + verified.
