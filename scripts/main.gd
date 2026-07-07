@@ -209,6 +209,7 @@ func _ready() -> void:
 		or (MatchConfig and "season" in MatchConfig and MatchConfig.season)
 	powerups_enabled = not special and game_mode in ["rounds", "koth", "sumo", "flood"]
 	powerup_spawn_timer = 6.0
+	_match_intro()  # dino roster intro over the buildup, then FIGHT on the beat drop
 
 # [experiment] Per-island ambient atmosphere — a subtle drifting-particle layer
 # (snow / petals / embers / motes) that leans into the painterly islands. Attached
@@ -1902,6 +1903,131 @@ func play_sfx(sound_name: String, pitch_var: float = 0.05) -> void:
 		return
 	player.pitch_scale = 1.0 + randf_range(-pitch_var, pitch_var)
 	player.play()
+
+# --- Dino match intro + beat drop --------------------------------------------
+# The battle track opens on a ~DROP_TIME buildup, then DROPS. We hold the fighters
+# at the line behind a dino roster card during the buildup, then slam the match live
+# on the drop — a FIGHT! flash, a roar, and a shake — so the music's drop and the
+# opening bell land on the exact same frame (the track starts in _ready, so the
+# buildup and this timer run together). Standard versus only; solo ladders skip it.
+const DROP_TIME := 3.5
+var _intro_running := false
+
+func _match_intro() -> void:
+	var special: bool = (MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet) \
+		or (MatchConfig and "season" in MatchConfig and MatchConfig.season)
+	if special or active_players.is_empty():
+		return
+	_intro_running = true
+	round_active = false
+	for p in active_players:
+		p.set_physics_process(false)
+		p.set_process_input(false)
+	var card := _build_intro_card()
+	await get_tree().create_timer(DROP_TIME, true, false, true).timeout
+	if is_instance_valid(card):
+		card.queue_free()
+	if match_over:
+		_intro_running = false
+		return
+	_fight_drop()
+	for p in active_players:
+		p.set_physics_process(true)
+		p.set_process_input(true)
+	round_active = true
+	_intro_running = false
+
+func _build_intro_card() -> CanvasLayer:
+	var layer := CanvasLayer.new()
+	layer.layer = 20
+	add_child(layer)
+	# Dim the arena so the roster card reads.
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.05, 0.04, 0.08, 0.0)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(dim)
+	dim.create_tween().tween_property(dim, "color:a", 0.42, 0.4)
+	# "GET READY" — pulsing, up top.
+	var title := Label.new()
+	title.text = "GET READY"
+	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	title.offset_top = 150.0
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 92)
+	title.add_theme_color_override("font_color", Color(1.0, 0.95, 0.7))
+	title.add_theme_constant_override("outline_size", 12)
+	title.add_theme_color_override("font_outline_color", Color(0.12, 0.08, 0.05))
+	layer.add_child(title)
+	var pt := title.create_tween().set_loops()
+	pt.tween_property(title, "modulate:a", 0.55, 0.45).set_trans(Tween.TRANS_SINE)
+	pt.tween_property(title, "modulate:a", 1.0, 0.45).set_trans(Tween.TRANS_SINE)
+	# Fighter roster row — each dino's NAME in its player colour, popping in staggered.
+	var row := HBoxContainer.new()
+	row.set_anchors_preset(Control.PRESET_CENTER)
+	row.add_theme_constant_override("separation", 44)
+	row.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	row.grow_vertical = Control.GROW_DIRECTION_BOTH
+	layer.add_child(row)
+	var i := 0
+	for p in active_players:
+		var dino_id: String = MatchConfig.dino_choices.get(p.player_id, "") if MatchConfig else ""
+		var dname: String = MatchConfig.DINOS.get(dino_id, {}).get("display_name", String(p.player_id).to_upper()) if MatchConfig else "DINO"
+		var col: Color = MatchConfig.PLAYER_COLORS.get(p.player_id, Color.WHITE) if MatchConfig else Color.WHITE
+		var lbl := Label.new()
+		lbl.text = dname
+		lbl.add_theme_font_size_override("font_size", 46)
+		lbl.add_theme_color_override("font_color", col)
+		lbl.add_theme_constant_override("outline_size", 8)
+		lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
+		lbl.pivot_offset = Vector2(60, 30)
+		lbl.scale = Vector2.ZERO
+		row.add_child(lbl)
+		var tw := lbl.create_tween()
+		tw.tween_interval(0.25 + i * 0.35)
+		tw.tween_property(lbl, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		i += 1
+	return layer
+
+func _fight_drop() -> void:
+	# The drop: white flash, a big FIGHT!, a roar-shake — the opening bell.
+	var layer := CanvasLayer.new()
+	layer.layer = 21
+	add_child(layer)
+	var flash := ColorRect.new()
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	flash.color = Color(1, 1, 1, 0.75)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(flash)
+	flash.create_tween().tween_property(flash, "color:a", 0.0, 0.28)
+	var fight := Label.new()
+	fight.text = "FIGHT!"
+	fight.set_anchors_preset(Control.PRESET_CENTER)
+	fight.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	fight.grow_vertical = Control.GROW_DIRECTION_BOTH
+	fight.add_theme_font_size_override("font_size", 140)
+	fight.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
+	fight.add_theme_constant_override("outline_size", 16)
+	fight.add_theme_color_override("font_outline_color", Color(0.5, 0.1, 0.05))
+	fight.pivot_offset = Vector2(200, 90)
+	fight.scale = Vector2(0.3, 0.3)
+	layer.add_child(fight)
+	var tw := fight.create_tween()
+	tw.tween_property(fight, "scale", Vector2(1.15, 1.15), 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.5)
+	tw.tween_property(fight, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(layer.queue_free)
+	shake(20.0, 0.45)
+	hit_pause(0.08, 0.25)
+	play_sfx("ko", 0.04)
+	# Fighters rear up on the bell — a quick roar-lunge (scale pop back to rest).
+	for p in active_players:
+		if not is_instance_valid(p):
+			continue
+		var s0: Vector2 = p.scale
+		var rt := p.create_tween()
+		rt.tween_property(p, "scale", s0 * 1.18, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		rt.tween_property(p, "scale", s0, 0.16)
 
 # --- Camera juice (called from dinos) ---
 
