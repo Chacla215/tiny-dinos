@@ -195,6 +195,7 @@ func _ready() -> void:
 	_layout_spawns()          # 3v3+: arrange six fighters in two team rows
 	_build_extra_huds()       # 3v3+: code-built mid-edge HUD corners for p5/p6
 	_apply_match_colors()
+	_apply_env_tint()  # grade fighters to each island's light so they belong in the scene
 	_style_hud()
 	_build_special_pips()
 	_setup_game_mode()
@@ -210,6 +211,39 @@ func _ready() -> void:
 	powerups_enabled = not special and game_mode in ["rounds", "koth", "sumo", "flood"]
 	powerup_spawn_timer = 6.0
 	_match_intro()  # dino roster intro over the buildup, then FIGHT on the beat drop
+
+# Per-island ENVIRONMENT GRADE: a subtle colour multiply applied to every fighter so
+# they read as lit by the scene (warm firelight on lava, cold blue on the floes,
+# violet on purple fields…) instead of pasted on top. Kept gentle — it's a hint of
+# the scene's light, not a recolour.
+const ENV_TINT := {
+	"beauty_beach":      Color(1.07, 1.02, 0.92),  # bright sunny warmth
+	"laughing_lava":     Color(1.14, 0.97, 0.83),  # hot firelight
+	"iciest_age":        Color(0.90, 0.96, 1.11),  # cold blue
+	"white_water_falls": Color(0.94, 1.00, 1.06),  # cool misty
+	"sunny_springs":     Color(0.98, 1.06, 0.94),  # fresh green
+	"purple_fields":     Color(1.02, 0.93, 1.09),  # violet dusk
+}
+
+# Ground colour kicked up on each footfall, per island (snow on ice, ash on lava…).
+const ENV_SCUFF := {
+	"beauty_beach":      Color(0.86, 0.80, 0.66, 0.5),  # sand
+	"laughing_lava":     Color(0.42, 0.38, 0.36, 0.5),  # dark ash
+	"iciest_age":        Color(0.95, 0.97, 1.0, 0.55),  # snow
+	"white_water_falls": Color(0.80, 0.86, 0.82, 0.45), # wet stone spray
+	"sunny_springs":     Color(0.72, 0.82, 0.60, 0.45), # grassy
+	"purple_fields":     Color(0.74, 0.66, 0.82, 0.5),  # violet dust
+}
+
+func _apply_env_tint() -> void:
+	var key: String = MatchConfig.island if MatchConfig and "island" in MatchConfig else ""
+	var tint: Color = ENV_TINT.get(key, Color.WHITE)
+	var scuff: Color = ENV_SCUFF.get(key, Color(0.82, 0.78, 0.68, 0.5))
+	for p in active_players:
+		if "env_tint" in p:
+			p.env_tint = tint
+		if "scuff_color" in p:
+			p.scuff_color = scuff
 
 # [experiment] Per-island ambient atmosphere — a subtle drifting-particle layer
 # (snow / petals / embers / motes) that leans into the painterly islands. Attached

@@ -248,6 +248,14 @@ const FIGHTER_SCALE_BOOST := 1.25
 ## True when the source sprite art faces left by default (e.g. bronto/Goober).
 ## Flips the flip_h logic so the dino visually faces its movement direction.
 var sprite_faces_left: bool = false
+# Per-island environment grade (set by main.gd at spawn) — a subtle colour multiply
+# so the fighter reads as lit by the scene, not floating on top of it.
+var env_tint: Color = Color.WHITE
+# Footfall scuff kicked up while moving — colour set per island by main.gd (snow on
+# ice, dust on sand, ash on lava…) so the fighter stirs the actual ground.
+var scuff_color: Color = Color(0.82, 0.78, 0.68, 0.5)
+const FOOTFALL_INTERVAL := 0.26
+var _footfall_timer: float = 0.0
 
 @onready var polygon: Polygon2D = $Polygon2D
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -1197,6 +1205,16 @@ func update_movement(delta: float) -> void:
 
 	move_and_slide()
 	_apply_current(delta)
+	# Footfall scuff: kick up a little of the ground as you move so you read as
+	# standing ON the surface, not gliding over it (snow on ice, dust on sand…).
+	if defense_state == DefenseState.NORMAL and attack_phase == AttackPhase.IDLE \
+			and grabbed_by == null and velocity.length() > 45.0:
+		_footfall_timer -= delta
+		if _footfall_timer <= 0.0:
+			_footfall_timer = FOOTFALL_INTERVAL
+			_footstep_scuff()
+	else:
+		_footfall_timer = 0.0
 
 # Environmental drift (e.g. White Water Falls current). Applied as a real
 # displacement so it respects walls and never accumulates into the velocity.
@@ -1853,6 +1871,30 @@ func _spawn_dust(dir: Vector2) -> void:
 		t.parallel().tween_property(puff, "scale", Vector2.ONE * 2.2, 0.3)
 		t.parallel().tween_property(puff, "modulate:a", 0.0, 0.3)
 		t.tween_callback(puff.queue_free)
+
+# A low, flat scuff at the feet on each footfall — a squashed puff of the ground
+# colour that drifts back and fades, so movement stirs the surface.
+func _footstep_scuff() -> void:
+	var root := get_tree().current_scene
+	if root == null:
+		return
+	var ring := PackedVector2Array()
+	for j in range(7):
+		var a: float = TAU * j / 7.0
+		ring.append(Vector2(cos(a) * 1.6, sin(a) * 0.7) * 5.0)  # flattened oval (ground plane)
+	var puff := Polygon2D.new()
+	puff.polygon = ring
+	puff.color = scuff_color
+	var foot_y: float = sprite_offset_y + 60.0 * sprite_scale
+	puff.global_position = global_position + Vector2(randf_range(-9, 9), foot_y)
+	puff.z_index = 0
+	root.add_child(puff)
+	var drift: Vector2 = -facing * randf_range(9.0, 17.0) + Vector2(0, -2)
+	var t := puff.create_tween()
+	t.tween_property(puff, "global_position", puff.global_position + drift, 0.32).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(puff, "scale", Vector2(2.1, 1.4), 0.32)
+	t.parallel().tween_property(puff, "modulate:a", 0.0, 0.32)
+	t.tween_callback(puff.queue_free)
 
 # [experiment] Grant a map power-up: instant heal, or a temp speed/damage buff
 # with a pulsing aura. Temp buffs revert via powerup_timer in update_timers().
@@ -2585,12 +2627,16 @@ func update_visual() -> void:
 		sprite_tint = Color.WHITE.lerp(sprite_tint, 0.35)
 	if beast_active:
 		color *= BEAST_TINT  # gold glow marks the juggernaut
+	# ENVIRONMENT GRADE: multiply in the island's light so fighters read as lit BY
+	# the scene (warm on lava, cool on the floes…) instead of pasted on top — but
+	# never during a hit-flash, so the white-out impact still punches through clean.
+	var env: Color = env_tint if hit_flash_timer <= 0.0 else Color.WHITE
 	polygon.modulate = color
-	sprite.modulate = color * sprite_tint
+	sprite.modulate = color * sprite_tint * env
 	if rig != null:
 		# Node2D.modulate propagates to every part sprite, so flash + player tint
 		# cover the whole skeleton in one set.
-		rig.modulate = color * sprite_tint
+		rig.modulate = color * sprite_tint * env
 
 # --- THE BEAST (juggernaut) crown toggling ---
 # Paired multiply/divide on the visual scale reverts exactly; HP swaps to a bonus
