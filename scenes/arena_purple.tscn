@@ -1,14 +1,25 @@
-[gd_scene load_steps=69 format=3]
+[gd_scene load_steps=73 format=3]
 
 [ext_resource type="Script" path="res://scripts/dino.gd" id="1_dino"]
 [ext_resource type="Script" path="res://scripts/main.gd" id="2_main"]
 [ext_resource type="Texture2D" path="res://assets/tilesets/purple_fields_bg.png" id="3_bg"]
+
+[ext_resource type="Texture2D" path="res://assets/props/rock_purple.png" id="9_rockprop"]
 
 [sub_resource type="RectangleShape2D" id="dino_shape"]
 size = Vector2(48, 48)
 
 [sub_resource type="RectangleShape2D" id="hitbox_placeholder"]
 size = Vector2(1, 1)
+
+[sub_resource type="CircleShape2D" id="col_RockA"]
+radius = 75.0
+
+[sub_resource type="CircleShape2D" id="col_RockB"]
+radius = 55.0
+
+[sub_resource type="CircleShape2D" id="col_RockC"]
+radius = 60.0
 
 [node name="Main" type="Node2D"]
 script = ExtResource("2_main")
@@ -33,8 +44,53 @@ texture = ExtResource("3_bg")
 
 [node name="IcePatches" type="Node2D" parent="."]
 
+[node name="Obstacles" type="Node2D" parent="."]
+
+[node name="RockA" type="StaticBody2D" parent="Obstacles"]
+position = Vector2(640, 454)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="Obstacles/RockA"]
+texture_filter = 2
+scale = Vector2(0.4386, 0.4386)
+texture = ExtResource("9_rockprop")
+
+[node name="Col" type="CollisionShape2D" parent="Obstacles/RockA"]
+position = Vector2(0, 65.0)
+shape = SubResource("col_RockA")
+
+[node name="RockB" type="StaticBody2D" parent="Obstacles"]
+position = Vector2(396, 534)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="Obstacles/RockB"]
+texture_filter = 2
+scale = Vector2(0.3216, 0.3216)
+texture = ExtResource("9_rockprop")
+
+[node name="Col" type="CollisionShape2D" parent="Obstacles/RockB"]
+position = Vector2(0, 47.7)
+shape = SubResource("col_RockB")
+
+[node name="RockC" type="StaticBody2D" parent="Obstacles"]
+position = Vector2(908, 377)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="Obstacles/RockC"]
+texture_filter = 2
+flip_h = true
+scale = Vector2(0.3509, 0.3509)
+texture = ExtResource("9_rockprop")
+
+[node name="Col" type="CollisionShape2D" parent="Obstacles/RockC"]
+position = Vector2(0, 52.0)
+shape = SubResource("col_RockC")
+
 [node name="Player1" type="CharacterBody2D" parent="."]
-position = Vector2(400, 380)
+position = Vector2(256, 377)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -66,7 +122,7 @@ disabled = true
 visible = false
 
 [node name="Player2" type="CharacterBody2D" parent="."]
-position = Vector2(780, 380)
+position = Vector2(1024, 377)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -98,7 +154,7 @@ disabled = true
 visible = false
 
 [node name="Player3" type="CharacterBody2D" parent="."]
-position = Vector2(400, 560)
+position = Vector2(256, 556)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -130,7 +186,7 @@ disabled = true
 visible = false
 
 [node name="Player4" type="CharacterBody2D" parent="."]
-position = Vector2(800, 560)
+position = Vector2(1024, 556)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1

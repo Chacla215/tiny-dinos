@@ -13,9 +13,12 @@ size = Vector2(48, 48)
 size = Vector2(1, 1)
 
 [sub_resource type="CircleShape2D" id="rock_a_col"]
-radius = 78.0
+radius = 74.0
 
 [sub_resource type="CircleShape2D" id="rock_b_col"]
+radius = 52.0
+
+[sub_resource type="CircleShape2D" id="rock_c_col"]
 radius = 58.0
 
 [node name="Main" type="Node2D"]
@@ -44,35 +47,50 @@ texture = ExtResource("3_bg")
 [node name="Obstacles" type="Node2D" parent="."]
 
 [node name="RockA" type="StaticBody2D" parent="Obstacles"]
-position = Vector2(560, 450)
+position = Vector2(620, 430)
 collision_layer = 2
 collision_mask = 0
 
 [node name="Sprite" type="Sprite2D" parent="Obstacles/RockA"]
 texture_filter = 2
-scale = Vector2(0.32, 0.32)
+scale = Vector2(0.3, 0.3)
 texture = ExtResource("4_rocka")
 
 [node name="Col" type="CollisionShape2D" parent="Obstacles/RockA"]
-position = Vector2(0, 55)
+position = Vector2(0, 52)
 shape = SubResource("rock_a_col")
 
 [node name="RockB" type="StaticBody2D" parent="Obstacles"]
-position = Vector2(800, 440)
+position = Vector2(380, 500)
 collision_layer = 2
 collision_mask = 0
 
 [node name="Sprite" type="Sprite2D" parent="Obstacles/RockB"]
 texture_filter = 2
-scale = Vector2(0.24, 0.24)
+scale = Vector2(0.22, 0.22)
 texture = ExtResource("5_rockb")
 
 [node name="Col" type="CollisionShape2D" parent="Obstacles/RockB"]
-position = Vector2(0, 42)
+position = Vector2(0, 38)
 shape = SubResource("rock_b_col")
 
+[node name="RockC" type="StaticBody2D" parent="Obstacles"]
+position = Vector2(890, 350)
+collision_layer = 2
+collision_mask = 0
+
+[node name="Sprite" type="Sprite2D" parent="Obstacles/RockC"]
+texture_filter = 2
+flip_h = true
+scale = Vector2(0.245, 0.245)
+texture = ExtResource("5_rockb")
+
+[node name="Col" type="CollisionShape2D" parent="Obstacles/RockC"]
+position = Vector2(0, 42)
+shape = SubResource("rock_c_col")
+
 [node name="Player1" type="CharacterBody2D" parent="."]
-position = Vector2(400, 350)
+position = Vector2(300, 385)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -104,7 +122,7 @@ disabled = true
 visible = false
 
 [node name="Player2" type="CharacterBody2D" parent="."]
-position = Vector2(880, 350)
+position = Vector2(985, 385)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -136,7 +154,7 @@ disabled = true
 visible = false
 
 [node name="Player3" type="CharacterBody2D" parent="."]
-position = Vector2(400, 540)
+position = Vector2(300, 552)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -168,7 +186,7 @@ disabled = true
 visible = false
 
 [node name="Player4" type="CharacterBody2D" parent="."]
-position = Vector2(880, 540)
+position = Vector2(985, 552)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
