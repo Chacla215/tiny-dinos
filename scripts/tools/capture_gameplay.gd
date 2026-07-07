@@ -41,8 +41,12 @@ func _ready() -> void:
 	var arena := packed.instantiate()
 	if "kos_to_win" in arena:
 		arena.kos_to_win = 99  # never end the match mid-capture
-	add_child(arena)
-	get_tree().current_scene = arena  # die()/effects route through current_scene
+	# current_scene must be a DIRECT child of root. Wait one frame so root finishes its
+	# own setup (can't add_child to a node still setting up), then parent the arena to
+	# root and promote it — otherwise Godot errors and can bail the record early.
+	await get_tree().process_frame
+	get_tree().root.add_child(arena)
+	get_tree().current_scene = arena
 
 	await get_tree().create_timer(secs).timeout
 	get_tree().quit()
