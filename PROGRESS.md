@@ -1,5 +1,30 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-06 (islands restyled + per-dino depth + attack sync)
+
+Three themes landed on `feat/feel-sweep`, each atomically committed + verified.
+
+- **Islands restyled to painterly (`1462cfe`).** The 5 remaining pixel arenas
+  (lava/falls/springs/purple/floes) re-rendered to the painterly beach/trailer
+  look via nano-banana image-to-image (composition-locked to each current bg, so
+  collision/spawns/safe_rect need no re-trace — pure art swap). New tool
+  `integrate_restyle_bgs.py` fits each 16:9 restyle to 1536x864 + bakes the
+  arena's own title banner. Verified in-match: fighters read on every floor incl.
+  dark lava + pale ice. Whole game now one painterly world.
+- **Per-dino signature passives (`cde3fd8`).** Real systemic depth — each dino
+  gets a persistent passive beyond stats + its one special, all hooking the
+  SHARED input/damage code (CPU inherits free): RALPH combo_king (light chains
+  speed up), MAX dash_cancel (cancel recovery into dodge — also fixed a latent
+  can_dodge gap), GUS charger (heavy super-armor), STEVE bulwark (jabs can't
+  stagger), JESSIE flighty (hit refunds dodge cd), FRANK spikeback (reflects
+  blocked dmg). Surfaced on the character screen's move card. Verified 12/12 by
+  `scripts/tools/sig_check.gd`.
+- **Attack swing synced to hitbox (`61cacfb`).** The restyle's 5-frame attack
+  clip truncated on fast dinos (raptor light 0.14s showed ~2 of 5 frames). Now
+  the clip's speed_scale stretches to fit windup+active, so the swing always
+  completes + its strike frame lands on the live hitbox. Hitbox timing itself
+  was always correct (driven by attack_active); this is the visual sync.
+
 ## Session — 2026-07-06 (chibi restyle rolling: raptor + trike integrated)
 
 The art program is live and Charlie is generating. Driven by `PASTE_ME.md`
