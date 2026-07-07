@@ -60,9 +60,12 @@ Godot binary: **`/opt/homebrew/bin/godot`** (4.6.3 stable).
   their track in `_ready` (`Audio.play_music("menu"/"battle")`; re-calling the
   current track is a no-op, changes crossfade). Menus call
   `Audio.ui("move"/"confirm"/"back")`. Buses (Master/Music/SFX) live in
-  `default_bus_layout.tres`. Music = real **CC0** loops (`assets/music/*.ogg`,
-  Juhani Junkala via OpenGameArt — see `assets/music/CREDITS.txt`); the Audio
-  autoload forces `loop=true` at load. **Combat SFX** = real **CC0** sounds from
+  `default_bus_layout.tres`. Music = real **CC0** tracks (`menu_theme.mp3` warm
+  soul / `battle_theme.mp3` = HoliznaCC0 "Eat", a hip-hop beat with a ~3.5s buildup
+  that drops — see `assets/music/CREDITS.txt`); the Audio autoload forces
+  `loop=true` at load. The **match opens on a dino roster intro** (`main.gd`
+  `_match_intro`) that holds the fighters over the buildup, then fires **FIGHT!** on
+  the beat drop (`DROP_TIME` = the track's detected drop). **Combat SFX** = real **CC0** sounds from
   Kenney (Impact Sounds + RPG Audio — see `assets/sfx/CREDITS.txt`), converted to
   WAV in place. **UI SFX** (ui_move/confirm/back, emote, win) are still the
   placeholder synths from `scripts/tools/gen_sfx.py` (swappable in place, next

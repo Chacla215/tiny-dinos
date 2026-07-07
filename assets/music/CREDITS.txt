@@ -1,7 +1,13 @@
 Tiny Dinos — music credits
 
-title_theme.ogg  — "Sunshine Coast" (JRPG Music Pack #2: Towns)
-battle_theme.ogg — "Army Approaching" (JRPG Music Pack #5: Action)
+menu_theme.mp3   — "Golden Afternoon Groove" (warm soul / jazzy hip-hop),
+                   from the open-lofi collection (github.com/btahir/open-lofi).
+battle_theme.mp3 — "Eat" by HoliznaCC0, from the album "Bassic" (bass-driven
+                   hip-hop). Opens on a ~3.5s buildup that drops into the beat —
+                   the match's dino intro syncs "FIGHT!" to that drop.
 
-Both by Juhani Junkala, released CC0 (public domain) via OpenGameArt.org.
-CC0 requires no attribution; credited here as a courtesy.
+Both released CC0 1.0 (public domain). CC0 requires no attribution; credited
+here as a courtesy.
+
+(Previous tracks — "Sunshine Coast" / "Army Approaching" by Juhani Junkala, also
+CC0 — were replaced this pass for a chill-menu -> hype-battle vibe.)

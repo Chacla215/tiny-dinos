@@ -9,8 +9,8 @@ extends Node
 ## missing files are skipped silently so audio can land piecemeal.
 
 const TRACKS := {
-	"menu": "res://assets/music/title_theme.ogg",
-	"battle": "res://assets/music/battle_theme.ogg",
+	"menu": "res://assets/music/menu_theme.mp3",
+	"battle": "res://assets/music/battle_theme.mp3",
 }
 const UI_SOUNDS := {
 	"move": "res://assets/sfx/ui_move.wav",
