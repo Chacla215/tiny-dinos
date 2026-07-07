@@ -11,7 +11,12 @@ const SHEET_ENEMY := "res://assets/sprites/enemysprites_revision.png"
 # blender_render_dino.py). Each carries "motion": true so the game plays these
 # frames via AnimatedSprite2D instead of the procedural rig. Old box-sliced
 # sheets (*_fighter.png) remain on disk as history.
-const SHEET_RALPH := "res://assets/sprites/ralph_fighter_3d.png"
+# Ralph is the painterly-chibi prototype: real Seedance motion clips
+# (assets/concept/ralph/motion/{idle,walk,attack}.mp4) sliced + cut out + packed
+# by scripts/tools/gen_dino_motion.py, so in-match Ralph matches the TRAILER look
+# (smooth/LINEAR, no dither). The other 5 are still the older 3D toon bakes until
+# the same motion pipeline rolls out to them.
+const SHEET_RALPH := "res://assets/sprites/ralph_motion.png"
 const SHEET_RAPTOR := "res://assets/sprites/raptor_fighter_3d.png"
 const SHEET_TRIKE := "res://assets/sprites/trike_fighter_3d.png"
 const SHEET_PTERRY := "res://assets/sprites/pterry_fighter_3d.png"
@@ -31,11 +36,13 @@ const ANIM_LAYOUTS := {
 		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(780, 0, 130, 168), Rect2(910, 0, 130, 168), Rect2(1040, 0, 130, 168)]},
 	},
 	"ralph": {
+		# Painterly motion sheet (135x153 cells, one row per anim) from
+		# gen_dino_motion.py — trailer-matched. idle 4 / walk 8 / attack 5.
 		"sheet": SHEET_RALPH,
 		"motion": true,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 138, 168), Rect2(138, 0, 138, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(276, 0, 138, 168), Rect2(414, 0, 138, 168), Rect2(552, 0, 138, 168), Rect2(690, 0, 138, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(828, 0, 138, 168), Rect2(966, 0, 138, 168), Rect2(1104, 0, 138, 168)]},
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 135, 153), Rect2(135, 0, 135, 153), Rect2(270, 0, 135, 153), Rect2(405, 0, 135, 153)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 153, 135, 153), Rect2(135, 153, 135, 153), Rect2(270, 153, 135, 153), Rect2(405, 153, 135, 153), Rect2(540, 153, 135, 153), Rect2(675, 153, 135, 153), Rect2(810, 153, 135, 153), Rect2(945, 153, 135, 153)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 306, 135, 153), Rect2(135, 306, 135, 153), Rect2(270, 306, 135, 153), Rect2(405, 306, 135, 153), Rect2(540, 306, 135, 153)]},
 	},
 	"trike": {
 		"sheet": SHEET_TRIKE,
