@@ -330,6 +330,16 @@ var current_is_special: bool = false
 # the (fixed-frame) clip to exactly this window — otherwise a fast dino's short
 # window truncates the swing before its strike/follow-through frames land.
 var swing_anim_dur: float = 0.001
+
+# Procedural locomotion for the painterly motion sprites. Their baked idle/walk
+# rows were sliced from in-place Seedance clips (not clean leg-cycles), so played
+# back they morph/jitter. Instead we HOLD one clean pose for grounded states and
+# animate movement with a squash/stretch bob (breathing when still, bouncy waddle
+# when moving) — the chibi-mobile way. Baked attack/hit/dodge/ko clips still play.
+var _is_motion: bool = false          # this dino uses a video-baked motion sheet
+var _cell_h: float = 132.0            # sheet cell height, for feet-anchored squash
+var _motion_phase: float = 0.0        # bob oscillator accumulator
+var _motion_grounded: bool = false    # true when idle/walk (a baked clip isn't playing)
 var special_cooldown_timer: float = 0.0
 var timed_slow_timer: float = 0.0  # screech-applied slow on this dino
 
@@ -610,6 +620,12 @@ func _setup_sprite() -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	sprite.scale = Vector2(sprite_scale, sprite_scale)
 	sprite.position.y = sprite_offset_y
+	# Procedural-locomotion setup (see _update_motion_anim): remember whether this
+	# is a motion sheet and its cell height (for feet-anchored squash).
+	_is_motion = ANIM_LAYOUTS[sprite_role].get("motion", false)
+	var _idle_rects: Array = ANIM_LAYOUTS[sprite_role].get("idle", {}).get("rects", [])
+	if not _idle_rects.is_empty():
+		_cell_h = _idle_rects[0].size.y
 	# Cosmetic skin: the select-screen pick for this slot wins; -1 falls back to
 	# the dino's creator-equipped MetaSave skin (null material = DEFAULT,
 	# unchanged). Display-only, no gameplay effect.
@@ -695,6 +711,7 @@ func _physics_process(delta: float) -> void:
 	update_timers(delta)
 	update_visual()
 	update_sprite_animation()
+	_update_motion_anim(delta)
 	var current_offset := current_attack_hitbox_offset if attack_phase != AttackPhase.IDLE else attack_hitbox_offset
 	hitbox.position = facing * current_offset
 	if weapon_visual and weapon_visual.visible:
@@ -884,6 +901,9 @@ func update_sprite_animation() -> void:
 	# Default to natural clip pacing; the attack branch overrides this to fit the
 	# swing into its windup+active window (see swing_anim_dur).
 	sprite.speed_scale = 1.0
+	# A baked clip (ko/hit/dodge/attack) is about to play → not a grounded state, so
+	# _update_motion_anim leaves the sprite alone and lets the clip read.
+	_motion_grounded = false
 	if is_downed and sf.has_animation("ko"):
 		if sprite.animation != "ko":
 			sprite.play("ko")
@@ -908,6 +928,16 @@ func update_sprite_animation() -> void:
 		if fc > 0 and base_fps > 0.0 and swing_anim_dur > 0.01:
 			sprite.speed_scale = (float(fc) / swing_anim_dur) / base_fps
 		return
+	# Grounded (idle/walk). Motion sheets HOLD a single clean pose (the jittery baked
+	# cycle is replaced by _update_motion_anim's procedural bob). A non-motion / older
+	# sheet still plays its baked idle/walk clip as before.
+	if _is_motion and sf.has_animation("idle"):
+		_motion_grounded = true
+		if sprite.animation != "idle":
+			sprite.animation = "idle"
+		sprite.frame = 0
+		sprite.pause()
+		return
 	var target := "walk" if moving else "idle"
 	if not sf.has_animation(target):
 		target = "idle" if moving else "walk"   # partial pilot sheet: best available
@@ -915,6 +945,38 @@ func update_sprite_animation() -> void:
 			return
 	if sprite.animation != target:
 		sprite.play(target)
+
+# Procedural locomotion for motion sprites: a squash/stretch bob that reads as
+# life (gentle breathing when still) and locomotion (a bouncy waddle when moving),
+# so a held pose animates cleanly instead of the jittery baked walk/idle cycle.
+# Feet stay planted: the vertical squash is anchored to the sprite's bottom edge,
+# then the walk hop lifts on top. No-ops (resets to base) while a baked clip plays
+# (attack/hit/dodge/ko) or for rig/non-motion dinos.
+func _update_motion_anim(delta: float) -> void:
+	if rig != null or not _is_motion or not sprite.visible:
+		return
+	var base: float = sprite_scale * (BEAST_SCALE if beast_active else 1.0)
+	if not _motion_grounded:
+		sprite.scale = Vector2(base, base)
+		sprite.position.y = sprite_offset_y
+		return
+	var walking := velocity.length() > 12.0
+	_motion_phase += delta * (9.5 if walking else 2.4)
+	var s := sin(_motion_phase)
+	var sq: float      # + = stretch taller, - = squash flatter
+	var hop: float     # upward lift (px), on top of the feet-anchored squash
+	if walking:
+		sq = 0.07 * s
+		hop = 8.0 * absf(s)          # a two-step bounce (rises each half-cycle)
+	else:
+		sq = 0.035 * s               # subtle breathing
+		hop = 1.5 * (s * 0.5 + 0.5)
+	var s_y := 1.0 + sq
+	var s_x := 1.0 - sq * 0.6        # rough volume preservation
+	sprite.scale = Vector2(base * s_x, base * s_y)
+	# Anchor the squash to the feet (bottom edge), then apply the hop lift.
+	var anchor: float = _cell_h * 0.5 * base * (s_y - 1.0)
+	sprite.position.y = sprite_offset_y - anchor - hop
 
 # --- Capability checks ---
 
