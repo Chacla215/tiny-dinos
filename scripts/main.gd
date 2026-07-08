@@ -95,6 +95,7 @@ var hill_ring: Line2D = null
 const HILL_RADIUS := 130.0
 var eliminated: Dictionary = {}      # STOCK: pid -> true once out of lives
 var season_end: String = ""          # SEASON end-state: "advance" / "champion" / "gameover"
+var career_end: String = ""          # CAREER end-state: "won" / "lost" / "victory"
 var _last_matchday_coins: int = 0    # coins paid out for the just-won matchday (draft header)
 var gauntlet_drafting: bool = false  # a draft overlay (gauntlet OR season) is open
 var draft_mode: String = "gauntlet"  # "gauntlet" | "season" — which flow the draft drives
@@ -190,6 +191,8 @@ func _ready() -> void:
 		kos_to_win = 2  # snappy matchdays
 	if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
 		kos_to_win = MatchConfig.gauntlet_kos_to_win()  # best-of-2 early, single-KO later
+	if MatchConfig and "career" in MatchConfig and MatchConfig.career:
+		kos_to_win = MatchConfig.career_kos_to_win()  # best-of-2, boss best-of-3
 	_ensure_extra_players()   # 3v3+: clone Player5/Player6 into the scene if needed
 	_setup_active_players()
 	_layout_spawns()          # 3v3+: arrange six fighters in two team rows
@@ -982,6 +985,8 @@ func _process(delta: float) -> void:
 				get_tree().change_scene_to_file("res://scenes/title.tscn")
 			elif MatchConfig and "season" in MatchConfig and MatchConfig.season:
 				_season_continue()
+			elif MatchConfig and "career" in MatchConfig and MatchConfig.career:
+				_career_continue()
 			else:
 				get_tree().change_scene_to_file("res://scenes/select.tscn")
 
@@ -1577,6 +1582,9 @@ func end_match(winner: CharacterBody2D, label: String) -> void:
 	if MatchConfig and "season" in MatchConfig and MatchConfig.season:
 		_end_match_season(winner)
 		return
+	if MatchConfig and "career" in MatchConfig and MatchConfig.career:
+		_end_match_career(winner)
+		return
 	match_over = true
 	round_active = false
 	_show_end_backdrop()
@@ -1663,6 +1671,63 @@ func _season_continue() -> void:
 	else:  # champion or game over -> end the season, back to the title
 		MatchConfig.season = false
 		get_tree().change_scene_to_file("res://scenes/title.tscn")
+
+# --- Career (raise-one-dino journey) fight end ---
+# Forgiving-with-stakes: a WIN banks full XP/coins, carries the survivor's wound
+# HP, and advances the journey. A LOSS still banks reduced XP + leaves a scar, but
+# you stay on this stop to try again (train/rest at HOME first). Beating the boss
+# (last stop) is VICTORY. START routes through _career_continue.
+func _end_match_career(winner: Node) -> void:
+	match_over = true
+	round_active = false
+	_show_end_backdrop()
+	for p in active_players:
+		p.set_process_input(false)
+		p.set_physics_process(false)
+	var player_won: bool = winner != null and winner.player_id == "p1"
+	var stop: int = MetaSave.career_stop
+	var rew: Dictionary = MatchConfig.career_win_reward()
+	var who: String = _dino_name("p1")
+	if player_won:
+		var hp_left: int = maxi(1, int(winner.hp))
+		MetaSave.career_record_fight(true, rew.xp, rew.coins, hp_left, "")
+		if MatchConfig.career_is_boss(stop):
+			career_end = "victory"
+			hud_win.text = "CHAMPION OF THE ISLANDS!"
+			hud_win.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+			hud_hint.text = "%s WON IT ALL.\n%d WINS  %d LOSSES\n\npress START for the title" % [who, MetaSave.career_wins, MetaSave.career_losses]
+		else:
+			career_end = "won"
+			hud_win.text = "STOP %d CLEARED" % (stop + 1)
+			hud_win.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5))
+			hud_hint.text = "%s  +%d XP  +%d COINS  (LV %d)\n\npress START to travel on" % [who, rew.xp, rew.coins, MetaSave.career_level()]
+		play_sfx("win", 0.0)
+	else:
+		career_end = "lost"
+		var loss_xp: int = int(rew.xp * 0.4)
+		MetaSave.career_record_fight(false, loss_xp, 0, -1, _career_scar(stop))
+		hud_win.text = "KNOCKED OUT"
+		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
+		hud_hint.text = "%s took a beating (+%d XP).\nREST UP AND TRY AGAIN.\n\npress START to regroup" % [who, loss_xp]
+		play_sfx("ko", 0.0)
+
+# One line of loss flavor for the scar log (story texture; display-only).
+func _career_scar(stop: int) -> String:
+	var where: String = MatchConfig.ISLAND_NAMES.get(MatchConfig.island, "THE ISLANDS") if "ISLAND_NAMES" in MatchConfig else "THE ISLANDS"
+	if MatchConfig.career_is_rival(stop):
+		return "FELL TO THE RIVAL AT %s" % where
+	return "KNOCKED OUT AT %s" % where
+
+func _career_continue() -> void:
+	if career_end == "victory":
+		MatchConfig.career = false  # journey complete -> back to the title
+		get_tree().change_scene_to_file("res://scenes/title.tscn")
+		return
+	if career_end == "won":
+		MetaSave.career_advance_stop()  # a loss stays on the same stop to retry
+	# Step 3 routes to the HOME/DEN screen here; for now relaunch the next fight.
+	MatchConfig.career_start_match()
+	get_tree().change_scene_to_file(MatchConfig.career_scene())
 
 # --- Gauntlet (roguelike) wave flow + upgrade draft ---
 
