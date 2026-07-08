@@ -66,6 +66,9 @@ func _ready() -> void:
 	var gauntlet_label: Label = $Menu/PlayItem.duplicate()
 	gauntlet_label.name = "GauntletItem"
 	$Menu.add_child(gauntlet_label)
+	var career_label: Label = $Menu/PlayItem.duplicate()
+	career_label.name = "CareerItem"
+	$Menu.add_child(career_label)
 	var trophies_label: Label = $Menu/PlayItem.duplicate()
 	trophies_label.name = "TrophiesItem"
 	$Menu.add_child(trophies_label)
@@ -79,6 +82,10 @@ func _ready() -> void:
 	var gauntlet_base: String = "GAUNTLET"
 	if MetaSave.best_wave > 0:
 		gauntlet_base = "GAUNTLET  (BEST: WAVE %d)" % MetaSave.best_wave
+	# CAREER shows RESUME (with the dino + how far) once a journey is underway.
+	var career_base: String = "CAREER"
+	if MetaSave.career_started:
+		career_base = "CAREER  (%s  STOP %d)" % [MetaSave.career_name.to_upper(), MetaSave.career_stop + 1]
 	var trophies_base: String = "TROPHIES"
 	if MetaSave.seasons_won > 0:
 		trophies_base = "TROPHIES  (%d)" % MetaSave.seasons_won
@@ -89,6 +96,7 @@ func _ready() -> void:
 		{"label": $Menu/PlayItem, "base": "VERSUS", "action": "play"},
 		{"label": season_label, "base": season_base, "action": "season"},
 		{"label": gauntlet_label, "base": gauntlet_base, "action": "gauntlet"},
+		{"label": career_label, "base": career_base, "action": "career"},
 		{"label": $Menu/CharacterItem, "base": "CHARACTER", "action": "creator"},
 		{"label": shop_label, "base": shop_base, "action": "shop"},
 		{"label": trophies_label, "base": trophies_base, "action": "trophies"},
@@ -204,6 +212,7 @@ func _activate(action: String) -> void:
 	# pause→EXIT, so a stale flag could mis-configure the next match.
 	MatchConfig.season = false
 	MatchConfig.gauntlet = false
+	MatchConfig.career = false
 	match action:
 		"play":
 			MatchConfig.season_setup = false
@@ -217,6 +226,12 @@ func _activate(action: String) -> void:
 			MatchConfig.gauntlet_setup = true
 			MatchConfig.season_setup = false
 			get_tree().change_scene_to_file(SELECT_SCENE)
+		"career":
+			# Resume an existing journey straight to the DEN, else pick a dino.
+			if MetaSave.career_started:
+				get_tree().change_scene_to_file("res://scenes/career_home.tscn")
+			else:
+				get_tree().change_scene_to_file("res://scenes/career_start.tscn")
 		"creator":
 			get_tree().change_scene_to_file(CREATOR_SCENE)
 		"trophies":
