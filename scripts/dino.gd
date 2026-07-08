@@ -339,6 +339,7 @@ var fall_timer: float = 0.0
 var fall_up: bool = false        # true = sky launch (recoverable), false = drop
 var fall_center_y: float = 0.0   # arena center, for height-based shrink/fade
 var spiral_angle: float = 0.0
+var fall_spin_dir: float = 1.0   # tumble handedness = the way it was flung
 var ringout_killer: Node = null
 
 var current_attack_damage: int = 0
@@ -401,12 +402,16 @@ const KNOCKBACK_DECEL := 2000.0
 ## in both models — not a launch that rides floppy's low friction off the edge.
 const DASH_DECEL := 3000.0
 
-## Ring-out fall tuning: how long the downward tumble lasts, downward accel, the
-## initial downward pop, and tumble spin (radians/sec).
-const FALL_DURATION := 0.75
-const FALL_GRAVITY := 2800.0
-const FALL_INITIAL_VY := 260.0
-const FALL_SPIN := 9.0
+## Ring-out fall tuning. A bottom-edge KO now reads as a LAUNCH, not a sink: the
+## dino pops up-and-out along the way it was flung (an arc), hangs, then gravity
+## tumbles it into the pit while it shrinks into the distance and fades late.
+const FALL_DURATION := 0.82
+const FALL_GRAVITY := 2600.0
+const FALL_LAUNCH_VY := -430.0   # initial UPWARD pop (negative = up) — the knock-off
+const FALL_MIN_VX := 190.0       # ensure some outward drift even on a dead-on hit
+const FALL_END_SCALE := 0.22     # shrink target — smaller = "fell far away"
+const FALL_FADE_FRAC := 0.42     # fade over the LAST this-fraction of the fall only
+const FALL_SPIN := 11.0          # tumble rate (radians/sec)
 
 ## Sky launch (top-edge ring-out): a constant UPWARD pull sucks the dino into the
 ## sky; mashing kicks it back down. Escape past SKY_ESCAPE_Y (off the top) = KO;
@@ -2476,18 +2481,31 @@ func begin_ringout(go_up: bool = false, center_y: float = 360.0) -> void:
 	hitbox_visual.visible = false
 	if weapon_visual:
 		weapon_visual.visible = false
-	velocity.y = -SKY_INITIAL_VY if go_up else maxf(velocity.y, FALL_INITIAL_VY)
+	if go_up:
+		velocity.y = -SKY_INITIAL_VY
+	else:
+		# Pop up-and-out: keep the knockback's outward drift (min FALL_MIN_VX so a
+		# dead-on hit still arcs sideways), then launch upward for the knock-off arc.
+		var out_dir: float = signf(velocity.x) if absf(velocity.x) > 1.0 else signf(facing.x)
+		if out_dir == 0.0:
+			out_dir = 1.0
+		velocity.x = out_dir * maxf(absf(velocity.x), FALL_MIN_VX)
+		velocity.y = FALL_LAUNCH_VY
+		fall_spin_dir = out_dir  # tumble the way it was flung
 
 func _process_fall(delta: float) -> void:
 	if fall_up:
 		_process_sky_launch(delta)
 		return
-	# Plain drop off the bottom — not recoverable.
+	# Knock-off arc off the bottom — not recoverable. Pops up, then tumbles down.
 	velocity.y += FALL_GRAVITY * delta
 	global_position += velocity * delta
-	rotation += FALL_SPIN * delta
-	scale = scale.move_toward(Vector2(0.35, 0.35), delta * 1.1)
-	modulate.a = clampf(fall_timer / FALL_DURATION, 0.0, 1.0)  # fade as it drops
+	rotation += FALL_SPIN * fall_spin_dir * delta
+	# age 0→1 across the fall. Shrink accelerates (age²) so it "falls away" into
+	# the pit; hold full opacity through the arc, then fade only in the final beat.
+	var age: float = clampf(1.0 - fall_timer / FALL_DURATION, 0.0, 1.0)
+	scale = Vector2.ONE.lerp(Vector2(FALL_END_SCALE, FALL_END_SCALE), age * age)
+	modulate.a = clampf((1.0 - age) / FALL_FADE_FRAC, 0.0, 1.0)
 	fall_timer -= delta
 	if fall_timer <= 0.0:
 		_finish_ringout()
