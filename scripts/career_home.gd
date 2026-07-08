@@ -78,8 +78,10 @@ func _build() -> void:
 	_dyn["lv"] = _title_label("", Vector2(70, 590), 30, ACCENT, 500, true)
 	_dyn["mood"] = _title_label("", Vector2(70, 626), 28, DIM, 500, true)
 
-	# --- Right: status + next fight + the care menu ---
-	_title_label("THE DEN", Vector2(650, 60), 34, DIM, 560)
+	# --- Right: story flavor for the road ahead, then status + next fight + menu ---
+	var story := _title_label(MatchConfig.career_story(MetaSave.career_stop, "intro"), Vector2(650, 52), 20, Color(0.8, 0.85, 1.0), 600)
+	story.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	story.size = Vector2(600, 54)
 	_dyn["stats"] = _title_label("", Vector2(650, 112), 24, Color(0.85, 0.88, 0.95), 600)
 	_dyn["wallet"] = _title_label("", Vector2(650, 150), 24, Color(0.85, 0.88, 0.95), 600)
 	_dyn["hp"] = _title_label("", Vector2(650, 184), 24, Color(0.85, 0.88, 0.95), 600)

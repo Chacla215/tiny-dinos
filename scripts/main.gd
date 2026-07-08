@@ -1687,7 +1687,6 @@ func _end_match_career(winner: Node) -> void:
 	var player_won: bool = winner != null and winner.player_id == "p1"
 	var stop: int = MetaSave.career_stop
 	var rew: Dictionary = MatchConfig.career_win_reward()
-	var who: String = _dino_name("p1")
 	if player_won:
 		var hp_left: int = maxi(1, int(winner.hp))
 		MetaSave.career_record_fight(true, rew.xp, rew.coins, hp_left, "")
@@ -1695,12 +1694,12 @@ func _end_match_career(winner: Node) -> void:
 			career_end = "victory"
 			hud_win.text = "CHAMPION OF THE ISLANDS!"
 			hud_win.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
-			hud_hint.text = "%s WON IT ALL.\n%d WINS  %d LOSSES\n\npress START for the title" % [who, MetaSave.career_wins, MetaSave.career_losses]
+			hud_hint.text = "%s\n%d WINS  %d LOSSES\n\npress START for the title" % [MatchConfig.career_story(stop, "win"), MetaSave.career_wins, MetaSave.career_losses]
 		else:
 			career_end = "won"
 			hud_win.text = "STOP %d CLEARED" % (stop + 1)
 			hud_win.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5))
-			hud_hint.text = "%s  +%d XP  +%d COINS  (LV %d)\n\npress START to travel on" % [who, rew.xp, rew.coins, MetaSave.career_level()]
+			hud_hint.text = "%s\n+%d XP  +%d COINS  (LV %d)\n\npress START to travel on" % [MatchConfig.career_story(stop, "win"), rew.xp, rew.coins, MetaSave.career_level()]
 		play_sfx("win", 0.0)
 	else:
 		career_end = "lost"
@@ -1708,7 +1707,7 @@ func _end_match_career(winner: Node) -> void:
 		MetaSave.career_record_fight(false, loss_xp, 0, -1, _career_scar(stop))
 		hud_win.text = "KNOCKED OUT"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
-		hud_hint.text = "%s took a beating (+%d XP).\nREST UP AND TRY AGAIN.\n\npress START to regroup" % [who, loss_xp]
+		hud_hint.text = "%s  (+%d XP)\nREST UP AND TRY AGAIN.\n\npress START to regroup" % [MatchConfig.career_story(stop, "loss"), loss_xp]
 		play_sfx("ko", 0.0)
 
 # One line of loss flavor for the scar log (story texture; display-only).

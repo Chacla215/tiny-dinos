@@ -990,6 +990,58 @@ func career_kos_to_win() -> int:
 func career_scene() -> String:
 	return ISLAND_SCENES.get(island, "res://scenes/main.tscn")
 
+# --- CAREER story beats. Light, characterful flavor keyed to the journey. %s =
+# your dino's name, %r = the rival's name. Milestone stops (rival encounters + the
+# boss) get authored lines; ordinary stops draw from pools (indexed by stop, so a
+# run reads varied but is reproducible). ---
+const CAREER_INTRO := {
+	0: "SIX ISLANDS. ONE CROWN. TIME TO EARN IT, %s.",
+	5: "%r BLOCKS THE ROAD.  \"SO YOU'RE THE ROOKIE EVERYONE'S ON ABOUT?\"",
+	11: "%r WAITS AGAIN.  \"...HUH. MAYBE YOU ARE THE REAL DEAL.\"",
+	16: "%r, ONE MORE TIME.  \"THIS ENDS BEFORE THE FINALE. IT HAS TO.\"",
+	20: "THE LAST ISLAND. ONLY %r STANDS BETWEEN %s AND THE CROWN.",
+}
+const CAREER_INTRO_POOL := [
+	"A NEW ISLAND. A NEW CHALLENGER SIZING YOU UP.",
+	"THE LOCALS SAY NOBODY BEATS THEIR CHAMPION HERE.",
+	"WORD OF %s IS SPREADING ACROSS THE ISLANDS.",
+	"REST UP. THIS ONE WON'T GO EASY.",
+	"ANOTHER RUNG ON THE CLIMB. KEEP GOING, %s.",
+]
+const CAREER_WIN_POOL := [
+	"ANOTHER ONE DOWN. THE CROWD LOVES %s.",
+	"CLEAN WORK. ON TO THE NEXT ISLAND.",
+	"THEY WON'T FORGET THAT ONE.",
+	"%s TAKES IT. THE LEGEND GROWS.",
+]
+const CAREER_LOSS_POOL := [
+	"A ROUGH ONE. SHAKE IT OFF, %s.",
+	"NOT TODAY. BACK TO THE DEN TO REGROUP.",
+	"DOWN, NOT OUT. TRAIN UP AND RUN IT BACK.",
+]
+
+func _career_fmt(s: String) -> String:
+	var me: String = MetaSave.career_name if MetaSave.career_name != "" else career_rival()
+	var riv: String = str(DINOS.get(career_rival(), {}).get("name", career_rival())).to_upper()
+	return s.replace("%s", me.to_upper()).replace("%r", riv)
+
+# Story line for a stop. phase = "intro" (DEN, upcoming) | "win" | "loss".
+func career_story(stop: int, phase: String) -> String:
+	if phase == "intro":
+		if CAREER_INTRO.has(stop):
+			return _career_fmt(CAREER_INTRO[stop])
+		return _career_fmt(CAREER_INTRO_POOL[stop % CAREER_INTRO_POOL.size()])
+	if phase == "win":
+		if career_is_boss(stop):
+			return _career_fmt("THE ISLANDS HAVE A NEW CHAMPION:  %s!")
+		if career_is_rival(stop):
+			return _career_fmt("%r REELS BACK, STUNNED.  \"...HOW?\"")
+		return _career_fmt(CAREER_WIN_POOL[stop % CAREER_WIN_POOL.size()])
+	# loss
+	if career_is_rival(stop):
+		return _career_fmt("%r SMIRKS.  \"COME BACK WHEN YOU'RE READY.\"")
+	return _career_fmt(CAREER_LOSS_POOL[stop % CAREER_LOSS_POOL.size()])
+
 # XP / coin reward for clearing the current stop (rival + boss pay more).
 func career_win_reward() -> Dictionary:
 	var stop: int = MetaSave.career_stop
