@@ -1725,9 +1725,8 @@ func _career_continue() -> void:
 		return
 	if career_end == "won":
 		MetaSave.career_advance_stop()  # a loss stays on the same stop to retry
-	# Step 3 routes to the HOME/DEN screen here; for now relaunch the next fight.
-	MatchConfig.career_start_match()
-	get_tree().change_scene_to_file(MatchConfig.career_scene())
+	# Back to the DEN to care for the dino (rest/feed/train) before the next stop.
+	get_tree().change_scene_to_file("res://scenes/career_home.tscn")
 
 # --- Gauntlet (roguelike) wave flow + upgrade draft ---
 
