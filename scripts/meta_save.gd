@@ -33,6 +33,38 @@ var season_titles_by_division: Array = [0, 0, 0]  # championships won per divisi
 # Display-only progression; defaults to 0 (DEFAULT) for any dino not set.
 var skins: Dictionary = {}
 
+# --- CAREER MODE: the ONE persistent dino you raise across the journey. Unlike a
+# gauntlet run (throwaway, lives on MatchConfig), a career survives quitting the
+# game, so its whole state persists here. Forgiving-with-stakes: losses cost mood
+# + leave a scar but never end the journey. See CAREER_MODE_PLAN.md. ---
+var career_started: bool = false   # a career exists to RESUME
+var career_dino: String = ""       # the bonded dino id — chosen ONCE
+var career_name: String = ""       # player-given name (cute, optional)
+var career_xp: int = 0             # spendable growth points (TRAIN spends these)
+var career_pips: Dictionary = {}   # stat id -> pips bought {power,speed,toughness,guard}
+var career_mood: int = 70          # 0..100 — FEED raises, losses lower, decays per stop
+var career_hp_carry: int = -1      # HP into the next fight; -1 = full (REST restores)
+var career_stop: int = 0           # index into the journey (MatchConfig builds it)
+var career_wins: int = 0
+var career_losses: int = 0
+var career_scars: Array = []       # loss flavor lines — story texture, display-only
+
+# Per-pip growth (longer-grind tuning). POWER/SPEED are multiplicative, TOUGHNESS/
+# GUARD flat. Cost to buy the Nth pip in a stat rises so the grind lengthens.
+const CAREER_STATS := ["power", "speed", "toughness", "guard"]
+const CAREER_PIP_POWER := 0.06     # +6% dmg per POWER pip
+const CAREER_PIP_SPEED := 0.04     # +4% move speed per SPEED pip
+const CAREER_PIP_TOUGH := 14       # +14 max HP per TOUGHNESS pip
+const CAREER_PIP_GUARD := 12       # +12 max block per GUARD pip
+const CAREER_PIP_BASE_COST := 80   # XP for the first pip in a stat
+const CAREER_PIP_STEP_COST := 40   # +this per pip already owned in that stat
+const CAREER_MOOD_START := 70
+const CAREER_MOOD_DECAY := 8        # mood lost per stop travelled
+const CAREER_FEED_MOOD := 20        # mood gained per FEED
+const CAREER_FEED_COST := 15        # coins per FEED
+const CAREER_WIN_MOOD := 8
+const CAREER_LOSS_MOOD := 15
+
 # Reach this wave (ever) to permanently unlock the perk. Ordered by threshold.
 const UNLOCKS := [
 	{"id": "extra_draft",   "wave": 3,  "name": "EXTRA DRAFT",   "blurb": "DRAFTS OFFER 4 UPGRADES"},
@@ -61,6 +93,21 @@ func _load() -> void:
 			season_titles_by_division = [0, 0, 0]
 		owned_skins = cfg.get_value("cosmetics", "owned_skins", {})
 		skins = cfg.get_value("cosmetics", "skins", {})
+		career_started = bool(cfg.get_value("career", "started", false))
+		career_dino = str(cfg.get_value("career", "dino", ""))
+		career_name = str(cfg.get_value("career", "name", ""))
+		career_xp = int(cfg.get_value("career", "xp", 0))
+		career_pips = cfg.get_value("career", "pips", {})
+		career_mood = int(cfg.get_value("career", "mood", CAREER_MOOD_START))
+		career_hp_carry = int(cfg.get_value("career", "hp_carry", -1))
+		career_stop = int(cfg.get_value("career", "stop", 0))
+		career_wins = int(cfg.get_value("career", "wins", 0))
+		career_losses = int(cfg.get_value("career", "losses", 0))
+		career_scars = cfg.get_value("career", "scars", [])
+		if typeof(career_pips) != TYPE_DICTIONARY:
+			career_pips = {}
+		if typeof(career_scars) != TYPE_ARRAY:
+			career_scars = []
 
 func _save() -> void:
 	var cfg := ConfigFile.new()
@@ -74,6 +121,17 @@ func _save() -> void:
 	cfg.set_value("season", "titles_by_division", season_titles_by_division)
 	cfg.set_value("cosmetics", "owned_skins", owned_skins)
 	cfg.set_value("cosmetics", "skins", skins)
+	cfg.set_value("career", "started", career_started)
+	cfg.set_value("career", "dino", career_dino)
+	cfg.set_value("career", "name", career_name)
+	cfg.set_value("career", "xp", career_xp)
+	cfg.set_value("career", "pips", career_pips)
+	cfg.set_value("career", "mood", career_mood)
+	cfg.set_value("career", "hp_carry", career_hp_carry)
+	cfg.set_value("career", "stop", career_stop)
+	cfg.set_value("career", "wins", career_wins)
+	cfg.set_value("career", "losses", career_losses)
+	cfg.set_value("career", "scars", career_scars)
 	cfg.save(SAVE_PATH)
 
 # Selected skin index for a dino (0 = DEFAULT).
@@ -168,4 +226,84 @@ func owns_skin(idx: int) -> bool:
 
 func buy_skin(idx: int) -> void:
 	owned_skins[idx] = true
+	_save()
+
+# --- CAREER MODE helpers -----------------------------------------------------
+
+# Begin a fresh career with a chosen bonded dino. Wipes any prior career.
+func career_begin(dino_id: String, given_name: String = "") -> void:
+	career_started = true
+	career_dino = dino_id
+	career_name = given_name
+	career_xp = 0
+	career_pips = {}
+	career_mood = CAREER_MOOD_START
+	career_hp_carry = -1
+	career_stop = 0
+	career_wins = 0
+	career_losses = 0
+	career_scars = []
+	_save()
+
+func career_pip_count(stat: String) -> int:
+	return int(career_pips.get(stat, 0))
+
+# Total pips bought = the dino's "growth level" (display + story gating).
+func career_level() -> int:
+	var n: int = 0
+	for s in CAREER_STATS:
+		n += career_pip_count(s)
+	return n
+
+# XP price of the NEXT pip in a stat (rises with pips already owned — the grind).
+func career_pip_cost(stat: String) -> int:
+	return CAREER_PIP_BASE_COST + CAREER_PIP_STEP_COST * career_pip_count(stat)
+
+func career_can_train(stat: String) -> bool:
+	return stat in CAREER_STATS and career_xp >= career_pip_cost(stat)
+
+# TRAIN: spend XP to buy one permanent pip in a stat. True if it went through.
+func career_train(stat: String) -> bool:
+	if not career_can_train(stat):
+		return false
+	career_xp -= career_pip_cost(stat)
+	career_pips[stat] = career_pip_count(stat) + 1
+	_save()
+	return true
+
+# FEED: raise mood, costs coins. True if affordable.
+func career_feed() -> bool:
+	if not spend_coins(CAREER_FEED_COST):  # spend_coins already persists
+		return false
+	career_mood = clampi(career_mood + CAREER_FEED_MOOD, 0, 100)
+	_save()
+	return true
+
+# REST: heal the carried HP back to full (a fresh fight) + a small mood lift.
+func career_rest() -> void:
+	career_hp_carry = -1
+	career_mood = clampi(career_mood + 5, 0, 100)
+	_save()
+
+# Record a finished career fight, awarding XP/coins and moving mood + HP carry.
+# Forgiving-with-stakes: a loss still advances but costs mood + leaves a scar.
+func career_record_fight(won: bool, xp_gain: int, coin_gain: int, hp_left: int, scar: String = "") -> void:
+	career_xp += maxi(0, xp_gain)
+	if coin_gain > 0:
+		coins += coin_gain
+	career_hp_carry = hp_left
+	if won:
+		career_wins += 1
+		career_mood = clampi(career_mood + CAREER_WIN_MOOD, 0, 100)
+	else:
+		career_losses += 1
+		career_mood = clampi(career_mood - CAREER_LOSS_MOOD, 0, 100)
+		if scar != "":
+			career_scars.append(scar)
+	_save()
+
+# Travel to the next stop: mood drifts down a little each leg.
+func career_advance_stop() -> void:
+	career_stop += 1
+	career_mood = clampi(career_mood - CAREER_MOOD_DECAY, 0, 100)
 	_save()

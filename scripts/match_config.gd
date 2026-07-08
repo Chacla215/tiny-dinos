@@ -876,6 +876,131 @@ func gauntlet_enemy_dmg_mult() -> float:
 func gauntlet_enemy_kb_resist() -> float:
 	return clampf(0.04 * float(gauntlet_wave), 0.0, 0.6)
 
+# --- CAREER MODE: raise ONE bonded dino across a long, authored journey. The run
+# state PERSISTS (MetaSave), unlike the throwaway gauntlet. `career` is the runtime
+# flag a career match sets so dino.gd applies the player's grown stats at spawn.
+# The journey is rebuilt DETERMINISTICALLY from the chosen dino (no RNG) so it's
+# identical every time you resume. See CAREER_MODE_PLAN.md. ---
+var career: bool = false
+
+const CAREER_STOP_COUNT := 21          # long grind; the final stop is the BOSS
+const CAREER_RIVAL_STOPS := [5, 11, 16]  # the recurring rival ambushes here...
+# ...and the boss (last stop) IS the rival — the showdown you've been building to.
+# A couple of mid-run stops swap in a mode for variety; the rest are straight fights.
+const CAREER_MODE_STOPS := {8: "koth", 14: "sumo"}
+
+# Stable per-career seed from the bonded dino id (char sum) — keeps the journey
+# reproducible across sessions without storing the whole schedule.
+func _career_seed() -> int:
+	var s: int = 0
+	for i in MetaSave.career_dino.length():
+		s += MetaSave.career_dino.unicode_at(i)
+	return s
+
+# The rival = a fixed foe (first roster dino that isn't yours) — a recurring nemesis.
+func career_rival() -> String:
+	for d in ROSTER_ORDER:
+		if d != MetaSave.career_dino:
+			return d
+	return "raptor"
+
+func career_is_boss(stop: int) -> bool:
+	return stop >= CAREER_STOP_COUNT - 1
+
+func career_is_rival(stop: int) -> bool:
+	return career_is_boss(stop) or stop in CAREER_RIVAL_STOPS
+
+func _career_difficulty(stop: int) -> String:
+	if career_is_boss(stop):
+		return "brutal"
+	var band: String = "easy" if stop < 4 else ("normal" if stop < 10 else "hard")
+	if career_is_rival(stop):  # the rival always fights a notch above the locals
+		band = "normal" if band == "easy" else "hard"
+	return band
+
+# The full journey, rebuilt deterministically. Each stop: island / mode / foe /
+# difficulty / rival / boss.
+func career_stops() -> Array:
+	var seed: int = _career_seed()
+	var pool: Array = []
+	for d in ROSTER_ORDER:
+		if d != MetaSave.career_dino:
+			pool.append(d)
+	var out: Array = []
+	for i in range(CAREER_STOP_COUNT):
+		var foe: String = career_rival() if career_is_rival(i) else pool[(i * 3 + seed) % pool.size()]
+		out.append({
+			"island": ISLAND_ORDER[(i + seed) % ISLAND_ORDER.size()],
+			"mode": CAREER_MODE_STOPS.get(i, "rounds"),
+			"foe": foe,
+			"difficulty": _career_difficulty(i),
+			"rival": career_is_rival(i),
+			"boss": career_is_boss(i),
+		})
+	return out
+
+func career_current_stop() -> Dictionary:
+	var stops: Array = career_stops()
+	return stops[clampi(MetaSave.career_stop, 0, stops.size() - 1)]
+
+# Growth the bonded dino applies at spawn (dino.gd reads this for p1). Pips are
+# permanent; mood gives a small same-fight buff/penalty. Format mirrors UPGRADES mods.
+func career_stat_bonus() -> Dictionary:
+	var pw: int = MetaSave.career_pip_count("power")
+	var sp: int = MetaSave.career_pip_count("speed")
+	var to: int = MetaSave.career_pip_count("toughness")
+	var gu: int = MetaSave.career_pip_count("guard")
+	var dmg_mul: float = pow(1.0 + MetaSave.CAREER_PIP_POWER, pw)
+	var spd_mul: float = pow(1.0 + MetaSave.CAREER_PIP_SPEED, sp)
+	var mood_mul: float = 1.05 if MetaSave.career_mood >= 70 else (0.95 if MetaSave.career_mood <= 30 else 1.0)
+	dmg_mul *= mood_mul
+	spd_mul *= mood_mul
+	return {
+		"attack_damage": ["mul", dmg_mul],
+		"heavy_damage": ["mul", dmg_mul],
+		"special_damage": ["mul", dmg_mul],
+		"max_speed": ["mul", spd_mul],
+		"max_hp": ["add", MetaSave.CAREER_PIP_TOUGH * to],
+		"max_block": ["add", MetaSave.CAREER_PIP_GUARD * gu],
+	}
+
+# HP the bonded dino spawns with this fight (-1 = full). REST restores it to full.
+func career_player_hp() -> int:
+	return MetaSave.career_hp_carry
+
+# Configure a versus match for the current journey stop (you = p1, foe = p2 CPU).
+func career_start_match() -> void:
+	career = true
+	gauntlet = false
+	season = false
+	var stop: Dictionary = career_current_stop()
+	teams_enabled = false
+	player_count = 2
+	cpu_players = {"p1": false, "p2": true, "p3": false, "p4": false, "p5": false, "p6": false}
+	dino_choices["p1"] = MetaSave.career_dino
+	dino_choices["p2"] = stop["foe"]
+	cpu_difficulty = stop["difficulty"]
+	island = stop["island"]
+	game_mode = stop["mode"]
+
+# Boss is best-of-3; the rest best-of-2 (a forgiving buffer, per the design).
+func career_kos_to_win() -> int:
+	return 3 if career_is_boss(MetaSave.career_stop) else 2
+
+func career_scene() -> String:
+	return ISLAND_SCENES.get(island, "res://scenes/main.tscn")
+
+# XP / coin reward for clearing the current stop (rival + boss pay more).
+func career_win_reward() -> Dictionary:
+	var stop: int = MetaSave.career_stop
+	var xp: int = 60 + stop * 6
+	var coins_r: int = 12 + stop
+	if career_is_boss(stop):
+		xp *= 3; coins_r *= 3
+	elif career_is_rival(stop):
+		xp = int(xp * 1.6); coins_r = int(coins_r * 1.6)
+	return {"xp": xp, "coins": coins_r}
+
 func _ready() -> void:
 	_setup_input_actions()
 

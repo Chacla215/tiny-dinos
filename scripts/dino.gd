@@ -471,6 +471,23 @@ func _ready() -> void:
 func _apply_run_upgrades() -> void:
 	if not MatchConfig:
 		return
+	# CAREER: the bonded dino (p1) applies the growth it's earned — permanent pips
+	# plus a small mood buff — and spawns with its carried HP. Foes stay at base
+	# (the stop's difficulty tier does the scaling). Mutually exclusive with the
+	# gauntlet/season runs below.
+	if "career" in MatchConfig and MatchConfig.career:
+		if player_id == "p1":
+			var bonus: Dictionary = MatchConfig.career_stat_bonus()
+			for stat in bonus:
+				if not (stat in self):
+					continue
+				var op: Array = bonus[stat]
+				var cur = get(stat)
+				var nv = (cur * op[1]) if op[0] == "mul" else (cur + op[1])
+				set(stat, int(round(nv)) if typeof(cur) == TYPE_INT else nv)
+			var carry: int = MatchConfig.career_player_hp()
+			_run_start_hp = max_hp if carry < 0 else clampi(carry, 1, max_hp)
+		return
 	# SEASON: your whole side carries the drafted TEAM PERKS (stacking across
 	# matchdays); the foe side gets nothing. same_side covers both 1v1 and 2v2.
 	if "season" in MatchConfig and MatchConfig.season:
