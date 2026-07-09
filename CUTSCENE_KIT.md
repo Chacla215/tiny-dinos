@@ -104,9 +104,24 @@ standing closing graphic.
   `ep1_no_vo.mp4`, takes in `vo_e*.wav`). This voice+bed is the template for
   the whole six-story season.
 
-**The other five (loglines, script on demand):**
-- **MAX — "FAST ISN'T FIRST":** cocky speedster loses a beach race to slow-and-
-  steady Steve after showboating; learns to finish. Ends: rematch handshake.
+**MAX — "FAST ISN'T FIRST" EPISODE 2 (scripted 2026-07-09, awaiting credits ~270):**
+Opens on the Ep1 resolution (serialized hook), then Max's own arc. Beach arena,
+signature weapon = **DAGGER** (his in-game kit), co-star Steve (bronto hero).
+Locked audio template; captions + TBC card pre-baked in `wip/ep2_max/`; VO
+already generated (`wip/ep2_max/vo_e1..5.wav`). Battle drop lands on beat 4's
+panic sprint. Seedance: 12s/beat, 9:16 720p, `generate_audio:false`, decline
+IN THE DARK, start_image = keyed raptor+bronto heroes composited on a beach
+slice (y≥170), chain last frames beat-to-beat.
+
+| beat | 12s clip | narrator line |
+|---|---|---|
+| 1 | COLD OPEN = Ep1 payoff: Max flat in the sand, Ralph plucks the leaf back onto his head, offers a hand up; Max slaps it away, storms off burning with embarrassment. | "When we last saw Max… he lost. To the tiniest king on the island. And Max does not. Lose." |
+| 2 | Max needs a win: twirling his dagger, he challenges Steve (ambling by, flower in mouth); Steve slow-blinks… nods. Dinos gather to watch. | "So Max picked a new opponent. Steve. Steve is… not fast." |
+| 3 | RACE! Max rockets off in a blur, laps Steve, then showboats — poses for the crowd, dagger-twirl taunt, raspberry. Behind him Steve plods on, never stopping. | "But here's the thing about Max: he never watches the finish line. He watches the crowd." |
+| 4 | Mid-pose, Max sees Steve's shadow at the finish palm — horror! Full panic blur, sand rooster-tails, gaining, gaining… (BATTLE DROP HERE) | "And Steve? Steve only knows one speed. He just… never… stops!" |
+| 5 | Photo-finish DIVE at the line — Max airborne, Steve's foot mid-fall — FREEZE → smash to "TO BE CONTINUED…" (resolution = Ep3 opener: Steve by a nose; the handshake.) | "Max was about to learn the difference between being fast… and being FIRST!" |
+
+**The other four (loglines, script on demand):**
 - **GUS — "THE WALL MOVES":** immovable Gus won't budge for anyone — until
   Jessie's egg-basket rolls toward the lava; the unstoppable charge, for once,
   is FOR someone. (Laughing Lava arena.)
