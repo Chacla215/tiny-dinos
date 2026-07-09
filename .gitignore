@@ -24,3 +24,6 @@ scenes/_ralph_shot.tscn
 scripts/tools/ralph_shot.gd
 scripts/tools/ralph_shot.gd.uid
 assets/concept/trailer/trailer_roughcut.mp4
+
+# cutscene work-in-progress (pending approval before committing final shorts)
+assets/concept/shorts/wip/
