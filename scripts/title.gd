@@ -75,6 +75,9 @@ func _ready() -> void:
 	var shop_label: Label = $Menu/PlayItem.duplicate()
 	shop_label.name = "ShopItem"
 	$Menu.add_child(shop_label)
+	var settings_label: Label = $Menu/PlayItem.duplicate()
+	settings_label.name = "SettingsItem"
+	$Menu.add_child(settings_label)
 	# Progress readouts: SEASON shows your trophy count, GAUNTLET your best wave.
 	var season_base: String = "SEASON"
 	if MetaSave.seasons_won > 0:
@@ -101,6 +104,7 @@ func _ready() -> void:
 		{"label": shop_label, "base": shop_base, "action": "shop"},
 		{"label": trophies_label, "base": trophies_base, "action": "trophies"},
 		{"label": $Menu/HowToItem, "base": "HOW TO PLAY", "action": "howto"},
+		{"label": settings_label, "base": "SETTINGS", "action": "settings"},
 		{"label": $Menu/QuitItem, "base": "QUIT", "action": "quit"},
 	]
 	# Re-stack the menu to fit ALL items in the band beneath the subtitle, sizing
@@ -240,6 +244,8 @@ func _activate(action: String) -> void:
 			get_tree().change_scene_to_file(SHOP_SCENE)
 		"howto":
 			_open_howto()
+		"settings":
+			get_tree().change_scene_to_file("res://scenes/settings.tscn")
 		"quit":
 			get_tree().quit()
 

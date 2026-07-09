@@ -33,6 +33,11 @@ var season_titles_by_division: Array = [0, 0, 0]  # championships won per divisi
 # Display-only progression; defaults to 0 (DEFAULT) for any dino not set.
 var skins: Dictionary = {}
 
+# --- SETTINGS: audio volume steps (0 = mute .. Audio.VOL_STEPS = full mix).
+# Stored per bus name; the Audio autoload reads + applies these at startup and
+# the SETTINGS screen writes them live (see Audio.set_volume_step).
+var volume_steps: Dictionary = {}
+
 # --- CAREER MODE: the ONE persistent dino you raise across the journey. Unlike a
 # gauntlet run (throwaway, lives on MatchConfig), a career survives quitting the
 # game, so its whole state persists here. Forgiving-with-stakes: losses cost mood
@@ -93,6 +98,9 @@ func _load() -> void:
 			season_titles_by_division = [0, 0, 0]
 		owned_skins = cfg.get_value("cosmetics", "owned_skins", {})
 		skins = cfg.get_value("cosmetics", "skins", {})
+		volume_steps = cfg.get_value("settings", "volume_steps", {})
+		if typeof(volume_steps) != TYPE_DICTIONARY:
+			volume_steps = {}
 		career_started = bool(cfg.get_value("career", "started", false))
 		career_dino = str(cfg.get_value("career", "dino", ""))
 		career_name = str(cfg.get_value("career", "name", ""))
@@ -121,6 +129,7 @@ func _save() -> void:
 	cfg.set_value("season", "titles_by_division", season_titles_by_division)
 	cfg.set_value("cosmetics", "owned_skins", owned_skins)
 	cfg.set_value("cosmetics", "skins", skins)
+	cfg.set_value("settings", "volume_steps", volume_steps)
 	cfg.set_value("career", "started", career_started)
 	cfg.set_value("career", "dino", career_dino)
 	cfg.set_value("career", "name", career_name)
@@ -141,6 +150,11 @@ func get_skin(dino_id: String) -> int:
 # Equip + persist a dino's skin.
 func set_skin(dino_id: String, idx: int) -> void:
 	skins[dino_id] = int(idx)
+	_save()
+
+# Persist one bus's volume step (the Audio autoload owns applying it).
+func set_volume_step(bus: String, step: int) -> void:
+	volume_steps[bus] = step
 	_save()
 
 func has_unlock(id: String) -> bool:
