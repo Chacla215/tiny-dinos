@@ -96,9 +96,17 @@ new music bed = **Feel Good Island Loop** (CC0, OpenGameArt, Brandon Morris)
 for beats 1–3, keeping the battle-theme drop at the sword moment (36.4s).
 Voices: `ep1_v2_arthur_island` (music change only), `_sterling_`, `_mabel_`,
 `_kevin_` (seed_audio presets), + `voice_audition.m4a` (beat-1 line, all four
-voices back-to-back). Rebuild: `wip/ep1/build_ep1_variants.sh`. DECISION
-PENDING Charlie's listen; loser files get deleted, winner becomes the template
-voice+bed for the six-story season.
+voices back-to-back). Rebuild: `wip/ep1/build_ep1_variants.sh`.
+
+**Round-1 verdict (Charlie):** Arthur most natural but maybe under-energized;
+both beds (menu-soul AND island loop) read too jazzy. **Round 2 (v3, built):**
+new bed = **"Go to the Picnic"** (Loyalty Freak Music, CC0, FreeMusicArchive)
+— bouncy cartoon-comedy, zero jazz — battle drop still at the sword moment.
+`ep1_v3_arthur_picnic.mp4` (original Arthur takes) vs
+`ep1_v3_arthur_energy_picnic.mp4` (Arthur regenerated at speech_rate +10 /
+loudness +15 with punchier punctuation, `vo_e*.wav`). Rebuild:
+`wip/ep1/build_ep1_v3.sh`. DECISION PENDING; winner becomes the template
+voice+bed for the six-story season, loser files get deleted.
 
 **The other five (loglines, script on demand):**
 - **MAX — "FAST ISN'T FIRST":** cocky speedster loses a beach race to slow-and-
