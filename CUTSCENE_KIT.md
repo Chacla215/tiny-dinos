@@ -74,14 +74,21 @@ arc (want → struggle → change), built from GAME pieces (weapon drops, arenas
 passives, the career rivalry). ~270 cr per story → **current balance funds ONE
 pilot (RALPH); the six-story season needs a credit top-up.**
 
-**RALPH — "THE LEAF" (the pilot, fully scripted):**
-| beat | 12s clip | arc function |
+**RALPH — "THE LEAF" EPISODE 1 (the pilot — MONETIZATION CUT, 2026-07-09):**
+Built for Reels/Shorts/TikTok: hook inside the first beat, ~60s, ends on a
+CLIFFHANGER (the resolution — Ralph reclaiming the leaf + helping Max up — is
+saved as the Episode 2 opener). Two audio mixes per episode: NARRATED (seed_audio
+preset "Arthur", lines below) and NO-VO (music + action only) — post both,
+let the platform data pick. Cliffhanger card ("TO BE CONTINUED…") precedes the
+standing closing graphic.
+
+| beat | 12s clip | narrator line |
 |---|---|---|
-| 1 | Dawn on Beauty Beach. Ralph naps against a palm, his leaf tucked snug. A red blur (MAX) zips past and SNATCHES the leaf off his head; Ralph startles awake, pats his bare head, devastated. | the loss |
-| 2 | Max struts and twirls the leaf, taunting. Ralph's sad face hardens into determination — he plants his feet and DEMANDS it back. Max sticks out his tongue and dashes off. | the want |
-| 3 | The chase across the island — Ralph's stubby waddle-run vs Max's blur, through sand sprays and swaying palms; Max always just out of reach, Ralph tumbles, gets up, keeps coming. | the struggle |
-| 4 | A sword drops from the sky and sticks in the sand between them (the game's weapon drop). Ralph grabs it — spin-slash flurry, glowing arcs — the shockwave trips Max mid-gloat; the leaf flutters free. | the turn |
-| 5 | Ralph catches the leaf, tucks it back… then offers Max a paw up. Max takes it, sheepish. They grin — freeze-frame, cartoon stars. → closing graphic. | the heart |
+| 1 | Ralph yawns, curls up under the palm — a red blur (MAX) snatches the leaf off his head; Ralph wakes, pats his bare head, horror. | "This is Ralph. King of a very tiny island. Ralph has exactly one rule: nobody… touches… the leaf." |
+| 2 | Max struts and twirls the leaf, taunting; Ralph's sad face hardens; Max blows a raspberry and dashes off; Ralph gives chase. | "Max touched the leaf." |
+| 3 | The chase — stubby waddle-run vs blur, sand sprays, Ralph tumbles hard, gets up panting; Max gloats from atop a rock. LOW POINT. | "Now, Ralph is not the fastest dino on the island. Or the strongest. Honestly? He's mostly just… tiny." |
+| 4 | A sword drops from the sky, sticks upright in the sand before Ralph. He looks up. Grips it. Eyes narrow. Stands tall, wind rising. | "But this island takes care of its little king. And sometimes… it sends help. From the sky." |
+| 5 | Ralph CHARGES, leaps sword-high; Max's smug grin collapses into wide-eyed shock — FREEZE mid-air → smash to "TO BE CONTINUED…" | "And Max? Max was about to learn Ralph's second rule." |
 
 **The other five (loglines, script on demand):**
 - **MAX — "FAST ISN'T FIRST":** cocky speedster loses a beach race to slow-and-
