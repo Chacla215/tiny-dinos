@@ -59,8 +59,9 @@ Locked from his read of the Ralph action pilot — every short from here obeys:
    Impact + outline + accent underline), unique per dino: name in their body
    colour, their emblem, their subtitle. (`make_v2_overlays.py` DINOS table.)
 6. **ALWAYS end on the closing graphic** — the standing brand card
-   (`closing_card.png`: real title logos + "GRAB A WEAPON. WIN THE ISLAND." +
-   "1-4 PLAYERS · COUCH BRAWLER").
+   (`closing_card.png`, Charlie-picked 2026-07-09: BRIGHT beach, the integrated
+   logo big, one small white line "A COUCH BRAWLER FOR 1-4 PLAYERS" — sunny
+   like the brand; no dark dim, no tagline block).
 7. **Longer clips** — 12s per Seedance clip (model caps at 15s). Action short =
    2×12s + card ≈ 27s. **Cost: 54 cr per 12s std 720p clip.**
 
