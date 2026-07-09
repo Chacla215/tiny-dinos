@@ -1,5 +1,39 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-09 (brand logo + shorts template v2 + Episode 1 produced)
+
+All on `feat/release-polish` (PR #18 still open, now includes this). Charlie
+directed live; Claude generated via Higgsfield (nano-banana images, Seedance
+video, seed_audio TTS).
+
+- **NEW BRAND LOGO (`aacae3b`).** Integrated painterly lockup after 4 gen
+  rounds with hero-PNG references: leaf dots the i in TiNY, Steve lunges
+  tongue-out to EAT it, Ralph climbs the scale-flanked D with his SWORD
+  raised, Gus chomps the S. `assets/sprites/title_logo.png` (magenta-keyed,
+  un-premultiply de-fringe). `title.gd`: single-logo slam intro
+  (`_play_intro_single`), old two-sprite path kept as fallback. **Ralph's
+  sword is now brand-wide.** Charlie must still SEE the title in-engine.
+- **Shorts template v2 LOCKED (`de297d9`, `e80f82d`)** from Charlie's pilot
+  notes: island immersion (composite heroes onto real arena art as start
+  frames), one weapon per short, personality beats, hype-the-game-through-the-
+  character, per-dino unique labels on a shared texture, ALWAYS end on the
+  closing graphic (bright beach + logo + "A COUCH BRAWLER FOR 1-4 PLAYERS"),
+  12s clips (54 cr each). Rebuilt `ralph_action_short_v2.mp4` (26.7s, wip/).
+- **EPISODE 1 PRODUCED — "THE LEAF" (65s, both mixes)** per Charlie's
+  monetization brief (hook fast / cliffhanger / narrator optional / captions
+  for muted feeds): 5 chained 12s Seedance beats (end-frame→start_image held
+  continuity), narrator = seed_audio "Arthur", music flips menu→battle at the
+  sword drop, TO BE CONTINUED card → closing card. Files in
+  `assets/concept/shorts/wip/ep1/` (`ep1_narrated.mp4` / `ep1_no_vo.mp4`, also
+  on Desktop) + `build_ep1.sh`. Script + 6 character arcs in CUTSCENE_KIT.md
+  (`1f7eecc`). Higgsfield balance ≈ **260 cr**.
+
+> **AWAITING CHARLIE:** (1) watch both Ep1 mixes — narrated vs not, Arthur's
+> voice, keep-or-reroll the (comically huge) sword; (2) title screen look
+> in-engine; (3) PR #18 merge + the Phase 1 playtest gate (unchanged); (4)
+> credits: ~260 left = 5-dino action batch OR ~one more episode — Ep2 (the
+> resolution) needs a top-up if both. Details in memory `career-mode-build`.
+
 ## Session — 2026-07-08 (v1.0 plan locked + feel-sweep landed on master)
 
 - **ROADMAP.md** (repo root, `46af9e3`): Charlie locked the destination —
