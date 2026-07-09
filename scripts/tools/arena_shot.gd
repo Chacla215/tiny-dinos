@@ -22,7 +22,9 @@ func _ready() -> void:
 	MatchConfig.player_count = 4
 	MatchConfig.cpu_players = {"p1": false, "p2": false, "p3": false, "p4": false}
 	MatchConfig.teams_enabled = false
-	MatchConfig.dino_choices = {"p1": "ralph", "p2": "raptor", "p3": "trike", "p4": "pterry"}
+	MatchConfig.dino_choices = {"p1": "ralph", "p2": "raptor", "p3": "anky", "p4": "bronto"}
+	await get_tree().process_frame  # let this node finish setting up before we add arenas
+	await get_tree().process_frame
 	for name in ARENAS:
 		await _shoot(name, ARENAS[name])
 	get_tree().quit()

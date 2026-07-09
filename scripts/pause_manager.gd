@@ -6,6 +6,7 @@ extends Node
 ## the in-match reference reads identically to the front end.
 
 const SELECT_SCENE := "res://scenes/select.tscn"
+const TITLE_SCENE := "res://scenes/title.tscn"
 const ControlsDiagram := preload("res://scripts/controls_diagram.gd")
 
 # Gamepad-only front end: any of the four pads can drive the pause menu, matching
@@ -101,7 +102,13 @@ func _exit_to_select() -> void:
 	Engine.time_scale = 1.0
 	_menu_root.visible = false
 	_howto_root.visible = false
-	get_tree().change_scene_to_file(SELECT_SCENE)
+	# Leaving a match for the menus: clear the live solo-run flags so the next match
+	# isn't silently still flagged season/gauntlet. A solo run returns to the title
+	# (its entry point); a versus match returns to the picker.
+	var was_solo: bool = MatchConfig.season or MatchConfig.gauntlet
+	MatchConfig.season = false
+	MatchConfig.gauntlet = false
+	get_tree().change_scene_to_file(TITLE_SCENE if was_solo else SELECT_SCENE)
 
 func _open_howto() -> void:
 	_howto_open = true

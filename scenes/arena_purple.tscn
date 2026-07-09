@@ -1,8 +1,9 @@
-[gd_scene load_steps=69 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/dino.gd" id="1_dino"]
 [ext_resource type="Script" path="res://scripts/main.gd" id="2_main"]
 [ext_resource type="Texture2D" path="res://assets/tilesets/purple_fields_bg.png" id="3_bg"]
+
 
 [sub_resource type="RectangleShape2D" id="dino_shape"]
 size = Vector2(48, 48)
@@ -34,7 +35,7 @@ texture = ExtResource("3_bg")
 [node name="IcePatches" type="Node2D" parent="."]
 
 [node name="Player1" type="CharacterBody2D" parent="."]
-position = Vector2(400, 380)
+position = Vector2(256, 377)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -66,7 +67,7 @@ disabled = true
 visible = false
 
 [node name="Player2" type="CharacterBody2D" parent="."]
-position = Vector2(780, 380)
+position = Vector2(1024, 377)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -98,7 +99,7 @@ disabled = true
 visible = false
 
 [node name="Player3" type="CharacterBody2D" parent="."]
-position = Vector2(400, 560)
+position = Vector2(256, 556)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -130,7 +131,7 @@ disabled = true
 visible = false
 
 [node name="Player4" type="CharacterBody2D" parent="."]
-position = Vector2(800, 560)
+position = Vector2(1024, 556)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1

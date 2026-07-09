@@ -112,6 +112,7 @@ const DINOS := {
 		"sprite_role": "trike",
 		"sprite_scale": 0.64,
 		"sprite_offset_y": -35.0,
+		"grip_offset": Vector2(30.0, -14.0),   # mouth, low & forward (quadruped)
 		"hit_sfx_name": "hit_chomp",
 		"max_speed": 300.0,
 		"ground_accel": 2500.0,
@@ -140,6 +141,7 @@ const DINOS := {
 		"dodge_cooldown": 0.6,
 		"dodge_distance": 150.0,
 		"dodge_block_cost": 32.0,
+		"signature": "charger",   # super-armor through his heavy — plows through trades
 		"special_type": "headbutt",
 		"special_damage": 30,
 		"special_knockback": 650.0,
@@ -158,6 +160,7 @@ const DINOS := {
 		"sprite_role": "pterry",
 		"sprite_scale": 0.55,
 		"sprite_offset_y": -29.0,
+		"grip_offset": Vector2(22.0, -18.0),   # near wing-claw hand, mid-height
 		"hit_sfx_name": "hit_chomp",
 		"max_speed": 280.0,
 		"ground_accel": 2000.0,
@@ -186,6 +189,7 @@ const DINOS := {
 		"dodge_cooldown": 0.6,
 		"dodge_distance": 120.0,
 		"dodge_block_cost": 35.0,
+		"signature": "flighty",   # landing a hit refunds her dodge — endless hit-and-run
 		"special_type": "screech",
 		"special_damage": 14,
 		"special_knockback": 250.0,
@@ -203,6 +207,7 @@ const DINOS := {
 		"sprite_role": "raptor",
 		"sprite_scale": 0.52,
 		"sprite_offset_y": -27.0,
+		"grip_offset": Vector2(20.0, -20.0),   # hands, mid-height (biped)
 		"hit_sfx_name": "hit_claw",
 		"max_speed": 440.0,
 		"ground_accel": 5000.0,
@@ -231,6 +236,7 @@ const DINOS := {
 		"dodge_cooldown": 0.5,
 		"dodge_distance": 200.0,
 		"dodge_block_cost": 22.0,
+		"signature": "dash_cancel",   # can cancel attack recovery into a dodge
 		"special_type": "dash_claw",
 		"special_damage": 30,
 		"special_knockback": 350.0,
@@ -249,6 +255,7 @@ const DINOS := {
 		"sprite_role": "bronto",
 		"sprite_scale": 0.72,
 		"sprite_offset_y": -40.0,
+		"grip_offset": Vector2(26.0, -78.0),   # mouth, HIGH at the top of the long neck
 		"hit_sfx_name": "hit_chomp",
 		"max_speed": 250.0,
 		"ground_accel": 1700.0,
@@ -277,6 +284,7 @@ const DINOS := {
 		"dodge_cooldown": 0.75,
 		"dodge_distance": 120.0,
 		"dodge_block_cost": 38.0,
+		"signature": "bulwark",   # jabs can't stagger the titan — only real blows
 		"special_type": "neck_whip",
 		"special_damage": 22,
 		"special_knockback": 520.0,
@@ -294,6 +302,7 @@ const DINOS := {
 		"sprite_role": "anky",
 		"sprite_scale": 0.63,
 		"sprite_offset_y": -34.0,
+		"grip_offset": Vector2(32.0, -10.0),   # mouth, low & forward (wide quadruped)
 		"hit_sfx_name": "hit_chomp",
 		"max_speed": 260.0,
 		"ground_accel": 2000.0,
@@ -322,6 +331,7 @@ const DINOS := {
 		"dodge_cooldown": 0.7,
 		"dodge_distance": 120.0,
 		"dodge_block_cost": 36.0,
+		"signature": "spikeback",   # reflects a share of BLOCKED damage at the attacker
 		"special_type": "tail_smash",
 		"special_damage": 18,
 		"special_knockback": 520.0,
@@ -344,6 +354,7 @@ const DINOS := {
 		"sprite_role": "ralph",
 		"sprite_scale": 0.6,
 		"sprite_offset_y": -32.0,
+		"grip_offset": Vector2(18.0, -14.0),   # tiny T-rex arms, low hand height
 		"hit_sfx_name": "hit_chomp",
 		"max_speed": 240.0,
 		"ground_accel": 1500.0,
@@ -372,6 +383,7 @@ const DINOS := {
 		"dodge_cooldown": 0.7,
 		"dodge_distance": 110.0,
 		"dodge_block_cost": 40.0,
+		"signature": "combo_king",   # light chains speed up his next light — rushdown
 		"special_type": "chomp",
 		"special_damage": 24,
 		"special_knockback": 300.0,
@@ -863,6 +875,183 @@ func gauntlet_enemy_dmg_mult() -> float:
 # arenas under floppy (a wave-16 foe lost 7:1) while it scaled fine on confined ones.
 func gauntlet_enemy_kb_resist() -> float:
 	return clampf(0.04 * float(gauntlet_wave), 0.0, 0.6)
+
+# --- CAREER MODE: raise ONE bonded dino across a long, authored journey. The run
+# state PERSISTS (MetaSave), unlike the throwaway gauntlet. `career` is the runtime
+# flag a career match sets so dino.gd applies the player's grown stats at spawn.
+# The journey is rebuilt DETERMINISTICALLY from the chosen dino (no RNG) so it's
+# identical every time you resume. See CAREER_MODE_PLAN.md. ---
+var career: bool = false
+
+const CAREER_STOP_COUNT := 21          # long grind; the final stop is the BOSS
+const CAREER_RIVAL_STOPS := [5, 11, 16]  # the recurring rival ambushes here...
+# ...and the boss (last stop) IS the rival — the showdown you've been building to.
+# A couple of mid-run stops swap in a mode for variety; the rest are straight fights.
+const CAREER_MODE_STOPS := {8: "koth", 14: "sumo"}
+
+# Stable per-career seed from the bonded dino id (char sum) — keeps the journey
+# reproducible across sessions without storing the whole schedule.
+func _career_seed() -> int:
+	var s: int = 0
+	for i in MetaSave.career_dino.length():
+		s += MetaSave.career_dino.unicode_at(i)
+	return s
+
+# The rival = a fixed foe (first roster dino that isn't yours) — a recurring nemesis.
+func career_rival() -> String:
+	for d in ROSTER_ORDER:
+		if d != MetaSave.career_dino:
+			return d
+	return "raptor"
+
+func career_is_boss(stop: int) -> bool:
+	return stop >= CAREER_STOP_COUNT - 1
+
+func career_is_rival(stop: int) -> bool:
+	return career_is_boss(stop) or stop in CAREER_RIVAL_STOPS
+
+func _career_difficulty(stop: int) -> String:
+	if career_is_boss(stop):
+		return "brutal"
+	var band: String = "easy" if stop < 4 else ("normal" if stop < 10 else "hard")
+	if career_is_rival(stop):  # the rival always fights a notch above the locals
+		band = "normal" if band == "easy" else "hard"
+	return band
+
+# The full journey, rebuilt deterministically. Each stop: island / mode / foe /
+# difficulty / rival / boss.
+func career_stops() -> Array:
+	var seed: int = _career_seed()
+	var pool: Array = []
+	for d in ROSTER_ORDER:
+		if d != MetaSave.career_dino:
+			pool.append(d)
+	var out: Array = []
+	for i in range(CAREER_STOP_COUNT):
+		var foe: String = career_rival() if career_is_rival(i) else pool[(i * 3 + seed) % pool.size()]
+		out.append({
+			"island": ISLAND_ORDER[(i + seed) % ISLAND_ORDER.size()],
+			"mode": CAREER_MODE_STOPS.get(i, "rounds"),
+			"foe": foe,
+			"difficulty": _career_difficulty(i),
+			"rival": career_is_rival(i),
+			"boss": career_is_boss(i),
+		})
+	return out
+
+func career_current_stop() -> Dictionary:
+	var stops: Array = career_stops()
+	return stops[clampi(MetaSave.career_stop, 0, stops.size() - 1)]
+
+# Growth the bonded dino applies at spawn (dino.gd reads this for p1). Pips are
+# permanent; mood gives a small same-fight buff/penalty. Format mirrors UPGRADES mods.
+func career_stat_bonus() -> Dictionary:
+	var pw: int = MetaSave.career_pip_count("power")
+	var sp: int = MetaSave.career_pip_count("speed")
+	var to: int = MetaSave.career_pip_count("toughness")
+	var gu: int = MetaSave.career_pip_count("guard")
+	var dmg_mul: float = pow(1.0 + MetaSave.CAREER_PIP_POWER, pw)
+	var spd_mul: float = pow(1.0 + MetaSave.CAREER_PIP_SPEED, sp)
+	var mood_mul: float = 1.05 if MetaSave.career_mood >= 70 else (0.95 if MetaSave.career_mood <= 30 else 1.0)
+	dmg_mul *= mood_mul
+	spd_mul *= mood_mul
+	return {
+		"attack_damage": ["mul", dmg_mul],
+		"heavy_damage": ["mul", dmg_mul],
+		"special_damage": ["mul", dmg_mul],
+		"max_speed": ["mul", spd_mul],
+		"max_hp": ["add", MetaSave.CAREER_PIP_TOUGH * to],
+		"max_block": ["add", MetaSave.CAREER_PIP_GUARD * gu],
+	}
+
+# HP the bonded dino spawns with this fight (-1 = full). REST restores it to full.
+func career_player_hp() -> int:
+	return MetaSave.career_hp_carry
+
+# Configure a versus match for the current journey stop (you = p1, foe = p2 CPU).
+func career_start_match() -> void:
+	career = true
+	gauntlet = false
+	season = false
+	var stop: Dictionary = career_current_stop()
+	teams_enabled = false
+	player_count = 2
+	cpu_players = {"p1": false, "p2": true, "p3": false, "p4": false, "p5": false, "p6": false}
+	dino_choices["p1"] = MetaSave.career_dino
+	dino_choices["p2"] = stop["foe"]
+	cpu_difficulty = stop["difficulty"]
+	island = stop["island"]
+	game_mode = stop["mode"]
+
+# Boss is best-of-3; the rest best-of-2 (a forgiving buffer, per the design).
+func career_kos_to_win() -> int:
+	return 3 if career_is_boss(MetaSave.career_stop) else 2
+
+func career_scene() -> String:
+	return ISLAND_SCENES.get(island, "res://scenes/main.tscn")
+
+# --- CAREER story beats. Light, characterful flavor keyed to the journey. %s =
+# your dino's name, %r = the rival's name. Milestone stops (rival encounters + the
+# boss) get authored lines; ordinary stops draw from pools (indexed by stop, so a
+# run reads varied but is reproducible). ---
+const CAREER_INTRO := {
+	0: "SIX ISLANDS. ONE CROWN. TIME TO EARN IT, %s.",
+	5: "%r BLOCKS THE ROAD.  \"SO YOU'RE THE ROOKIE EVERYONE'S ON ABOUT?\"",
+	11: "%r WAITS AGAIN.  \"...HUH. MAYBE YOU ARE THE REAL DEAL.\"",
+	16: "%r, ONE MORE TIME.  \"THIS ENDS BEFORE THE FINALE. IT HAS TO.\"",
+	20: "THE LAST ISLAND. ONLY %r STANDS BETWEEN %s AND THE CROWN.",
+}
+const CAREER_INTRO_POOL := [
+	"A NEW ISLAND. A NEW CHALLENGER SIZING YOU UP.",
+	"THE LOCALS SAY NOBODY BEATS THEIR CHAMPION HERE.",
+	"WORD OF %s IS SPREADING ACROSS THE ISLANDS.",
+	"REST UP. THIS ONE WON'T GO EASY.",
+	"ANOTHER RUNG ON THE CLIMB. KEEP GOING, %s.",
+]
+const CAREER_WIN_POOL := [
+	"ANOTHER ONE DOWN. THE CROWD LOVES %s.",
+	"CLEAN WORK. ON TO THE NEXT ISLAND.",
+	"THEY WON'T FORGET THAT ONE.",
+	"%s TAKES IT. THE LEGEND GROWS.",
+]
+const CAREER_LOSS_POOL := [
+	"A ROUGH ONE. SHAKE IT OFF, %s.",
+	"NOT TODAY. BACK TO THE DEN TO REGROUP.",
+	"DOWN, NOT OUT. TRAIN UP AND RUN IT BACK.",
+]
+
+func _career_fmt(s: String) -> String:
+	var me: String = MetaSave.career_name if MetaSave.career_name != "" else career_rival()
+	var riv: String = str(DINOS.get(career_rival(), {}).get("name", career_rival())).to_upper()
+	return s.replace("%s", me.to_upper()).replace("%r", riv)
+
+# Story line for a stop. phase = "intro" (DEN, upcoming) | "win" | "loss".
+func career_story(stop: int, phase: String) -> String:
+	if phase == "intro":
+		if CAREER_INTRO.has(stop):
+			return _career_fmt(CAREER_INTRO[stop])
+		return _career_fmt(CAREER_INTRO_POOL[stop % CAREER_INTRO_POOL.size()])
+	if phase == "win":
+		if career_is_boss(stop):
+			return _career_fmt("THE ISLANDS HAVE A NEW CHAMPION:  %s!")
+		if career_is_rival(stop):
+			return _career_fmt("%r REELS BACK, STUNNED.  \"...HOW?\"")
+		return _career_fmt(CAREER_WIN_POOL[stop % CAREER_WIN_POOL.size()])
+	# loss
+	if career_is_rival(stop):
+		return _career_fmt("%r SMIRKS.  \"COME BACK WHEN YOU'RE READY.\"")
+	return _career_fmt(CAREER_LOSS_POOL[stop % CAREER_LOSS_POOL.size()])
+
+# XP / coin reward for clearing the current stop (rival + boss pay more).
+func career_win_reward() -> Dictionary:
+	var stop: int = MetaSave.career_stop
+	var xp: int = 60 + stop * 6
+	var coins_r: int = 12 + stop
+	if career_is_boss(stop):
+		xp *= 3; coins_r *= 3
+	elif career_is_rival(stop):
+		xp = int(xp * 1.6); coins_r = int(coins_r * 1.6)
+	return {"xp": xp, "coins": coins_r}
 
 func _ready() -> void:
 	_setup_input_actions()

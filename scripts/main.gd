@@ -95,6 +95,7 @@ var hill_ring: Line2D = null
 const HILL_RADIUS := 130.0
 var eliminated: Dictionary = {}      # STOCK: pid -> true once out of lives
 var season_end: String = ""          # SEASON end-state: "advance" / "champion" / "gameover"
+var career_end: String = ""          # CAREER end-state: "won" / "lost" / "victory"
 var _last_matchday_coins: int = 0    # coins paid out for the just-won matchday (draft header)
 var gauntlet_drafting: bool = false  # a draft overlay (gauntlet OR season) is open
 var draft_mode: String = "gauntlet"  # "gauntlet" | "season" — which flow the draft drives
@@ -190,11 +191,14 @@ func _ready() -> void:
 		kos_to_win = 2  # snappy matchdays
 	if MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet:
 		kos_to_win = MatchConfig.gauntlet_kos_to_win()  # best-of-2 early, single-KO later
+	if MatchConfig and "career" in MatchConfig and MatchConfig.career:
+		kos_to_win = MatchConfig.career_kos_to_win()  # best-of-2, boss best-of-3
 	_ensure_extra_players()   # 3v3+: clone Player5/Player6 into the scene if needed
 	_setup_active_players()
 	_layout_spawns()          # 3v3+: arrange six fighters in two team rows
 	_build_extra_huds()       # 3v3+: code-built mid-edge HUD corners for p5/p6
 	_apply_match_colors()
+	_apply_env_tint()  # grade fighters to each island's light so they belong in the scene
 	_style_hud()
 	_build_special_pips()
 	_setup_game_mode()
@@ -209,6 +213,40 @@ func _ready() -> void:
 		or (MatchConfig and "season" in MatchConfig and MatchConfig.season)
 	powerups_enabled = not special and game_mode in ["rounds", "koth", "sumo", "flood"]
 	powerup_spawn_timer = 6.0
+	_match_intro()  # dino roster intro over the buildup, then FIGHT on the beat drop
+
+# Per-island ENVIRONMENT GRADE: a subtle colour multiply applied to every fighter so
+# they read as lit by the scene (warm firelight on lava, cold blue on the floes,
+# violet on purple fields…) instead of pasted on top. Kept gentle — it's a hint of
+# the scene's light, not a recolour.
+const ENV_TINT := {
+	"beauty_beach":      Color(1.07, 1.02, 0.92),  # bright sunny warmth
+	"laughing_lava":     Color(1.14, 0.97, 0.83),  # hot firelight
+	"iciest_age":        Color(0.90, 0.96, 1.11),  # cold blue
+	"white_water_falls": Color(0.94, 1.00, 1.06),  # cool misty
+	"sunny_springs":     Color(0.98, 1.06, 0.94),  # fresh green
+	"purple_fields":     Color(1.02, 0.93, 1.09),  # violet dusk
+}
+
+# Ground colour kicked up on each footfall, per island (snow on ice, ash on lava…).
+const ENV_SCUFF := {
+	"beauty_beach":      Color(0.86, 0.80, 0.66, 0.5),  # sand
+	"laughing_lava":     Color(0.42, 0.38, 0.36, 0.5),  # dark ash
+	"iciest_age":        Color(0.95, 0.97, 1.0, 0.55),  # snow
+	"white_water_falls": Color(0.80, 0.86, 0.82, 0.45), # wet stone spray
+	"sunny_springs":     Color(0.72, 0.82, 0.60, 0.45), # grassy
+	"purple_fields":     Color(0.74, 0.66, 0.82, 0.5),  # violet dust
+}
+
+func _apply_env_tint() -> void:
+	var key: String = MatchConfig.island if MatchConfig and "island" in MatchConfig else ""
+	var tint: Color = ENV_TINT.get(key, Color.WHITE)
+	var scuff: Color = ENV_SCUFF.get(key, Color(0.82, 0.78, 0.68, 0.5))
+	for p in active_players:
+		if "env_tint" in p:
+			p.env_tint = tint
+		if "scuff_color" in p:
+			p.scuff_color = scuff
 
 # [experiment] Per-island ambient atmosphere — a subtle drifting-particle layer
 # (snow / petals / embers / motes) that leans into the painterly islands. Attached
@@ -791,6 +829,10 @@ func _bomb_detonate() -> void:
 	if alive.size() <= 1:
 		if alive.size() == 1:
 			end_match(alive[0], _dino_name(alive[0].player_id))
+		elif holder != null:
+			# Mutual destruction (the last fighter blew themselves up): end on the
+			# holder rather than soft-hang with no living fighters and no end screen.
+			end_match(holder, _dino_name(bomb_holder))
 		return
 	_assign_bomb(alive[randi() % alive.size()].player_id)
 
@@ -822,6 +864,11 @@ func _crown_beast(pid: String) -> void:
 func _update_beast(delta: float) -> void:
 	var beast: Node = _player_node(beast_pid)
 	if beast == null:
+		return
+	# Don't bank crown time (or win) while the beast is tumbling off the edge — the
+	# crown transfers to the killer once the ring-out completes, so a falling beast
+	# must not cross BEAST_TARGET and win mid-fall.
+	if beast.is_falling:
 		return
 	mode_score[beast_pid] = mode_score.get(beast_pid, 0.0) + delta
 	if beast_crown:
@@ -884,20 +931,23 @@ func _on_joy_connection_changed(device: int, connected: bool) -> void:
 		print("Joypad disconnected: device %d" % device)
 
 func _load_sfx() -> void:
-	sfx = {
-		"swing": $SFX/Swing,
-		"hit_chomp": $SFX/HitChomp,
-		"hit_claw": $SFX/HitClaw,
-		"block": $SFX/Block,
-		"guard_break": $SFX/GuardBreak,
-		"dodge": $SFX/Dodge,
-		"ko": $SFX/KO,
-		"win": $SFX/Win,
+	# Reuse the baked $SFX players when an arena scene has them; tolerate any that
+	# are missing (a new island scene without the node) by building a fallback
+	# below instead of crashing on a null node.
+	var baked := {
+		"swing": "SFX/Swing", "hit_chomp": "SFX/HitChomp", "hit_claw": "SFX/HitClaw",
+		"block": "SFX/Block", "guard_break": "SFX/GuardBreak", "dodge": "SFX/Dodge",
+		"ko": "SFX/KO", "win": "SFX/Win",
 	}
+	sfx = {}
+	for key in baked:
+		var node: Node = get_node_or_null(baked[key])
+		if node != null:
+			sfx[key] = node
 	for key in SFX_PATHS:
 		var path: String = SFX_PATHS[key]
 		if not sfx.has(key):
-			# Newer sounds have no baked $SFX node in the arena scenes; build one.
+			# Newer sounds (and any missing baked node) get a player built here.
 			var p := AudioStreamPlayer.new()
 			$SFX.add_child(p)
 			sfx[key] = p
@@ -935,6 +985,8 @@ func _process(delta: float) -> void:
 				get_tree().change_scene_to_file("res://scenes/title.tscn")
 			elif MatchConfig and "season" in MatchConfig and MatchConfig.season:
 				_season_continue()
+			elif MatchConfig and "career" in MatchConfig and MatchConfig.career:
+				_career_continue()
 			else:
 				get_tree().change_scene_to_file("res://scenes/select.tscn")
 
@@ -1162,11 +1214,11 @@ func _separate_players() -> void:
 	var count := active_players.size()
 	for i in range(count):
 		var a: CharacterBody2D = active_players[i]
-		if a.is_falling:
+		if a.is_falling or eliminated.get(a.player_id, false):
 			continue
 		for j in range(i + 1, count):
 			var b: CharacterBody2D = active_players[j]
-			if b.is_falling:
+			if b.is_falling or eliminated.get(b.player_id, false):
 				continue
 			var diff := b.global_position - a.global_position
 			var dist := diff.length()
@@ -1344,7 +1396,8 @@ func on_ringout_complete(victim: Node) -> void:
 		return
 	if victim.has_method("respawn"):
 		victim.respawn()
-	if killer != null and killer != victim and killer in active_players:
+	if killer != null and killer != victim and killer in active_players \
+			and not eliminated.get(killer.player_id, false):
 		award_ko(killer, victim)
 
 # The dino mashed its way back onto the field — no KO, no respawn, keeps its HP.
@@ -1419,7 +1472,9 @@ func _award_ko_rounds(killer: Node) -> void:
 
 func _dino_name(pid: String) -> String:
 	var dino_id: String = MatchConfig.dino_choices.get(pid, "ralph")
-	return MatchConfig.DINOS[dino_id].display_name
+	# Guard a stale/removed roster id (dino.gd guards this too) so the HUD update
+	# loop can't crash on a hard DINOS index every frame.
+	return MatchConfig.DINOS.get(dino_id, {}).get("display_name", "?")
 
 func add_dp(pid: String, points: int) -> void:
 	if pid in dp:
@@ -1527,6 +1582,9 @@ func end_match(winner: CharacterBody2D, label: String) -> void:
 	if MatchConfig and "season" in MatchConfig and MatchConfig.season:
 		_end_match_season(winner)
 		return
+	if MatchConfig and "career" in MatchConfig and MatchConfig.career:
+		_end_match_career(winner)
+		return
 	match_over = true
 	round_active = false
 	_show_end_backdrop()
@@ -1613,6 +1671,61 @@ func _season_continue() -> void:
 	else:  # champion or game over -> end the season, back to the title
 		MatchConfig.season = false
 		get_tree().change_scene_to_file("res://scenes/title.tscn")
+
+# --- Career (raise-one-dino journey) fight end ---
+# Forgiving-with-stakes: a WIN banks full XP/coins, carries the survivor's wound
+# HP, and advances the journey. A LOSS still banks reduced XP + leaves a scar, but
+# you stay on this stop to try again (train/rest at HOME first). Beating the boss
+# (last stop) is VICTORY. START routes through _career_continue.
+func _end_match_career(winner: Node) -> void:
+	match_over = true
+	round_active = false
+	_show_end_backdrop()
+	for p in active_players:
+		p.set_process_input(false)
+		p.set_physics_process(false)
+	var player_won: bool = winner != null and winner.player_id == "p1"
+	var stop: int = MetaSave.career_stop
+	var rew: Dictionary = MatchConfig.career_win_reward()
+	if player_won:
+		var hp_left: int = maxi(1, int(winner.hp))
+		MetaSave.career_record_fight(true, rew.xp, rew.coins, hp_left, "")
+		if MatchConfig.career_is_boss(stop):
+			career_end = "victory"
+			hud_win.text = "CHAMPION OF THE ISLANDS!"
+			hud_win.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+			hud_hint.text = "%s\n%d WINS  %d LOSSES\n\npress START for the title" % [MatchConfig.career_story(stop, "win"), MetaSave.career_wins, MetaSave.career_losses]
+		else:
+			career_end = "won"
+			hud_win.text = "STOP %d CLEARED" % (stop + 1)
+			hud_win.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5))
+			hud_hint.text = "%s\n+%d XP  +%d COINS  (LV %d)\n\npress START to travel on" % [MatchConfig.career_story(stop, "win"), rew.xp, rew.coins, MetaSave.career_level()]
+		play_sfx("win", 0.0)
+	else:
+		career_end = "lost"
+		var loss_xp: int = int(rew.xp * 0.4)
+		MetaSave.career_record_fight(false, loss_xp, 0, -1, _career_scar(stop))
+		hud_win.text = "KNOCKED OUT"
+		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
+		hud_hint.text = "%s  (+%d XP)\nREST UP AND TRY AGAIN.\n\npress START to regroup" % [MatchConfig.career_story(stop, "loss"), loss_xp]
+		play_sfx("ko", 0.0)
+
+# One line of loss flavor for the scar log (story texture; display-only).
+func _career_scar(stop: int) -> String:
+	var where: String = MatchConfig.ISLAND_NAMES.get(MatchConfig.island, "THE ISLANDS") if "ISLAND_NAMES" in MatchConfig else "THE ISLANDS"
+	if MatchConfig.career_is_rival(stop):
+		return "FELL TO THE RIVAL AT %s" % where
+	return "KNOCKED OUT AT %s" % where
+
+func _career_continue() -> void:
+	if career_end == "victory":
+		MatchConfig.career = false  # journey complete -> back to the title
+		get_tree().change_scene_to_file("res://scenes/title.tscn")
+		return
+	if career_end == "won":
+		MetaSave.career_advance_stop()  # a loss stays on the same stop to retry
+	# Back to the DEN to care for the dino (rest/feed/train) before the next stop.
+	get_tree().change_scene_to_file("res://scenes/career_home.tscn")
 
 # --- Gauntlet (roguelike) wave flow + upgrade draft ---
 
@@ -1883,10 +1996,135 @@ func play_sfx(sound_name: String, pitch_var: float = 0.05) -> void:
 	if not sound_name in sfx:
 		return
 	var player: AudioStreamPlayer = sfx[sound_name]
-	if player.stream == null:
+	if player == null or player.stream == null:
 		return
 	player.pitch_scale = 1.0 + randf_range(-pitch_var, pitch_var)
 	player.play()
+
+# --- Dino match intro + beat drop --------------------------------------------
+# The battle track opens on a ~DROP_TIME buildup, then DROPS. We hold the fighters
+# at the line behind a dino roster card during the buildup, then slam the match live
+# on the drop — a FIGHT! flash, a roar, and a shake — so the music's drop and the
+# opening bell land on the exact same frame (the track starts in _ready, so the
+# buildup and this timer run together). Standard versus only; solo ladders skip it.
+const DROP_TIME := 3.5
+var _intro_running := false
+
+func _match_intro() -> void:
+	var special: bool = (MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet) \
+		or (MatchConfig and "season" in MatchConfig and MatchConfig.season)
+	if special or active_players.is_empty():
+		return
+	_intro_running = true
+	round_active = false
+	for p in active_players:
+		p.set_physics_process(false)
+		p.set_process_input(false)
+	var card := _build_intro_card()
+	await get_tree().create_timer(DROP_TIME, true, false, true).timeout
+	if is_instance_valid(card):
+		card.queue_free()
+	if match_over:
+		_intro_running = false
+		return
+	_fight_drop()
+	for p in active_players:
+		p.set_physics_process(true)
+		p.set_process_input(true)
+	round_active = true
+	_intro_running = false
+
+func _build_intro_card() -> CanvasLayer:
+	var layer := CanvasLayer.new()
+	layer.layer = 20
+	add_child(layer)
+	# Dim the arena so the roster card reads.
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.05, 0.04, 0.08, 0.0)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(dim)
+	dim.create_tween().tween_property(dim, "color:a", 0.42, 0.4)
+	# "GET READY" — pulsing, up top.
+	var title := Label.new()
+	title.text = "GET READY"
+	title.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	title.offset_top = 150.0
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 92)
+	title.add_theme_color_override("font_color", Color(1.0, 0.95, 0.7))
+	title.add_theme_constant_override("outline_size", 12)
+	title.add_theme_color_override("font_outline_color", Color(0.12, 0.08, 0.05))
+	layer.add_child(title)
+	var pt := title.create_tween().set_loops()
+	pt.tween_property(title, "modulate:a", 0.55, 0.45).set_trans(Tween.TRANS_SINE)
+	pt.tween_property(title, "modulate:a", 1.0, 0.45).set_trans(Tween.TRANS_SINE)
+	# Fighter roster row — each dino's NAME in its player colour, popping in staggered.
+	var row := HBoxContainer.new()
+	row.set_anchors_preset(Control.PRESET_CENTER)
+	row.add_theme_constant_override("separation", 44)
+	row.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	row.grow_vertical = Control.GROW_DIRECTION_BOTH
+	layer.add_child(row)
+	var i := 0
+	for p in active_players:
+		var dino_id: String = MatchConfig.dino_choices.get(p.player_id, "") if MatchConfig else ""
+		var dname: String = MatchConfig.DINOS.get(dino_id, {}).get("display_name", String(p.player_id).to_upper()) if MatchConfig else "DINO"
+		var col: Color = MatchConfig.PLAYER_COLORS.get(p.player_id, Color.WHITE) if MatchConfig else Color.WHITE
+		var lbl := Label.new()
+		lbl.text = dname
+		lbl.add_theme_font_size_override("font_size", 46)
+		lbl.add_theme_color_override("font_color", col)
+		lbl.add_theme_constant_override("outline_size", 8)
+		lbl.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
+		lbl.pivot_offset = Vector2(60, 30)
+		lbl.scale = Vector2.ZERO
+		row.add_child(lbl)
+		var tw := lbl.create_tween()
+		tw.tween_interval(0.25 + i * 0.35)
+		tw.tween_property(lbl, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		i += 1
+	return layer
+
+func _fight_drop() -> void:
+	# The drop: white flash, a big FIGHT!, a roar-shake — the opening bell.
+	var layer := CanvasLayer.new()
+	layer.layer = 21
+	add_child(layer)
+	var flash := ColorRect.new()
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	flash.color = Color(1, 1, 1, 0.75)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(flash)
+	flash.create_tween().tween_property(flash, "color:a", 0.0, 0.28)
+	var fight := Label.new()
+	fight.text = "FIGHT!"
+	fight.set_anchors_preset(Control.PRESET_CENTER)
+	fight.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	fight.grow_vertical = Control.GROW_DIRECTION_BOTH
+	fight.add_theme_font_size_override("font_size", 140)
+	fight.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
+	fight.add_theme_constant_override("outline_size", 16)
+	fight.add_theme_color_override("font_outline_color", Color(0.5, 0.1, 0.05))
+	fight.pivot_offset = Vector2(200, 90)
+	fight.scale = Vector2(0.3, 0.3)
+	layer.add_child(fight)
+	var tw := fight.create_tween()
+	tw.tween_property(fight, "scale", Vector2(1.15, 1.15), 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.5)
+	tw.tween_property(fight, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(layer.queue_free)
+	shake(20.0, 0.45)
+	hit_pause(0.08, 0.25)
+	play_sfx("ko", 0.04)
+	# Fighters rear up on the bell — a quick roar-lunge (scale pop back to rest).
+	for p in active_players:
+		if not is_instance_valid(p):
+			continue
+		var s0: Vector2 = p.scale
+		var rt := p.create_tween()
+		rt.tween_property(p, "scale", s0 * 1.18, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		rt.tween_property(p, "scale", s0, 0.16)
 
 # --- Camera juice (called from dinos) ---
 
@@ -1915,9 +2153,13 @@ func hit_pause(duration: float, scale: float = 0.2) -> void:
 func on_hit_landed(damage: int) -> void:
 	var intensity: float = min(24.0, float(damage) * 0.45)
 	var duration: float = 0.12 + float(damage) * 0.004
-	var pause_dur: float = float(damage) * 0.002
+	# Freeze scales with the blow on BOTH axes: a jab gives a short shallow hitch,
+	# a haymaker a longer, deeper slow-mo bite — so weight reads through the pause.
+	var heavy: float = clampf((float(damage) - 10.0) / 35.0, 0.0, 1.0)
+	var pause_dur: float = 0.025 + float(damage) * 0.0022
+	var pause_scale: float = lerpf(0.45, 0.12, heavy)
 	shake(intensity, duration)
-	hit_pause(pause_dur, 0.25)
+	hit_pause(pause_dur, pause_scale)
 
 # Blocked hit: a firm thunk you feel, but no freeze — blocking shouldn't
 # interrupt the flow the way landing a clean hit does.

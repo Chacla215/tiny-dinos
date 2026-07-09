@@ -1,6 +1,6 @@
 {
   "core_size": [
-    100,
+    101,
     132
   ],
   "order": [
@@ -21,44 +21,44 @@
     "back_leg": {
       "tex": "res://assets/sprites/parts/bronto/back_leg.png",
       "center": [
-        -20.0,
-        44.0
+        -17.5,
+        44.5
       ],
       "pivot": [
-        -20.0,
+        -20.2,
         39.6
       ]
     },
     "tail": {
       "tex": "res://assets/sprites/parts/bronto/tail.png",
       "center": [
-        30.5,
-        41.5
+        31.0,
+        41.0
       ],
       "pivot": [
-        22.0,
+        22.22,
         39.6
       ]
     },
     "front_leg": {
       "tex": "res://assets/sprites/parts/bronto/front_leg.png",
       "center": [
-        10.0,
+        11.0,
         44.0
       ],
       "pivot": [
-        10.0,
+        10.1,
         39.6
       ]
     },
     "head": {
       "tex": "res://assets/sprites/parts/bronto/head.png",
       "center": [
-        -20.5,
-        -24.0
+        -23.5,
+        -24.5
       ],
       "pivot": [
-        -22.0,
+        -22.22,
         2.64
       ]
     }

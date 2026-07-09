@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://scripts/main.gd" id="2_main"]
 [ext_resource type="Texture2D" path="res://assets/tilesets/white_water_falls_bg.png" id="3_bg"]
 
+
 [sub_resource type="RectangleShape2D" id="dino_shape"]
 size = Vector2(48, 48)
 
@@ -77,7 +78,7 @@ color = Color(0.85, 0.95, 1, 0.18)
 polygon = PackedVector2Array(-16, -10, 16, -10, 0, 12)
 
 [node name="Player1" type="CharacterBody2D" parent="."]
-position = Vector2(440, 330)
+position = Vector2(293, 283)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -109,7 +110,7 @@ disabled = true
 visible = false
 
 [node name="Player2" type="CharacterBody2D" parent="."]
-position = Vector2(850, 330)
+position = Vector2(993, 283)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -141,7 +142,7 @@ disabled = true
 visible = false
 
 [node name="Player3" type="CharacterBody2D" parent="."]
-position = Vector2(440, 470)
+position = Vector2(293, 478)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1
@@ -173,7 +174,7 @@ disabled = true
 visible = false
 
 [node name="Player4" type="CharacterBody2D" parent="."]
-position = Vector2(850, 470)
+position = Vector2(993, 478)
 collision_layer = 1
 collision_mask = 2
 collision_layer = 1

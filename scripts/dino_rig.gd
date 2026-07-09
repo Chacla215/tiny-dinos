@@ -1,6 +1,13 @@
 extends Node2D
 class_name DinoRig
 
+# Global amplitude boost on ALL ambient/idle motion (head/tail/leg sway, wing
+# flap, body teeter). The per-dino idle_* values stay tuned relative to each
+# other; this just makes the whole roster read as clearly alive at gameplay zoom
+# instead of near-frozen. Tune here, not per-profile.
+const IDLE_LIFE := 1.8
+const BREATHE_AMP := 0.055   # body vertical breathing swell (was 0.035)
+
 ## Runtime limb skeleton for the in-match fighters.
 ##
 ## Replaces the single baked AnimatedSprite2D with body + 4 limb sprites
@@ -28,6 +35,7 @@ const DEFAULT := {
 	"idle_tail": 5.0,
 	"idle_head": 2.5,
 	"idle_wing": 0.0,        # wing flap amplitude at rest (pterry)
+	"idle_leg": 3.0,         # standing weight-shift on the legs so nobody reads frozen
 	# walk
 	"phase_per_px": 0.022,   # step phase per px travelled -> faster = quicker steps
 	"leg_swing": 13.0,
@@ -58,7 +66,8 @@ const DEFAULT := {
 # Per-dino overrides. Only the keys that differ from DEFAULT are listed.
 const PROFILES := {
 	# Heavyweight king — calm, weighty, deliberate.
-	"ralph": {"damping": 10.0, "idle_hz": 0.36, "leg_swing": 12.0, "bounce": 2.8,
+	"ralph": {"damping": 10.0, "idle_hz": 0.40, "leg_swing": 12.0, "bounce": 2.8,
+		"idle_teeter": 1.7, "idle_leg": 2.6,
 		"hit_head": 200.0, "hit_tail": 200.0, "hit_leg": 160.0,
 		"lean_per_speed": 0.018, "hit_stumble": 85.0},
 	# Glass cannon — light, twitchy, long balancing tail, quick steps. Wobbliest.
@@ -69,12 +78,13 @@ const PROFILES := {
 		"lean_damp": 4.5, "lean_per_speed": 0.026, "lean_max": 16.0, "idle_teeter": 2.0,
 		"hit_stumble": 130.0},
 	# Armored charger — stiff, slow, heavy head, legs barely move.
-	"trike": {"stiffness": 172.0, "damping": 12.0, "gait": "quad", "idle_hz": 0.30,
-		"idle_head": 3.0, "phase_per_px": 0.016, "leg_swing": 8.0, "walk_tail": 5.0,
+	"trike": {"stiffness": 172.0, "damping": 12.0, "gait": "quad", "idle_hz": 0.42,
+		"idle_head": 3.5, "idle_tail": 5.5, "idle_leg": 3.2,
+		"phase_per_px": 0.016, "leg_swing": 8.0, "walk_tail": 5.0,
 		"walk_head": 3.0, "bounce": 2.0, "hit_head": 150.0, "hit_tail": 175.0,
 		"hit_leg": 110.0, "body_recoil": 18.0, "body_squash": 0.12,
 		"lean_stiff": 85.0, "lean_damp": 8.0, "lean_per_speed": 0.012, "lean_max": 8.0,
-		"idle_teeter": 0.8, "hit_stumble": 55.0},   # planted, hard to stagger
+		"idle_teeter": 1.7, "hit_stumble": 55.0},   # planted but breathing
 	# Flyer — "legs" are wings (flap), "tail" is the feet (small), big crest head.
 	"pterry": {"stiffness": 112.0, "damping": 6.0, "gait": "wing", "max_angle": 56.0,
 		"idle_hz": 0.85, "idle_wing": 9.0, "idle_head": 3.0, "idle_tail": 2.0,
@@ -84,20 +94,22 @@ const PROFILES := {
 		"lean_damp": 4.0, "lean_per_speed": 0.024, "lean_max": 17.0, "idle_teeter": 2.2,
 		"hit_stumble": 120.0},   # airy, light, gets knocked around
 	# Gentle giant — huge, slow, long swaying neck ("head" slot), tiny leg motion.
-	"bronto": {"stiffness": 140.0, "damping": 12.0, "gait": "quad", "idle_hz": 0.26,
-		"idle_tail": 6.0, "idle_head": 6.5, "phase_per_px": 0.014, "leg_swing": 7.0,
+	"bronto": {"stiffness": 140.0, "damping": 12.0, "gait": "quad", "idle_hz": 0.40,
+		"idle_tail": 6.0, "idle_head": 6.5, "idle_leg": 2.8,
+		"phase_per_px": 0.014, "leg_swing": 7.0,
 		"walk_tail": 6.0, "walk_head": 7.0, "bounce": 1.8, "hit_head": 175.0,
 		"hit_tail": 160.0, "hit_leg": 90.0, "body_recoil": 15.0, "body_squash": 0.10,
 		"lean_stiff": 80.0, "lean_damp": 8.5, "lean_per_speed": 0.010, "lean_max": 7.0,
-		"idle_teeter": 1.0, "hit_stumble": 50.0},   # immovable
+		"idle_teeter": 1.6, "hit_stumble": 50.0},   # immovable but breathing — long neck sways
 	# Tank — armored, low head, heavy club tail that lags and carries momentum.
-	"anky": {"stiffness": 162.0, "damping": 11.0, "gait": "quad", "idle_hz": 0.28,
-		"idle_tail": 5.0, "idle_head": 2.5, "phase_per_px": 0.015, "leg_swing": 7.0,
+	"anky": {"stiffness": 162.0, "damping": 11.0, "gait": "quad", "idle_hz": 0.42,
+		"idle_tail": 5.5, "idle_head": 3.0, "idle_leg": 3.0,
+		"phase_per_px": 0.015, "leg_swing": 7.0,
 		"walk_tail": 6.0, "walk_head": 2.5, "bounce": 1.8, "hit_head": 130.0,
 		"hit_tail": 265.0, "hit_leg": 90.0, "body_recoil": 15.0, "body_squash": 0.10,
 		"tail_damping": 7.0,    # club tail under-damped so it swings heavy
 		"lean_stiff": 90.0, "lean_damp": 9.0, "lean_per_speed": 0.009, "lean_max": 6.0,
-		"idle_teeter": 0.7, "hit_stumble": 45.0},   # the rock — barely budges
+		"idle_teeter": 1.5, "hit_stumble": 45.0},   # the rock — now visibly breathing, club tail swings
 }
 
 class Limb:
@@ -252,6 +264,19 @@ func hit(world_dir: Vector2, power: float) -> void:
 	# upright (low lean_damp = a few drunk oscillations before it recovers).
 	_lean_vel += _c("hit_stumble") * power * signf(world_dir.x)
 
+## Landing a blow: the ATTACKER's follow-through. The torso drives forward into
+## the impact and the head pecks after it, then both snap home fast — so a clean
+## hit reads with weight on the giving end too, not just the receiving one. Much
+## lighter than hit(); connecting shouldn't fling you around like being struck.
+func connect_recoil(power: float) -> void:
+	power = clampf(power, 0.2, 1.2)
+	# Forward lurch in the rig's facing frame (+x = the way it's facing). Take the
+	# stronger of any recoil already in flight so rapid hits keep punching forward.
+	_body_recoil.x = max(_body_recoil.x, _c("body_recoil") * 0.45 * power)
+	_body_recoil.y = min(_body_recoil.y, -1.5 * power)
+	if _limbs.has("head"):
+		_limbs["head"].vel += _c("hit_head") * 0.35 * power
+
 ## FLOPPY stage 3: grabbed and carried — hang limp with a faint dangle sway.
 func set_held(held: bool) -> void:
 	_held = held
@@ -332,15 +357,26 @@ func _resolve_targets(delta: float) -> void:
 		if tail: tail.target = _c("walk_tail") * s
 		if head: head.target = _c("walk_head") * sin(_walk_phase * 2.0)
 	else:
-		# idle sway/breathe
+		# idle sway/breathe. IDLE_LIFE scales every ambient amplitude up so the dinos
+		# visibly live standing still (near-frozen at gameplay zoom otherwise) —
+		# proportional, so a tank stays planted and raptor stays twitchy. The head
+		# gets a second faster nod harmonic so it bobs like it's breathing/looking
+		# around, not just tilting.
 		var w := _t * TAU * _c("idle_hz")
-		if tail: tail.target = _c("idle_tail") * sin(w)
-		if head: head.target = _c("idle_head") * sin(w + 0.6)
+		if tail: tail.target = _c("idle_tail") * IDLE_LIFE * sin(w)
+		if head: head.target = _c("idle_head") * IDLE_LIFE * (sin(w + 0.6) + 0.35 * sin(w * 2.3 + 1.0))
 		# pterry's wings idle with a slow flap so he never looks frozen.
 		if gait == "wing":
-			var flap := _c("idle_wing") * sin(w)
+			var flap := _c("idle_wing") * IDLE_LIFE * sin(w)
 			if fl: fl.target = flap
 			if bl: bl.target = -flap
+		else:
+			# Standing weight-shift: legs rock slowly (slower than the breath, phase-
+			# offset) so even a planted tank visibly lives instead of freezing.
+			var lw := sin(w * 0.6 + 1.1)
+			var leg_idle := _c("idle_leg") * IDLE_LIFE
+			if fl: fl.target = leg_idle * lw
+			if bl: bl.target = -leg_idle * lw * 0.6
 
 	# Attack lunge overlays on top: a quick forward throw of head + front limb.
 	if _attack_t >= 0.0:
@@ -387,7 +423,7 @@ func _integrate_lean(delta: float) -> void:
 		stiff = 40.0
 		damp = 6.0
 	else:
-		var teeter := _c("idle_teeter") * sin(_t * TAU * _c("teeter_hz"))
+		var teeter := _c("idle_teeter") * IDLE_LIFE * sin(_t * TAU * _c("teeter_hz"))
 		var momentum := clampf(_motion_x * _c("lean_per_speed"), -_c("lean_max"), _c("lean_max"))
 		target = momentum + teeter
 	_lean_vel += (target - _lean) * stiff * delta
@@ -408,7 +444,7 @@ func _apply_body(delta: float) -> void:
 	if _state == "walk":
 		bounce = -absf(sin(_walk_phase)) * _c("bounce")
 	else:
-		breathe = 0.035 * sin(_t * TAU * _c("idle_hz"))
+		breathe = BREATHE_AMP * sin(_t * TAU * _c("idle_hz"))
 	# _flip sits _feet_y above the lean pivot; bounce/recoil ride on top of that.
 	_flip.position.y = -_feet_y + bounce + _body_recoil.y
 	_flip.position.x = _body_recoil.x * (1.0 if _facing_right else -1.0)

@@ -1,5 +1,152 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-07 (gameplay QA + animation fix + audio SFX)
+
+Charlie's plan: make gameplay good → then build a REAL-gameplay trailer (cutscenes
+flowing together) + improve audio. Progress this session, all on `feat/feel-sweep`:
+
+- **Gameplay QA pass.** Captured real 4-CPU matches on beach/lava/floes via a new
+  capture harness (`0398fc5`: `_capture_gameplay.tscn` + `capture_gameplay.gd`,
+  `--arena X`, Godot Movie Maker). Verdict: gameplay is solid — fighters legible on
+  every restyled floor, combat/grabs/weapons/specials/ring-outs all working, HUD +
+  per-player ▽ markers clean. (mp4s in /tmp/td_capture/, not committed.)
+- **Animation fix (`4bb01d9`).** Diagnosed: the motion sheets' idle/walk rows were
+  sliced from Seedance in-place clips (not leg-cycles) → morphed/jittered in play.
+  Fix = hold ONE clean pose for grounded states + procedural feet-anchored squash
+  bob (breathing idle / bouncy waddle when moving) in `dino.gd _update_motion_anim`;
+  baked attack/hit/dodge/ko clips still play. Verified numerically.
+- **Audio SFX (`ed3ff2d`).** Charlie picked: combat SFX, cute & cartoony. Replaced
+  the 10 placeholder-synth combat sounds with CC0 Kenney (Impact Sounds + RPG Audio)
+  — soft/wood thuds, comedic bell bonk for KO, glass tink for guard-break, cloth
+  whooshes. Drop-in (same filenames). UI SFX left as-is. Credits added.
+
+> **PENDING Charlie's audition (next session):** both the bob AMPLITUDE and the SFX
+> picks await his in-person feel/ear check — bob knob = the COMBO consts in
+> `_update_motion_anim`; each SFX is a one-file swap/pitch-up. THEN build the real
+> trailer: capture with `capture_gameplay.gd`, hand-pick action beats (AI clusters,
+> so choose frames with a clear hit/launch/AoE), cut so shots flow together. Concept
+> trailer (`assets/concept/trailer/*.mp4`, incl. trailer_roughcut.mp4) still
+> uncommitted — Charlie's external edit assets.
+
+## Session — 2026-07-06 (islands restyled + per-dino depth + attack sync)
+
+Three themes landed on `feat/feel-sweep`, each atomically committed + verified.
+
+- **Islands restyled to painterly (`1462cfe`).** The 5 remaining pixel arenas
+  (lava/falls/springs/purple/floes) re-rendered to the painterly beach/trailer
+  look via nano-banana image-to-image (composition-locked to each current bg, so
+  collision/spawns/safe_rect need no re-trace — pure art swap). New tool
+  `integrate_restyle_bgs.py` fits each 16:9 restyle to 1536x864 + bakes the
+  arena's own title banner. Verified in-match: fighters read on every floor incl.
+  dark lava + pale ice. Whole game now one painterly world.
+- **Per-dino signature passives (`cde3fd8`).** Real systemic depth — each dino
+  gets a persistent passive beyond stats + its one special, all hooking the
+  SHARED input/damage code (CPU inherits free): RALPH combo_king (light chains
+  speed up), MAX dash_cancel (cancel recovery into dodge — also fixed a latent
+  can_dodge gap), GUS charger (heavy super-armor), STEVE bulwark (jabs can't
+  stagger), JESSIE flighty (hit refunds dodge cd), FRANK spikeback (reflects
+  blocked dmg). Surfaced on the character screen's move card. Verified 12/12 by
+  `scripts/tools/sig_check.gd`.
+- **Attack swing synced to hitbox (`61cacfb`).** The restyle's 5-frame attack
+  clip truncated on fast dinos (raptor light 0.14s showed ~2 of 5 frames). Now
+  the clip's speed_scale stretches to fit windup+active, so the swing always
+  completes + its strike frame lands on the live hitbox. Hitbox timing itself
+  was always correct (driven by attack_active); this is the visual sync.
+
+## Session — 2026-07-06 (chibi restyle rolling: raptor + trike integrated)
+
+The art program is live and Charlie is generating. Driven by `PASTE_ME.md`
+(14 assembled prompts) — Charlie pastes each winner into chat, Claude saves +
+bakes + wires + screenshots + commits per dino.
+
+- **Raptor "Max" (`9b26ba3`).** Chibi restyle integrated. The restyle turned
+  him from a horizontal-lean body into an upright chibi biped, so the old
+  `PART_DEFS_BY_DINO["raptor"]` rig override (which now sliced his FACE as the
+  "tail") was removed — default chibi cut fits. Faces right natively; smooth
+  sheet cell 133x168.
+- **Trike "Gus" (`dd0b8f1`).** Chibi restyle integrated. Chunky quadruped,
+  sage frill, chipped right brow horn; smooth sheet cell 134x168, faces right.
+- Both verified via in-match beach screenshots next to Ralph. Learned:
+  fighter sheets are baked **--smooth** (painterly, ~1400 colors/patch), NOT
+  --pixel; re-check the rig part-cut after each restyle in case the body plan
+  changed.
+
+> Resume hint: `PASTE_ME.md` order — done: raptor(1), trike(2). NEXT: pterry(3,
+> clipboard was left here), bronto(4), anky(5), Beauty Beach island(6), trailer
+> shots(7-12), ralph motion pilot(13-14). Per-dino recipe in memory
+> [[seedance-motion-pipeline]].
+
+## Session — 2026-07-05 (Seedance pilot: engine half + trailer spine)
+
+Continued the Seedance work while clips are still pending, and Charlie added a
+new goal: a **full trailer** (Ralph + a cast that's ACTUALLY cute-cuddly like
+him — his words: the current five dinos don't capture it) that doubles as the
+**opening cutscene**.
+
+- **Motion-sheet engine support (`6d5c898`).** `dino.gd`: `"motion": true`
+  layout flag switches a dino from the DinoRig to its video-baked sheet
+  (per-dino A/B); state-priority anim chooser (ko > hit flinch > dodge >
+  heavy/attack > walk/idle), every state guarded by `has_animation` so old
+  3-anim sheets and partial pilot sheets degrade cleanly; `hit_anim_timer`
+  armed in `take_damage`. Validated: synthetic ralph motion sheet wired temp,
+  10+ min of headless CPU matches error-free + arena screenshot confirmed
+  sheet render/scale/flip; temp art then reverted (code is inert until a real
+  motion layout is pasted).
+- **Trailer spine (`88c2ba4`).** `scripts/tools/trailer_prompts.md`: 6-shot
+  storyboard (~45s) — island push-in, Ralph entrance, friends arrive, coconut
+  bonk, cartoon brawl-cloud, freeze-frame gag — shots 1-4 + logo = the ~20s
+  opening cut. **Phase 0 = the chibi restyle** (`dino_chibi_restyle_prompts.md`):
+  the restyled heroes are the trailer cast AND fix the roster brand.
+  `scenes/opening.tscn`+`opening.gd` is now the boot scene: plays
+  `assets/video/opening.ogv` when it exists (gamepad-skippable), boots straight
+  to title until then (verified headless).
+
+Later same session: a research sweep (GitHub + web) hardened the pipeline —
+`gen_dino_motion.py` bg key is now connected-region flood-fill (FrameKit's
+smart-chroma idea; protects bg-colored bellies) and `trailer_prompts.md`
+gained proven Seedance consistency rules (never paraphrase character lines,
+stress-test heroes on 3 bgs, first/end-frame chaining). Party Animals logged
+as the closest commercial reference (cute physics brawler with a chibi dino).
+Charlie then extended the restyle to the ISLANDS: `arena_bg_restyle_prompts.md`
+(image-to-image, same composition so collisions survive, Beauty Beach pilot
+first) + `CHARLIE_TODO.md` at root — his 4-step art-program checklist (dinos →
+one island → trailer → motion clips).
+
+> Resume hint: everything is now blocked on Charlie generations, in the order
+> of `CHARLIE_TODO.md`: (1) 5 restyled heroes, (2) Beauty Beach restyle pilot,
+> (3) trailer shots, (4) motion clips. All Claude-side tooling is built and
+> validated; when Charlie says "I did step N", pick up from that kit.
+
+## Session — 2026-07-04 (video-gen animation pipeline — Seedance 2.0)
+
+Charlie greenlit using **Seedance 2.0** (image-to-video) to upgrade graphics +
+fluidity. Root insight: every in-match frame today is a bake-time transform of
+ONE still hero PNG (9 frames/dino: idle 2 / walk 4 / attack 3; block, dodge,
+hit, KO have **no art at all** — just code effects). Video-gen from the same
+heroes gives real motion and the missing states.
+
+- **Prompt kit** `scripts/tools/dino_motion_prompts.md`: framing block (locked
+  camera, in-place motion, flat keyable bg) + per-species look reminders + 8
+  motion blocks (`idle walk attack heavy hit ko dodge win`). 4s clips suffice.
+  Clips land at `assets/concept/<dino>/motion/<anim>.mp4`.
+- **Bake tool** `scripts/tools/gen_dino_motion.py`: ffmpeg frame extraction →
+  soft bg key (same ramp as the hero bake) → per-clip union bbox (keeps lunges/
+  bounces) → one global scale + shared feet baseline (no pop between anims) →
+  `assets/sprites/<dino>_motion.png` grid + printed ANIM_LAYOUTS block.
+  `--trim/--pick/--frames/--fps/--pixel` for hand-tuning. **Validated
+  end-to-end with synthetic clips** (fake Seedance footage built from the ralph
+  hero) — keying, alignment, and the printed Rect2 block all check out.
+- Engine side is nearly free: `dino.gd build_sprite_frames` already iterates
+  arbitrary layout keys, so new anims auto-build once rects exist; the code
+  change is *playing* hit/ko/dodge/win at the right moments (queued until real
+  frames exist).
+
+> Resume hint: **PILOT is blocked on Charlie** — generate ralph `walk` + `attack`
+> per the prompt kit, drop them in `assets/concept/ralph/motion/`, then bake +
+> wire + in-game check before batching the roster. Known open item: baked-in
+> contact shadows survive the key (may double with in-game shadow — check in
+> pilot; suppression can be added to the tool).
+
 ## Session — 2026-06-15 (FIRST hands-on playtest — feel fixes + real music)
 
 Charlie played the build on a controller (the long-deferred feel check) and fired

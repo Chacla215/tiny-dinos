@@ -7,67 +7,79 @@ enum DefenseState { NORMAL, BLOCKING, DODGING, GUARD_BROKEN }
 const SHEET_PLAYER := "res://assets/sprites/playersprites_revision.png"
 const SHEET_REF := "res://assets/sprites/rynosaurlandcharacters.png"
 const SHEET_ENEMY := "res://assets/sprites/enemysprites_revision.png"
-const SHEET_RALPH := "res://assets/sprites/ralph_fighter.png"
-const SHEET_RAPTOR := "res://assets/sprites/raptor_fighter.png"
-const SHEET_TRIKE := "res://assets/sprites/trike_fighter.png"
-const SHEET_PTERRY := "res://assets/sprites/pterry_fighter.png"
-const SHEET_BRONTO := "res://assets/sprites/bronto_fighter.png"
-const SHEET_ANKY := "res://assets/sprites/anky_fighter.png"
+# Painterly-chibi fighter sheets: all 6 are real Seedance motion clips
+# (assets/concept/<dino>/motion/{idle,walk,attack}.mp4) sliced + cut out + packed
+# by scripts/tools/gen_dino_motion.py, so in-match dinos match the TRAILER look
+# (smooth/LINEAR, no dither). The older 3D toon bakes (*_fighter_3d.png) and the
+# 2D dither sheets (*_fighter.png) stay on disk as history.
+const SHEET_RALPH := "res://assets/sprites/ralph_motion.png"
+const SHEET_RAPTOR := "res://assets/sprites/raptor_motion.png"
+const SHEET_TRIKE := "res://assets/sprites/trike_motion.png"
+const SHEET_PTERRY := "res://assets/sprites/pterry_motion.png"
+const SHEET_BRONTO := "res://assets/sprites/bronto_motion.png"
+const SHEET_ANKY := "res://assets/sprites/anky_motion.png"
 
 const ANIM_LAYOUTS := {
-	# Raptor as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py raptor (173x168 cells).
+	# Every fighter below is a 3D-baked sheet (Meshy model -> Blender toon bake,
+	# scripts/tools/blender_render_dino.py + pack_dino_sheet.py). "motion": true =>
+	# wants_rig=false, so the AnimatedSprite2D plays these idle/walk/attack frames
+	# (squash-and-stretch animation baked in) instead of the procedural limb rig.
 	"raptor": {
+		# Painterly motion sheet (156x154 cells) from gen_dino_motion.py.
 		"sheet": SHEET_RAPTOR,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 173, 168), Rect2(173, 0, 173, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(346, 0, 173, 168), Rect2(519, 0, 173, 168), Rect2(692, 0, 173, 168), Rect2(865, 0, 173, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1038, 0, 173, 168), Rect2(1211, 0, 173, 168), Rect2(1384, 0, 173, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 156, 154), Rect2(156, 0, 156, 154), Rect2(312, 0, 156, 154), Rect2(468, 0, 156, 154)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 154, 156, 154), Rect2(156, 154, 156, 154), Rect2(312, 154, 156, 154), Rect2(468, 154, 156, 154), Rect2(624, 154, 156, 154), Rect2(780, 154, 156, 154), Rect2(936, 154, 156, 154), Rect2(1092, 154, 156, 154)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 308, 156, 154), Rect2(156, 308, 156, 154), Rect2(312, 308, 156, 154), Rect2(468, 308, 156, 154), Rect2(624, 308, 156, 154)]},
 	},
-	# Ralph the mascot as an in-match fighter — pixel-art sheet baked from the
-	# existing painterly hero by scripts/tools/gen_ralph_fighter.py (126x168 cells).
 	"ralph": {
+		# Painterly motion sheet (135x153 cells, one row per anim) from
+		# gen_dino_motion.py — trailer-matched. idle 4 / walk 8 / attack 5.
 		"sheet": SHEET_RALPH,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 126, 168), Rect2(126, 0, 126, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(252, 0, 126, 168), Rect2(378, 0, 126, 168), Rect2(504, 0, 126, 168), Rect2(630, 0, 126, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(756, 0, 126, 168), Rect2(882, 0, 126, 168), Rect2(1008, 0, 126, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 135, 153), Rect2(135, 0, 135, 153), Rect2(270, 0, 135, 153), Rect2(405, 0, 135, 153)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 153, 135, 153), Rect2(135, 153, 135, 153), Rect2(270, 153, 135, 153), Rect2(405, 153, 135, 153), Rect2(540, 153, 135, 153), Rect2(675, 153, 135, 153), Rect2(810, 153, 135, 153), Rect2(945, 153, 135, 153)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 306, 135, 153), Rect2(135, 306, 135, 153), Rect2(270, 306, 135, 153), Rect2(405, 306, 135, 153), Rect2(540, 306, 135, 153)]},
 	},
-	# Trike as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py trike (155x168 cells).
 	"trike": {
+		# Painterly motion sheet (131x156 cells) from gen_dino_motion.py.
 		"sheet": SHEET_TRIKE,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 155, 168), Rect2(155, 0, 155, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(310, 0, 155, 168), Rect2(465, 0, 155, 168), Rect2(620, 0, 155, 168), Rect2(775, 0, 155, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(930, 0, 155, 168), Rect2(1085, 0, 155, 168), Rect2(1240, 0, 155, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 131, 156), Rect2(131, 0, 131, 156), Rect2(262, 0, 131, 156), Rect2(393, 0, 131, 156)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 156, 131, 156), Rect2(131, 156, 131, 156), Rect2(262, 156, 131, 156), Rect2(393, 156, 131, 156), Rect2(524, 156, 131, 156), Rect2(655, 156, 131, 156), Rect2(786, 156, 131, 156), Rect2(917, 156, 131, 156)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 312, 131, 156), Rect2(131, 312, 131, 156), Rect2(262, 312, 131, 156), Rect2(393, 312, 131, 156), Rect2(524, 312, 131, 156)]},
 	},
-	# Pterry as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py pterry (168x168 cells).
 	"pterry": {
+		# Painterly motion sheet (244x157 cells — wide for the wings) from gen_dino_motion.py.
 		"sheet": SHEET_PTERRY,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 168, 168), Rect2(168, 0, 168, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(336, 0, 168, 168), Rect2(504, 0, 168, 168), Rect2(672, 0, 168, 168), Rect2(840, 0, 168, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1008, 0, 168, 168), Rect2(1176, 0, 168, 168), Rect2(1344, 0, 168, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 244, 157), Rect2(244, 0, 244, 157), Rect2(488, 0, 244, 157), Rect2(732, 0, 244, 157)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 157, 244, 157), Rect2(244, 157, 244, 157), Rect2(488, 157, 244, 157), Rect2(732, 157, 244, 157), Rect2(976, 157, 244, 157), Rect2(1220, 157, 244, 157), Rect2(1464, 157, 244, 157), Rect2(1708, 157, 244, 157)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 314, 244, 157), Rect2(244, 314, 244, 157), Rect2(488, 314, 244, 157), Rect2(732, 314, 244, 157), Rect2(976, 314, 244, 157)]},
 	},
-	# Bronto as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py bronto (136x168 cells). New art faces
-	# right, so the old Goober faces_left flag is gone. Long neck eats the height
-	# budget by design — he reads tall and slender.
 	"bronto": {
+		# Painterly motion sheet (237x155 cells — wide for the neck-whip) from gen_dino_motion.py.
 		"sheet": SHEET_BRONTO,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 136, 168), Rect2(136, 0, 136, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(272, 0, 136, 168), Rect2(408, 0, 136, 168), Rect2(544, 0, 136, 168), Rect2(680, 0, 136, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(816, 0, 136, 168), Rect2(952, 0, 136, 168), Rect2(1088, 0, 136, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 237, 155), Rect2(237, 0, 237, 155), Rect2(474, 0, 237, 155), Rect2(711, 0, 237, 155)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 155, 237, 155), Rect2(237, 155, 237, 155), Rect2(474, 155, 237, 155), Rect2(711, 155, 237, 155), Rect2(948, 155, 237, 155), Rect2(1185, 155, 237, 155), Rect2(1422, 155, 237, 155), Rect2(1659, 155, 237, 155)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 310, 237, 155), Rect2(237, 310, 237, 155), Rect2(474, 310, 237, 155), Rect2(711, 310, 237, 155), Rect2(948, 310, 237, 155)]},
 	},
-	# Anky as an in-match fighter — pixel sheet baked from the painterly hero
-	# by scripts/tools/gen_ralph_fighter.py anky (269x168 cells). Low and long,
-	# so the cell is wide; height-normalized like the rest of the roster.
 	"anky": {
+		# Painterly motion sheet (231x161 cells) from gen_dino_motion.py.
 		"sheet": SHEET_ANKY,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 269, 168), Rect2(269, 0, 269, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(538, 0, 269, 168), Rect2(807, 0, 269, 168), Rect2(1076, 0, 269, 168), Rect2(1345, 0, 269, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(1614, 0, 269, 168), Rect2(1883, 0, 269, 168), Rect2(2152, 0, 269, 168)]},
+		"motion": true,
+		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 231, 161), Rect2(231, 0, 231, 161), Rect2(462, 0, 231, 161), Rect2(693, 0, 231, 161)]},
+		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 161, 231, 161), Rect2(231, 161, 231, 161), Rect2(462, 161, 231, 161), Rect2(693, 161, 231, 161), Rect2(924, 161, 231, 161), Rect2(1155, 161, 231, 161), Rect2(1386, 161, 231, 161), Rect2(1617, 161, 231, 161)]},
+		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 322, 231, 161), Rect2(231, 322, 231, 161), Rect2(462, 322, 231, 161), Rect2(693, 322, 231, 161), Rect2(924, 322, 231, 161)]},
 	},
 }
 
+# Global tempo knob: every dino's top speed scales by this so the whole match reads
+# slower and more legible (pairs with hitstun — slower + hits that stick = combat you
+# can actually follow). Per-dino speed RATIOS are preserved; applied once in
+# _apply_config_preset so locomotion AND the knockback-decel threshold slow together.
+const GAME_SPEED_MULT := 0.8
 @export var max_speed: float = 320.0
 @export var ground_accel: float = 3000.0
 @export var ground_friction: float = 3000.0
@@ -80,6 +92,15 @@ const ANIM_LAYOUTS := {
 @export var floppy_accel: float = 1500.0       # ramp-up / reverse (~0.25s to reverse)
 @export var floppy_friction: float = 620.0     # friction AT the reference speed (below)
 @export var floppy_speed_mult: float = 1.10    # let momentum carry you a bit faster
+# Extra friction applied ONLY when you release the stick. Tightens the post-release
+# slide — the "ice-skating" symptom — without stiffening active drive/turn (those use
+# accel, not friction), so floppy stays loose to control but plants where you aim.
+@export var floppy_release_brake: float = 1.45
+# Ice / lava-centre friction as a FRACTION of floppy-ground friction. Keeps those
+# surfaces slippier than ground (still read distinct) without collapsing to the old
+# flat ice_friction=200 floor, which made fast dinos slide ~half the arena (a 484-top
+# dino: ~586px on ice vs ~125px on ground — the uniform-glide model breaking on ice).
+@export var floppy_ice_factor: float = 0.55
 # Floppy glide is v^2/(2*friction): with flat friction a 440-speed dino slid ~673px
 # (half the arena — it rang itself out of a centre sprint) while a 240 tank slid
 # ~135px (barely floppy). Scale friction with top speed so every dino coasts for the
@@ -105,6 +126,16 @@ const FLOPPY_REF_SPEED := 320.0
 @export var attack_hitbox_offset: float = 52.0
 @export var invuln_duration: float = 0.8
 @export var hitstun_invuln: float = 0.15
+# HITSTUN: a clean (unblocked, non-super-armored) hit briefly locks the victim out
+# of acting AND steering — this is what makes offense earn tempo. The window scales
+# with the blow (a jab gives a sliver, a haymaker a real opening) and sits just
+# above the post-hit i-frame window (hitstun_invuln = 0.15) so a fast poke can
+# SOMETIMES re-connect for a single follow-up, but a 4-way pile-on never turns into
+# helpless stunlock. Party feel first: tempo, not true combos.
+const HITSTUN_BASE := 0.10
+const HITSTUN_PER_DMG := 0.006
+const HITSTUN_MIN := 0.12
+const HITSTUN_MAX := 0.34
 
 @export_group("Heavy Attack")
 @export var heavy_damage: int = 30
@@ -175,6 +206,20 @@ const BEAST_TINT := Color(1.5, 1.2, 0.5)
 @export var dodge_distance: float = 160.0
 @export var dodge_block_cost: float = 30.0
 
+@export_group("Signature")
+# Each dino's persistent signature passive — its systemic identity beyond stats
+# and its one special move. Set per-dino in MatchConfig.DINOS; the CPU inherits
+# every one for FREE because they hook the shared input/damage code, not a
+# player-only path. Values (see the hooks): combo_king (RALPH) / dash_cancel
+# (MAX) / charger (GUS) / bulwark (STEVE) / flighty (JESSIE) / spikeback (FRANK).
+@export var signature: String = "none"
+const COMBO_KING_PER_HIT := 0.12   # RALPH: windup+recovery cut per live combo hit…
+const COMBO_KING_MAX_CUT := 0.36   # …capped here (3-hit chain = -36%, a real ramp)
+const BULWARK_POISE_DMG := 24      # STEVE: hits at/under this can't stagger or shove him
+const BULWARK_KB_FACTOR := 0.0     # …and their knockback is nullified (he stays planted)
+const FLIGHTY_DODGE_REFUND := 0.6  # JESSIE: landing a hit refunds this much of her dodge cd
+const SPIKEBACK_REFLECT := 0.35    # FRANK: reflects this share of BLOCKED damage at attacker
+
 @export_group("Input")
 @export var player_id: String = "p1"
 ## When true this dino is driven by dino_ai.gd instead of player input.
@@ -192,11 +237,25 @@ var ai: RefCounted = null
 @export var sprite_role: String = "raptor"
 @export var sprite_scale: float = 2.5
 @export var sprite_offset_y: float = -10.0
+## Where a held weapon / carried foe anchors on THIS dino's body, so the grab
+## reads as anatomically true: x = distance forward along facing, y = vertical
+## (negative = up). Hand-grabbers (Ralph/Max) sit near hand height; the wing-claw
+## (Jessie) a touch higher; mouth-grabbers (Gus/Frank low, Steve high on his neck)
+## anchor up at the snout. DINOS overrides this per dino; default = old hand anchor.
+@export var grip_offset: Vector2 = Vector2(18.0, -6.0)
 # Global visual-scale multiplier on every fighter (readability on the busy arenas).
 const FIGHTER_SCALE_BOOST := 1.25
 ## True when the source sprite art faces left by default (e.g. bronto/Goober).
 ## Flips the flip_h logic so the dino visually faces its movement direction.
 var sprite_faces_left: bool = false
+# Per-island environment grade (set by main.gd at spawn) — a subtle colour multiply
+# so the fighter reads as lit by the scene, not floating on top of it.
+var env_tint: Color = Color.WHITE
+# Footfall scuff kicked up while moving — colour set per island by main.gd (snow on
+# ice, dust on sand, ash on lava…) so the fighter stirs the actual ground.
+var scuff_color: Color = Color(0.82, 0.78, 0.68, 0.5)
+const FOOTFALL_INTERVAL := 0.26
+var _footfall_timer: float = 0.0
 
 @onready var polygon: Polygon2D = $Polygon2D
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -216,6 +275,7 @@ var facing: Vector2 = Vector2.RIGHT
 var hp: int
 var attack_phase: int = AttackPhase.IDLE
 var attack_timer: float = 0.0
+var attack_phase_dur: float = 0.001   # full length of the current phase, for swing progress (0..1)
 var invuln_timer: float = 0.0
 var hit_targets_this_swing: Array = []
 
@@ -227,6 +287,9 @@ var dodge_velocity: Vector2 = Vector2.ZERO
 var guard_break_timer: float = 0.0
 var last_damaged_by: Node = null
 var hit_flash_timer: float = 0.0
+var hit_flash_strength: float = 0.0   # 0 = soft (jab/blocked) … 1 = white-out (haymaker)
+var hit_anim_timer: float = 0.0       # motion-sheet "hit" flinch clip (only when the sheet has one)
+var hitstun_timer: float = 0.0        # clean-hit control lockout: can't act or steer while > 0
 var afterimage_timer: float = 0.0
 var ice_overlap_count: int = 0
 var slow_overlap_count: int = 0
@@ -257,10 +320,15 @@ var grab_escape: float = 0.0         # 0..1 struggle progress while I'm held
 const GRAB_RANGE := 96.0             # how far in front a grab reaches
 const GRAB_MAX_HOLD := 1.7           # seconds before a held foe slips free
 const GRAB_HOLD_DIST := 62.0         # how far in front the held foe is carried
-const GRAB_THROW_KB := 740.0         # launch power when you hurl them
+const GRAB_THROW_KB := 880.0         # launch power when you hurl them — a committed
+									 # grab earns a decisive yeet (~245px slide vs ~185),
+									 # so throw-off-the-edge is a real KO, not a soft toss
 const GRAB_COOLDOWN := 0.55
 const GRAB_ESCAPE_PER_MASH := 0.17   # struggle gained per button press (humans)
 const GRAB_ESCAPE_CPU_RATE := 0.62   # struggle/sec a held CPU builds automatically
+const GRAB_CARRY_SLOW := 0.72        # hauling a limp foe drags your own top speed down
+const GRAB_CARRY_LAG := 0.32         # how fast the carried foe closes to the hold point
+									 # (lower = it swings/trails behind you like dead weight)
 
 # Ring-out: shoved off the island, the dino either tumbles off the BOTTOM (sides
 # + low edge, a clean KO) or gets sucked UP and spirals into the sky off the TOP.
@@ -271,6 +339,7 @@ var fall_timer: float = 0.0
 var fall_up: bool = false        # true = sky launch (recoverable), false = drop
 var fall_center_y: float = 0.0   # arena center, for height-based shrink/fade
 var spiral_angle: float = 0.0
+var fall_spin_dir: float = 1.0   # tumble handedness = the way it was flung
 var ringout_killer: Node = null
 
 var current_attack_damage: int = 0
@@ -281,6 +350,21 @@ var current_attack_hitbox_size: Vector2 = Vector2.ZERO
 var current_attack_hitbox_offset: float = 0.0
 var current_is_heavy: bool = false
 var current_is_special: bool = false
+# Visible-swing duration (windup+active) of the current attack. The motion sheets'
+# attack clip plays only across WINDUP+ACTIVE, so update_sprite_animation stretches
+# the (fixed-frame) clip to exactly this window — otherwise a fast dino's short
+# window truncates the swing before its strike/follow-through frames land.
+var swing_anim_dur: float = 0.001
+
+# Procedural locomotion for the painterly motion sprites. Their baked idle/walk
+# rows were sliced from in-place Seedance clips (not clean leg-cycles), so played
+# back they morph/jitter. Instead we HOLD one clean pose for grounded states and
+# animate movement with a squash/stretch bob (breathing when still, bouncy waddle
+# when moving) — the chibi-mobile way. Baked attack/hit/dodge/ko clips still play.
+var _is_motion: bool = false          # this dino uses a video-baked motion sheet
+var _cell_h: float = 132.0            # sheet cell height, for feet-anchored squash
+var _motion_phase: float = 0.0        # bob oscillator accumulator
+var _motion_grounded: bool = false    # true when idle/walk (a baked clip isn't playing)
 var special_cooldown_timer: float = 0.0
 var timed_slow_timer: float = 0.0  # screech-applied slow on this dino
 
@@ -318,12 +402,16 @@ const KNOCKBACK_DECEL := 2000.0
 ## in both models — not a launch that rides floppy's low friction off the edge.
 const DASH_DECEL := 3000.0
 
-## Ring-out fall tuning: how long the downward tumble lasts, downward accel, the
-## initial downward pop, and tumble spin (radians/sec).
-const FALL_DURATION := 0.75
-const FALL_GRAVITY := 2800.0
-const FALL_INITIAL_VY := 260.0
-const FALL_SPIN := 9.0
+## Ring-out fall tuning. A bottom-edge KO now reads as a LAUNCH, not a sink: the
+## dino pops up-and-out along the way it was flung (an arc), hangs, then gravity
+## tumbles it into the pit while it shrinks into the distance and fades late.
+const FALL_DURATION := 0.82
+const FALL_GRAVITY := 2600.0
+const FALL_LAUNCH_VY := -430.0   # initial UPWARD pop (negative = up) — the knock-off
+const FALL_MIN_VX := 190.0       # ensure some outward drift even on a dead-on hit
+const FALL_END_SCALE := 0.22     # shrink target — smaller = "fell far away"
+const FALL_FADE_FRAC := 0.42     # fade over the LAST this-fraction of the fall only
+const FALL_SPIN := 11.0          # tumble rate (radians/sec)
 
 ## Sky launch (top-edge ring-out): a constant UPWARD pull sucks the dino into the
 ## sky; mashing kicks it back down. Escape past SKY_ESCAPE_Y (off the top) = KO;
@@ -382,6 +470,23 @@ func _ready() -> void:
 # per-wave enemy scaling so the run keeps escalating past the HARD difficulty cap.
 func _apply_run_upgrades() -> void:
 	if not MatchConfig:
+		return
+	# CAREER: the bonded dino (p1) applies the growth it's earned — permanent pips
+	# plus a small mood buff — and spawns with its carried HP. Foes stay at base
+	# (the stop's difficulty tier does the scaling). Mutually exclusive with the
+	# gauntlet/season runs below.
+	if "career" in MatchConfig and MatchConfig.career:
+		if player_id == "p1":
+			var bonus: Dictionary = MatchConfig.career_stat_bonus()
+			for stat in bonus:
+				if not (stat in self):
+					continue
+				var op: Array = bonus[stat]
+				var cur = get(stat)
+				var nv = (cur * op[1]) if op[0] == "mul" else (cur + op[1])
+				set(stat, int(round(nv)) if typeof(cur) == TYPE_INT else nv)
+			var carry: int = MatchConfig.career_player_hp()
+			_run_start_hp = max_hp if carry < 0 else clampi(carry, 1, max_hp)
 		return
 	# SEASON: your whole side carries the drafted TEAM PERKS (stacking across
 	# matchdays); the foe side gets nothing. same_side covers both 1v1 and 2v2.
@@ -464,6 +569,8 @@ func _apply_config_preset() -> void:
 	for key in preset:
 		if key in self:
 			set(key, preset[key])
+	# Global tempo: slow every dino's top speed by the same factor (ratios preserved).
+	max_speed *= GAME_SPEED_MULT
 	# READABILITY: fighters read too small on the busy painterly arenas (4-player
 	# couch legibility is the priority). Bump the VISUAL scale a notch — look-only,
 	# the Hitbox/CharacterBody2D use their own exports, so balance is untouched. Feet
@@ -515,7 +622,7 @@ static func build_sprite_frames(role: String, only: PackedStringArray = PackedSt
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim_name in layout:
-		if anim_name == "sheet" or anim_name == "faces_left":
+		if anim_name == "sheet" or anim_name == "faces_left" or anim_name == "motion":
 			continue
 		if not only.is_empty() and not (anim_name in only):
 			continue
@@ -561,6 +668,12 @@ func _setup_sprite() -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	sprite.scale = Vector2(sprite_scale, sprite_scale)
 	sprite.position.y = sprite_offset_y
+	# Procedural-locomotion setup (see _update_motion_anim): remember whether this
+	# is a motion sheet and its cell height (for feet-anchored squash).
+	_is_motion = ANIM_LAYOUTS[sprite_role].get("motion", false)
+	var _idle_rects: Array = ANIM_LAYOUTS[sprite_role].get("idle", {}).get("rects", [])
+	if not _idle_rects.is_empty():
+		_cell_h = _idle_rects[0].size.y
 	# Cosmetic skin: the select-screen pick for this slot wins; -1 falls back to
 	# the dino's creator-equipped MetaSave skin (null material = DEFAULT,
 	# unchanged). Display-only, no gameplay effect.
@@ -569,20 +682,25 @@ func _setup_sprite() -> void:
 		skin_idx = MetaSave.get_skin(sprite_role)
 	var skin_mat := MatchConfig.skin_material(skin_idx)
 	sprite.material = skin_mat
-	sprite.play("idle")
+	sprite.play("idle" if sf.has_animation("idle") else "walk")
 	polygon.visible = false
 	# Prefer the live limb rig; the baked sheet stays as the fallback if a dino's
 	# parts haven't been exported yet (gen_ralph_fighter.py <dino> --parts).
-	var r := DinoRig.new()
-	r.scale = Vector2(sprite_scale, sprite_scale)
-	r.position.y = sprite_offset_y
-	if r.build_for(sprite_role, skin_mat):
-		rig = r
-		add_child(rig)
-		rig.set_facing(true)
-		sprite.visible = false
-	else:
-		r.free()
+	# EXCEPT when the dino's layout is a video-baked motion sheet ("motion": true,
+	# from gen_dino_motion.py): real animation frames replace the procedural rig
+	# for that dino, so the two looks can be A/B'd per-dino during the rollout.
+	var wants_rig: bool = not ANIM_LAYOUTS.get(sprite_role, {}).get("motion", false)
+	if wants_rig:
+		var r := DinoRig.new()
+		r.scale = Vector2(sprite_scale, sprite_scale)
+		r.position.y = sprite_offset_y
+		if r.build_for(sprite_role, skin_mat):
+			rig = r
+			add_child(rig)
+			rig.set_facing(true)
+			sprite.visible = false
+		else:
+			r.free()
 	_add_contact_shadow()
 
 # A grounded CONTACT SHADOW: a soft dark oval cast on the floor at the feet (the
@@ -641,11 +759,17 @@ func _physics_process(delta: float) -> void:
 	update_timers(delta)
 	update_visual()
 	update_sprite_animation()
+	_update_motion_anim(delta)
 	var current_offset := current_attack_hitbox_offset if attack_phase != AttackPhase.IDLE else attack_hitbox_offset
 	hitbox.position = facing * current_offset
 	if weapon_visual and weapon_visual.visible:
-		weapon_visual.rotation = facing.angle()
-		weapon_visual.position = facing * 18.0 + Vector2(0, -6)
+		# Melee weapons SWING through the attack (cock back on windup, chop down on
+		# active, ease home on recovery) so a weapon hit reads as a real strike, not
+		# a static prop. Ranged weapons (bow) don't swing — they fire.
+		var fsign := 1.0 if facing.x >= 0.0 else -1.0
+		var sw := Vector2.ZERO if wpn_projectile else _weapon_swing()
+		weapon_visual.rotation = facing.angle() + deg_to_rad(sw.x) * fsign
+		weapon_visual.position = facing * (grip_offset.x + sw.y) + Vector2(0, grip_offset.y)
 		# Facing left rotates the sprite past 90°; un-mirror it so the blade's
 		# top edge stays up.
 		if weapon_visual is Sprite2D:
@@ -654,16 +778,46 @@ func _physics_process(delta: float) -> void:
 func _action(name: String) -> String:
 	return "%s_%s" % [player_id, name]
 
+# Input buffer: a core press that can't fire yet (you're in recovery, in hitstun,
+# mid-dodge) is remembered for this long and re-fired the instant it's legal — so
+# fast exchanges feel responsive instead of eating inputs on the edge of a window.
+const INPUT_BUFFER := 0.12
+var _buffered_action: String = ""
+var _buffer_timer: float = 0.0
+
+func _buffer(action: String) -> void:
+	_buffered_action = action
+	_buffer_timer = INPUT_BUFFER
+
+# Attempt one buffered/just-pressed core action. Returns true if it fired.
+func _try_action(action: String) -> bool:
+	match action:
+		"attack":
+			if can_attack():
+				start_attack(false)
+				return true
+		"heavy":
+			if can_attack():
+				start_attack(true)
+				return true
+		"special":
+			if can_special():
+				start_special()
+				return true
+		"dodge":
+			if can_dodge():
+				start_dodge()
+				return true
+	return false
+
 func _process_input_actions() -> void:
 	if is_cpu and ai != null:
 		_process_cpu_actions()
 		return
-	if Input.is_action_just_pressed(_action("attack")) and can_attack():
-		start_attack(false)
-	if Input.is_action_just_pressed(_action("heavy")) and can_attack():
-		start_attack(true)
-	if Input.is_action_just_pressed(_action("special")) and can_special():
-		start_special()
+	# Core actions route through the buffer: fire now if legal, else remember it.
+	for act in ["attack", "heavy", "special"]:
+		if Input.is_action_just_pressed(_action(act)) and not _try_action(act):
+			_buffer(act)
 	if Input.is_action_just_pressed(_action("swap")):
 		_swap_weapon()
 	# RT: hurl a held foe if you have one, else throw your weapon.
@@ -682,10 +836,14 @@ func _process_input_actions() -> void:
 		start_block()
 	elif Input.is_action_just_released(_action("block")) and defense_state == DefenseState.BLOCKING:
 		end_block()
-	if Input.is_action_just_pressed(_action("dodge")) and can_dodge():
-		start_dodge()
+	if Input.is_action_just_pressed(_action("dodge")) and not _try_action("dodge"):
+		_buffer("dodge")
 	if Input.is_action_just_pressed(_action("emote")):
 		play_emote()
+	# Re-fire a still-pending buffered action the moment its gate opens.
+	if _buffer_timer > 0.0 and _buffered_action != "" and _try_action(_buffered_action):
+		_buffered_action = ""
+		_buffer_timer = 0.0
 
 func _process_cpu_actions() -> void:
 	# FLOPPY: hurl a held foe, or reach out and grab one.
@@ -817,46 +975,125 @@ func update_sprite_animation() -> void:
 		sprite.flip_h = sprite_faces_left
 	elif facing.x < -0.05:
 		sprite.flip_h = not sprite_faces_left
+	# Motion-sheet states (video-baked sheets carry ko/hit/dodge/heavy clips the
+	# 3-anim fallback sheets don't). Priority: downed > flinch > dodge > attack.
+	# Every branch requires the clip to exist, so old sheets behave exactly as
+	# before and a partial sheet (pilot = walk+attack only) degrades per-state.
+	var sf := sprite.sprite_frames
+	# Default to natural clip pacing; the attack branch overrides this to fit the
+	# swing into its windup+active window (see swing_anim_dur).
+	sprite.speed_scale = 1.0
+	# A baked clip (ko/hit/dodge/attack) is about to play → not a grounded state, so
+	# _update_motion_anim leaves the sprite alone and lets the clip read.
+	_motion_grounded = false
+	if is_downed and sf.has_animation("ko"):
+		if sprite.animation != "ko":
+			sprite.play("ko")
+		return
+	if hit_anim_timer > 0.0 and not attacking and sf.has_animation("hit"):
+		if sprite.animation != "hit":
+			sprite.play("hit")
+		return
+	if defense_state == DefenseState.DODGING and sf.has_animation("dodge"):
+		if sprite.animation != "dodge":
+			sprite.play("dodge")
+		return
 	if attacking:
-		if sprite.animation != "attack":
-			sprite.play("attack")
+		var atk := "heavy" if current_is_heavy and sf.has_animation("heavy") else "attack"
+		if sprite.animation != atk:
+			sprite.play(atk)
+		# Stretch the fixed-frame swing clip to span this attack's windup+active so
+		# the strike/follow-through frames always land on the live hitbox — a fast
+		# dino's short window no longer truncates the swing to its first frames.
+		var fc: int = sf.get_frame_count(atk)
+		var base_fps: float = sf.get_animation_speed(atk)
+		if fc > 0 and base_fps > 0.0 and swing_anim_dur > 0.01:
+			sprite.speed_scale = (float(fc) / swing_anim_dur) / base_fps
+		return
+	# Grounded (idle/walk). Motion sheets HOLD a single clean pose (the jittery baked
+	# cycle is replaced by _update_motion_anim's procedural bob). A non-motion / older
+	# sheet still plays its baked idle/walk clip as before.
+	if _is_motion and sf.has_animation("idle"):
+		_motion_grounded = true
+		if sprite.animation != "idle":
+			sprite.animation = "idle"
+		sprite.frame = 0
+		sprite.pause()
 		return
 	var target := "walk" if moving else "idle"
+	if not sf.has_animation(target):
+		target = "idle" if moving else "walk"   # partial pilot sheet: best available
+		if not sf.has_animation(target):
+			return
 	if sprite.animation != target:
 		sprite.play(target)
+
+# Procedural locomotion for motion sprites: a squash/stretch bob that reads as
+# life (gentle breathing when still) and locomotion (a bouncy waddle when moving),
+# so a held pose animates cleanly instead of the jittery baked walk/idle cycle.
+# Feet stay planted: the vertical squash is anchored to the sprite's bottom edge,
+# then the walk hop lifts on top. No-ops (resets to base) while a baked clip plays
+# (attack/hit/dodge/ko) or for rig/non-motion dinos.
+func _update_motion_anim(delta: float) -> void:
+	if rig != null or not _is_motion or not sprite.visible:
+		return
+	var base: float = sprite_scale * (BEAST_SCALE if beast_active else 1.0)
+	if not _motion_grounded:
+		sprite.scale = Vector2(base, base)
+		sprite.position.y = sprite_offset_y
+		return
+	var walking := velocity.length() > 12.0
+	_motion_phase += delta * (9.5 if walking else 2.4)
+	var s := sin(_motion_phase)
+	var sq: float      # + = stretch taller, - = squash flatter
+	var hop: float     # upward lift (px), on top of the feet-anchored squash
+	if walking:
+		sq = 0.07 * s
+		hop = 8.0 * absf(s)          # a two-step bounce (rises each half-cycle)
+	else:
+		sq = 0.035 * s               # subtle breathing
+		hop = 1.5 * (s * 0.5 + 0.5)
+	var s_y := 1.0 + sq
+	var s_x := 1.0 - sq * 0.6        # rough volume preservation
+	sprite.scale = Vector2(base * s_x, base * s_y)
+	# Anchor the squash to the feet (bottom edge), then apply the hop lift.
+	var anchor: float = _cell_h * 0.5 * base * (s_y - 1.0)
+	sprite.position.y = sprite_offset_y - anchor - hop
 
 # --- Capability checks ---
 
 func can_attack() -> bool:
-	return not is_downed and grabbing == null and grabbed_by == null \
+	return not is_downed and hitstun_timer <= 0.0 and grabbing == null and grabbed_by == null \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_start_block() -> bool:
-	return not is_downed and grabbing == null and grabbed_by == null \
+	return not is_downed and hitstun_timer <= 0.0 and grabbing == null and grabbed_by == null \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_special() -> bool:
-	return not is_downed and grabbing == null and grabbed_by == null \
+	return not is_downed and hitstun_timer <= 0.0 and grabbing == null and grabbed_by == null \
 		and special_type != "none" \
 		and special_cooldown_timer <= 0.0 \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_throw() -> bool:
-	return not is_downed and grabbed_by == null \
+	return not is_downed and hitstun_timer <= 0.0 and grabbed_by == null \
 		and _active_weapon_id() != "fists" \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
 
 func can_pickup() -> bool:
-	return not is_downed and grabbed_by == null \
+	return not is_downed and hitstun_timer <= 0.0 and grabbed_by == null \
 		and defense_state != DefenseState.DODGING \
 		and defense_state != DefenseState.GUARD_BROKEN
 
 func can_dodge() -> bool:
 	if is_downed or grabbed_by != null:
+		return false
+	if hitstun_timer > 0.0:
 		return false
 	if dodge_cooldown_timer > 0.0:
 		return false
@@ -865,6 +1102,11 @@ func can_dodge() -> bool:
 	if defense_state == DefenseState.DODGING or defense_state == DefenseState.GUARD_BROKEN:
 		return false
 	if attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE:
+		return false
+	# Recovery is normally a locked commitment window (see is_recovering — the CPU
+	# treats it as a free punish). MAX's dash_cancel signature is the sole exception:
+	# he can cancel his attack recovery into a dodge for hit-and-run pressure.
+	if attack_phase == AttackPhase.RECOVERY and signature != "dash_cancel":
 		return false
 	if block_durability < dodge_block_cost:
 		return false
@@ -921,7 +1163,10 @@ func update_movement(delta: float) -> void:
 		_apply_current(delta)
 		return
 
-	var movement_locked := attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE
+	# Can't steer mid-swing (windup/active) or while in hitstun — you keep the blow's
+	# momentum and bleed to a stop, but you can't drive out of it until it ends.
+	var movement_locked := attack_phase == AttackPhase.WINDUP or attack_phase == AttackPhase.ACTIVE \
+		or hitstun_timer > 0.0
 	var direction := Vector2.ZERO
 	if not movement_locked:
 		direction = get_input_direction()
@@ -936,7 +1181,9 @@ func update_movement(delta: float) -> void:
 		# Friction scaled by top speed (see FLOPPY_REF_SPEED) → constant glide TIME, so
 		# fast dinos don't slide off the stage and slow ones still feel loose.
 		var fric: float = floppy_friction * (max_speed * floppy_speed_mult) / FLOPPY_REF_SPEED
-		friction = fric if current_surface == Surface.GROUND else minf(ice_friction, fric)
+		# Ice/lava slippier than ground but PROPORTIONALLY (see floppy_ice_factor) — the
+		# old minf(ice_friction, fric) floor collapsed fast dinos into an ice rink.
+		friction = fric if current_surface == Surface.GROUND else fric * floppy_ice_factor
 
 	var move_factor: float = 1.0
 	if defense_state == DefenseState.BLOCKING:
@@ -946,6 +1193,9 @@ func update_movement(delta: float) -> void:
 		accel *= SLOW_ACCEL_FACTOR
 	if floppy:
 		move_factor *= floppy_speed_mult
+	# Lugging a limp foe is heavy — your top speed sags while you carry one.
+	if grabbing != null:
+		move_factor *= GRAB_CARRY_SLOW
 
 	# Bleed off knockback launch speed at a fixed rate so a big hit can't skate
 	# you across an ice map. Only the speed above max_speed is affected, so it
@@ -970,10 +1220,23 @@ func update_movement(delta: float) -> void:
 	if direction != Vector2.ZERO:
 		velocity = velocity.move_toward(direction * max_speed * move_factor * powerup_speed_mult, accel * delta)
 	else:
-		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+		# Released the stick: in floppy, brake harder so you plant where you aimed
+		# instead of skating on (active drive above stays loose — it uses accel).
+		var brake := friction * floppy_release_brake if floppy else friction
+		velocity = velocity.move_toward(Vector2.ZERO, brake * delta)
 
 	move_and_slide()
 	_apply_current(delta)
+	# Footfall scuff: kick up a little of the ground as you move so you read as
+	# standing ON the surface, not gliding over it (snow on ice, dust on sand…).
+	if defense_state == DefenseState.NORMAL and attack_phase == AttackPhase.IDLE \
+			and grabbed_by == null and velocity.length() > 45.0:
+		_footfall_timer -= delta
+		if _footfall_timer <= 0.0:
+			_footfall_timer = FOOTFALL_INTERVAL
+			_footstep_scuff()
+	else:
+		_footfall_timer = 0.0
 
 # Environmental drift (e.g. White Water Falls current). Applied as a real
 # displacement so it respects walls and never accumulates into the velocity.
@@ -1026,6 +1289,7 @@ func knock_down(dir: Vector2, power: float) -> void:
 func get_up() -> void:
 	is_downed = false
 	down_timer = 0.0
+	hitstun_timer = 0.0                                   # a knockdown supersedes any lingering stun
 	invuln_timer = maxf(invuln_timer, DOWN_GETUP_INVULN)  # brief grace as you rise
 	knockdown_immune_timer = DOWN_IMMUNE_AFTER           # can't be juggled straight back down
 
@@ -1033,7 +1297,7 @@ func get_up() -> void:
 
 func can_grab() -> bool:
 	return MatchConfig.floppy_mode \
-		and not is_downed and grabbing == null and grabbed_by == null \
+		and not is_downed and hitstun_timer <= 0.0 and grabbing == null and grabbed_by == null \
 		and grab_cooldown <= 0.0 \
 		and attack_phase == AttackPhase.IDLE \
 		and defense_state == DefenseState.NORMAL
@@ -1103,8 +1367,13 @@ func _process_grabbed(delta: float) -> void:
 	if not is_instance_valid(g) or g.grabbing != self:
 		_clear_grabbed()
 		return
-	var hold: Vector2 = g.global_position + g.facing.normalized() * GRAB_HOLD_DIST + Vector2(0, -8)
-	global_position = global_position.lerp(hold, 0.45)
+	# Carried at arm's/neck's length in front, but at the HOLDER's grip height, so a
+	# foe dangles from Steve's mouth (high) or is held low by Gus — matching where
+	# that dino grabs. Forward stays large (foes are bigger than weapons).
+	var hold: Vector2 = g.global_position + g.facing.normalized() * GRAB_HOLD_DIST + Vector2(0, g.grip_offset.y)
+	# Trail toward the hold point instead of snapping to it, so the limp foe swings
+	# and drags behind the carrier like dead weight rather than riding rigidly.
+	global_position = global_position.lerp(hold, GRAB_CARRY_LAG)
 	velocity = Vector2.ZERO
 	if g.facing != Vector2.ZERO:
 		facing = (-g.facing).normalized()  # held foe faces its captor
@@ -1134,6 +1403,18 @@ func throw_grabbed() -> void:
 		dir = Vector2.RIGHT
 	foe._released(dir * GRAB_THROW_KB, true)
 	play_scene_sfx("throw", 0.12)
+	# The thrower heaves the whole body forward — a big follow-through lurch sells
+	# the effort of the yeet on the giving end.
+	if rig != null:
+		rig.connect_recoil(1.2)
+	# The throw is the biggest, highest-commitment verb in floppy — give it a jolt
+	# so the yeet has weight (it was the only impact moment firing no screen shake).
+	# A crisp freeze-frame at the release punctuates the heave before the foe skids.
+	var sr := get_tree().current_scene
+	if sr and sr.has_method("shake"):
+		sr.shake(15.0, 0.24)
+	if sr and sr.has_method("hit_pause"):
+		sr.hit_pause(0.07, 0.22)
 
 # Hold timer expired: just let go (no launch).
 func _drop_grab() -> void:
@@ -1214,7 +1495,15 @@ func start_attack(heavy: bool = false) -> void:
 	current_attack_hitbox_offset += wpn_range
 	current_attack_recovery *= wpn_recovery
 	attack_timer *= wpn_windup
+	# RALPH combo_king: a live light chain speeds up his next light — windup and
+	# recovery shrink as the combo climbs, so staying on offense snowballs.
+	if signature == "combo_king" and not heavy and combo_count > 0:
+		var cut: float = minf(COMBO_KING_PER_HIT * float(combo_count), COMBO_KING_MAX_CUT)
+		attack_timer *= (1.0 - cut)
+		current_attack_recovery *= (1.0 - cut)
+	swing_anim_dur = maxf(attack_timer + current_attack_active, 0.001)
 	attack_phase = AttackPhase.WINDUP
+	attack_phase_dur = maxf(attack_timer, 0.001)
 	play_scene_sfx("swing", 0.08)
 
 func _refresh_weapon() -> void:
@@ -1349,8 +1638,29 @@ func start_special() -> void:
 	if special_self_dash > 0.0:
 		velocity = facing * special_self_dash
 		dash_active = true
+	swing_anim_dur = maxf(attack_timer + current_attack_active, 0.001)
 	attack_phase = AttackPhase.WINDUP
+	attack_phase_dur = maxf(attack_timer, 0.001)
+	_spawn_special_charge(maxf(attack_timer, 0.08))  # wind-up telegraph
 	play_scene_sfx("swing", 0.06)
+
+# Held-weapon swing pose for the current attack phase. Returns Vector2(angle_deg,
+# reach_px): angle is the offset added to the facing angle (+ = chopping forward/
+# down), reach is a small forward thrust on the active frame. Windup cocks it back
+# overhead, active whips it down through the arc, recovery eases it home.
+func _weapon_swing() -> Vector2:
+	var p := clampf(1.0 - attack_timer / attack_phase_dur, 0.0, 1.0)
+	match attack_phase:
+		AttackPhase.WINDUP:
+			var e := 1.0 - (1.0 - p) * (1.0 - p)         # ease-out: snap up, then hold cocked
+			return Vector2(-98.0 * e, -2.0 * e)
+		AttackPhase.ACTIVE:
+			return Vector2(lerpf(-98.0, 62.0, p), sin(p * PI) * 12.0)  # whip down + thrust
+		AttackPhase.RECOVERY:
+			var e := 1.0 - (1.0 - p) * (1.0 - p)
+			return Vector2(lerpf(62.0, 0.0, e), 0.0)     # settle back to the held rest pose
+		_:
+			return Vector2.ZERO
 
 func update_attack(delta: float) -> void:
 	if attack_phase == AttackPhase.ACTIVE:
@@ -1367,6 +1677,9 @@ func update_attack(delta: float) -> void:
 		AttackPhase.WINDUP:
 			attack_phase = AttackPhase.ACTIVE
 			attack_timer = current_attack_active
+			attack_phase_dur = maxf(current_attack_active, 0.001)
+			if current_is_special:
+				_spawn_special_flash()  # release "pop" (also clears the telegraph)
 			if current_is_special and (special_type == "screech" or special_type == "stomp"):
 				_do_screech()
 			elif current_is_special and special_type == "tail_smash":
@@ -1387,6 +1700,7 @@ func update_attack(delta: float) -> void:
 		AttackPhase.ACTIVE:
 			attack_phase = AttackPhase.RECOVERY
 			attack_timer = current_attack_recovery
+			attack_phase_dur = maxf(current_attack_recovery, 0.001)
 			hitbox_shape.disabled = true
 			hitbox_visual.visible = false
 		AttackPhase.RECOVERY:
@@ -1412,6 +1726,10 @@ func try_hit(body: Node) -> void:
 		dmg = int(round(dmg * BEAST_DMG_MULT))
 		kb *= BEAST_KB_MULT
 	body.take_damage(dmg, kb, self)
+	# Attacker follow-through: our own torso lurches into the blow so a clean
+	# connect has weight on the giving end, not just the receiving one.
+	if rig != null:
+		rig.connect_recoil(float(dmg) / 24.0)
 	var root := get_tree().current_scene
 	if root and root.has_method("add_dp"):
 		root.add_dp(player_id, 10)
@@ -1425,6 +1743,10 @@ func try_hit(body: Node) -> void:
 	# DASH CLAW: landing the rake renews the hunt — most of the cooldown refunds.
 	if current_is_special and special_type == "dash_claw":
 		special_cooldown_timer = minf(special_cooldown_timer, special_cooldown * 0.35)
+	# JESSIE flighty: landing a blow refunds most of her dodge cooldown, so she can
+	# immediately dart back out — a relentless hit-and-run flyer.
+	if signature == "flighty" and dodge_cooldown_timer > 0.0:
+		dodge_cooldown_timer *= (1.0 - FLIGHTY_DODGE_REFUND)
 
 # --- Defense actions ---
 
@@ -1572,6 +1894,30 @@ func _spawn_dust(dir: Vector2) -> void:
 		t.parallel().tween_property(puff, "modulate:a", 0.0, 0.3)
 		t.tween_callback(puff.queue_free)
 
+# A low, flat scuff at the feet on each footfall — a squashed puff of the ground
+# colour that drifts back and fades, so movement stirs the surface.
+func _footstep_scuff() -> void:
+	var root := get_tree().current_scene
+	if root == null:
+		return
+	var ring := PackedVector2Array()
+	for j in range(7):
+		var a: float = TAU * j / 7.0
+		ring.append(Vector2(cos(a) * 1.6, sin(a) * 0.7) * 5.0)  # flattened oval (ground plane)
+	var puff := Polygon2D.new()
+	puff.polygon = ring
+	puff.color = scuff_color
+	var foot_y: float = sprite_offset_y + 60.0 * sprite_scale
+	puff.global_position = global_position + Vector2(randf_range(-9, 9), foot_y)
+	puff.z_index = 0
+	root.add_child(puff)
+	var drift: Vector2 = -facing * randf_range(9.0, 17.0) + Vector2(0, -2)
+	var t := puff.create_tween()
+	t.tween_property(puff, "global_position", puff.global_position + drift, 0.32).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(puff, "scale", Vector2(2.1, 1.4), 0.32)
+	t.parallel().tween_property(puff, "modulate:a", 0.0, 0.32)
+	t.tween_callback(puff.queue_free)
+
 # [experiment] Grant a map power-up: instant heal, or a temp speed/damage buff
 # with a pulsing aura. Temp buffs revert via powerup_timer in update_timers().
 func apply_powerup(kind: String) -> void:
@@ -1695,7 +2041,10 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 
 	if source != null:
 		last_damaged_by = source
-	hit_flash_timer = 0.08
+	# Baseline flash for any connecting hit (blocked hits return before the clean
+	# path below, so they keep this soft version); a clean hit overrides it scaled.
+	hit_flash_timer = 0.07
+	hit_flash_strength = 0.0
 	# A connecting hit (dodge/invuln/falling already returned above) — let the scene
 	# react, e.g. BOMB TAG passes the bomb to whoever just got struck.
 	if source != null:
@@ -1712,6 +2061,11 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 		play_scene_sfx(sfx_name, 0.1)
 
 	if defense_state == DefenseState.BLOCKING:
+		# FRANK spikeback: his armored shell punishes a blocked blow, reflecting a
+		# share of it straight back at the attacker (chip only — see take_reflect,
+		# which carries no knockback/recursion so it can't loop).
+		if signature == "spikeback" and source != null and source != self and source.has_method("take_reflect"):
+			source.take_reflect(int(round(float(amount) * SPIKEBACK_REFLECT)))
 		# NECK WHIP guard-crush: the whip chews through block durability, so
 		# turtling against Steve cracks the guard open fast.
 		var crush := 1.0
@@ -1741,18 +2095,42 @@ func take_damage(amount: int, knockback: Vector2, source: Node = null) -> void:
 
 	if not ringout_only:
 		hp -= amount
+	# GUS charger: super-armor through his own heavy — takes the damage but keeps his
+	# footing so the charge plows through a trade (headbutt armor, extended to heavy).
+	var poise_heavy: bool = signature == "charger" and current_is_heavy and attack_phase != AttackPhase.IDLE
+	# STEVE bulwark: jabs (weak hits) can't move the titan — only real blows stagger him.
+	var bulwark_soft: bool = signature == "bulwark" and amount <= BULWARK_POISE_DMG
 	# HEADBUTT armor: mid-charge Gus takes the damage but can't be shoved off course.
-	var shoved := not (current_is_special and special_type == "headbutt" and attack_phase != AttackPhase.IDLE)
+	var shoved := not poise_heavy and not bulwark_soft \
+		and not (current_is_special and special_type == "headbutt" and attack_phase != AttackPhase.IDLE)
 	if shoved:
 		velocity += knockback
 		knockback_active = true
 	notify_hit(amount)
+	# Impact flash scales with the blow so a jab and a haymaker read differently:
+	# a clean hit flashes brighter + a touch longer the harder it lands.
+	hit_flash_timer = clampf(0.08 + float(amount) * 0.003, 0.08, 0.17)
+	hit_flash_strength = clampf((float(amount) - 10.0) / 35.0, 0.0, 1.0)
+	# Motion-sheet flinch: long enough to read as a stagger, harder hits hold longer.
+	hit_anim_timer = clampf(0.18 + float(amount) * 0.004, 0.18, 0.32)
+	# Poise (GUS charging heavy / STEVE shrugging a jab): no stagger flinch — the blow
+	# lands but the titan doesn't react, selling the super-armor.
+	if poise_heavy or bulwark_soft:
+		hit_anim_timer = 0.0
+	# HITSTUN: lock the victim out of acting/steering for a window that scales with the
+	# blow, so a clean hit earns tempo. Gated on `shoved` — anything armored enough to
+	# ignore the knockback (poise heavy / bulwark / mid-charge headbutt) also shrugs
+	# off the stun and keeps acting.
+	if shoved:
+		hitstun_timer = clampf(HITSTUN_BASE + float(amount) * HITSTUN_PER_DMG, HITSTUN_MIN, HITSTUN_MAX)
 	# Impact burst at the contact point (cosmetic): spray along the knockback.
 	var kdir: Vector2 = knockback.normalized() if knockback.length() > 1.0 else facing
 	_spawn_hit_burst(global_position - kdir * 16.0 + Vector2(0, sprite_offset_y * 0.5), kdir, amount, hp <= 0 and not ringout_only)
 	# Limb flail: kick the rig's springs so head/legs/tail react to the blow.
+	# Divisor is the single knob for how violently everyone reels — lower = more
+	# whip (per-dino weight still reads through each profile's own hit_* values).
 	if rig != null:
-		rig.hit(kdir, float(amount) / 18.0)
+		rig.hit(kdir, float(amount) / 14.0)
 	# FLOPPY stage 2: a hard enough shove takes your feet out from under you. (Not
 	# on a lethal hit — that path goes to die() below.)
 	var lethal := hp <= 0 and not ringout_only
@@ -1810,6 +2188,11 @@ func _spawn_projectile() -> void:
 
 # Stegosaurus Shooting Spikes: a 3-spike fan.
 func _spawn_spike_volley() -> void:
+	# Muzzle flash + a light kick so loosing the volley reads as a firm launch.
+	_spawn_hit_burst(global_position + facing * 42.0 + Vector2(0, sprite_offset_y * 0.5), facing, 10, false)
+	var sr := get_tree().current_scene
+	if sr and sr.has_method("shake"):
+		sr.shake(6.0, 0.10)
 	for ang in [-0.26, 0.0, 0.26]:
 		_make_spike(facing.rotated(ang), special_damage, special_knockback)
 
@@ -1869,6 +2252,14 @@ func _do_radial_special(slow_duration: float, ring_color: Color) -> void:
 			other.take_damage(special_damage, dir * special_knockback, self)
 		if slow_duration > 0.0 and other.has_method("apply_screech"):
 			other.apply_screech(slow_duration)
+	# The AOE boom lands with weight whether or not it caught anyone: a solid
+	# shake + a crisp freeze-frame punctuate the shockwave.
+	var sr := get_tree().current_scene
+	if sr:
+		if sr.has_method("shake"):
+			sr.shake(16.0, 0.28)
+		if sr.has_method("hit_pause"):
+			sr.hit_pause(0.06, 0.32)
 	_spawn_radial_ring(ring_color)
 
 # Called on a dino caught in a screech: slows it + locks dodge for the duration.
@@ -1876,44 +2267,179 @@ func apply_screech(duration: float) -> void:
 	timed_slow_timer = maxf(timed_slow_timer, duration)
 
 func _spawn_radial_ring(color: Color) -> void:
-	var ring := Polygon2D.new()
+	var root := get_tree().current_scene
+	if root == null:
+		return
+	var center := global_position
+	# 1) Coloured shock FILL disc that snaps out to full radius and fades.
+	var fill := Polygon2D.new()
 	var pts := PackedVector2Array()
-	for i in range(28):
-		var a := TAU * i / 28.0
+	for i in range(32):
+		var a := TAU * i / 32.0
 		pts.append(Vector2(cos(a), sin(a)) * special_radius)
-	ring.polygon = pts
-	ring.color = color
-	ring.global_position = global_position
-	ring.scale = Vector2(0.15, 0.15)
-	ring.z_index = -1
-	get_tree().current_scene.add_child(ring)
-	var tw := ring.create_tween()
-	tw.tween_property(ring, "scale", Vector2(1, 1), 0.25)
-	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.3)
-	tw.chain().tween_callback(ring.queue_free)
+	fill.polygon = pts
+	fill.color = color
+	fill.global_position = center
+	fill.scale = Vector2(0.15, 0.15)
+	fill.z_index = -1
+	root.add_child(fill)
+	var ft := fill.create_tween()
+	ft.tween_property(fill, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	ft.parallel().tween_property(fill, "modulate:a", 0.0, 0.28)
+	ft.tween_callback(fill.queue_free)
+	# 2) Bright leading-edge RING snapping outward (tapering Line2D) -- the crack.
+	var edge := Line2D.new()
+	var ep := PackedVector2Array()
+	for i in range(41):
+		var a := TAU * i / 40.0
+		ep.append(Vector2(cos(a), sin(a)) * special_radius)
+	edge.points = ep
+	edge.closed = true
+	edge.width = 7.0
+	edge.default_color = Color(1, 1, 1, 0.9)
+	edge.global_position = center
+	edge.scale = Vector2(0.15, 0.15)
+	edge.z_index = 30
+	root.add_child(edge)
+	var et := edge.create_tween()
+	et.tween_property(edge, "scale", Vector2.ONE, 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	et.parallel().tween_property(edge, "modulate:a", 0.0, 0.30)
+	et.parallel().tween_property(edge, "width", 1.5, 0.24)
+	et.tween_callback(edge.queue_free)
+	# 3) Grit: dust shards flung outward around the perimeter for weight.
+	for i in range(10):
+		var a := TAU * i / 10.0 + randf_range(-0.15, 0.15)
+		var d := Vector2(cos(a), sin(a))
+		var shard := Polygon2D.new()
+		shard.polygon = PackedVector2Array([Vector2(-3, -2), Vector2(7, 0), Vector2(-3, 2)])
+		shard.color = Color(color.r, color.g, color.b, 0.9)
+		shard.global_position = center + d * (special_radius * 0.35)
+		shard.rotation = a
+		shard.z_index = 31
+		root.add_child(shard)
+		var st := shard.create_tween()
+		st.tween_property(shard, "global_position", center + d * special_radius, 0.26).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		st.parallel().tween_property(shard, "scale", Vector2.ZERO, 0.26)
+		st.parallel().tween_property(shard, "modulate:a", 0.0, 0.26)
+		st.tween_callback(shard.queue_free)
 
-# A sweeping slash arc when a melee attack goes active. Shape/size/colour/speed
-# differ by attack kind so light, heavy, and each special read distinctly.
+# --- Special telegraph + flash (juice, no art) --------------------------------
+
+# Per-special signature colour, shared by the telegraph, flash, and swipe so each
+# dino's signature reads as one consistent hue.
+func _special_color() -> Color:
+	match special_type:
+		"dash_claw": return Color(0.5, 0.95, 1.0)
+		"chomp": return Color(1.0, 0.45, 0.4)
+		"headbutt": return Color(1.0, 0.9, 0.5)
+		"neck_whip": return Color(0.55, 0.9, 0.55)
+		"tail_smash", "stomp": return Color(0.82, 0.62, 0.35)
+		"screech": return Color(0.75, 0.55, 1.0)
+		"spikes": return Color(0.95, 0.85, 0.4)
+		_: return Color(0.85, 0.7, 1.0)
+
+func _circle_points(r: float, steps: int = 28) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in range(steps):
+		var a := TAU * i / steps
+		pts.append(Vector2(cos(a), sin(a)) * r)
+	return pts
+
+# WINDUP telegraph: a charging glow that swells + brightens under the dino over the
+# windup, plus sparks converging inward — so a special reads as a wound-up BEAT you
+# can see coming, not a silent poke. Auto-frees when the flash fires (or on timeout).
+var _special_charge: Node2D = null
+func _spawn_special_charge(dur: float) -> void:
+	if is_instance_valid(_special_charge):
+		_special_charge.queue_free()
+	var col := _special_color()
+	var root := Node2D.new()
+	root.global_position = global_position + Vector2(0, sprite_offset_y * 0.4)
+	root.z_index = 2
+	get_tree().current_scene.add_child(root)
+	_special_charge = root
+	# Growing glow disc.
+	var glow := Polygon2D.new()
+	glow.polygon = _circle_points(38.0)
+	glow.color = Color(col.r, col.g, col.b, 0.0)
+	glow.scale = Vector2(0.2, 0.2)
+	root.add_child(glow)
+	var gt := glow.create_tween()
+	gt.tween_property(glow, "scale", Vector2(1.15, 1.15), dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	gt.parallel().tween_property(glow, "color:a", 0.5, dur).set_trans(Tween.TRANS_SINE)
+	# Sparks converging inward toward the charge point.
+	for i in range(6):
+		var a := TAU * i / 6.0
+		var d := Vector2(cos(a), sin(a))
+		var spark := Polygon2D.new()
+		spark.polygon = PackedVector2Array([Vector2(-2, -2), Vector2(6, 0), Vector2(-2, 2)])
+		spark.color = Color(col.r, col.g, col.b, 0.95)
+		spark.position = d * 64.0
+		spark.rotation = a + PI  # point toward centre
+		root.add_child(spark)
+		var st := spark.create_tween()
+		st.tween_property(spark, "position", d * 10.0, dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		st.parallel().tween_property(spark, "scale", Vector2(0.3, 0.3), dur)
+
+# RELEASE flash: a bright rim-ring + white core that snaps outward the instant the
+# special fires — the "pop" that punctuates the wind-up. Also frees the telegraph.
+func _spawn_special_flash() -> void:
+	if is_instance_valid(_special_charge):
+		_special_charge.queue_free()
+		_special_charge = null
+	var col := _special_color()
+	var center := global_position + facing * 24.0 + Vector2(0, sprite_offset_y * 0.4)
+	var root := get_tree().current_scene
+	if root == null:
+		return
+	# White-hot core pops and fades fast.
+	var core := Polygon2D.new()
+	core.polygon = _circle_points(30.0)
+	core.color = Color(1, 1, 1, 0.9)
+	core.global_position = center
+	core.scale = Vector2(0.3, 0.3)
+	core.z_index = 33
+	root.add_child(core)
+	var ct := core.create_tween()
+	ct.tween_property(core, "scale", Vector2(1.4, 1.4), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	ct.parallel().tween_property(core, "modulate:a", 0.0, 0.16)
+	ct.tween_callback(core.queue_free)
+	# Coloured rim ring snapping outward behind the core.
+	var rim := Line2D.new()
+	rim.points = _circle_points(34.0, 32)
+	rim.closed = true
+	rim.width = 6.0
+	rim.default_color = Color(col.r, col.g, col.b, 0.95)
+	rim.global_position = center
+	rim.scale = Vector2(0.3, 0.3)
+	rim.z_index = 32
+	root.add_child(rim)
+	var rt := rim.create_tween()
+	rt.tween_property(rim, "scale", Vector2(1.8, 1.8), 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	rt.parallel().tween_property(rim, "width", 1.0, 0.22)
+	rt.parallel().tween_property(rim, "modulate:a", 0.0, 0.22)
+	rt.tween_callback(rim.queue_free)
+
+# A sweeping slash arc when a melee attack goes active. Only SPECIALS draw one now —
+# the fat light/heavy bands read as clutter, so those sell the swing through the
+# sprite animation + weapon swing + hit-burst instead. Each special stays distinct.
 func _spawn_attack_swipe() -> void:
-	if current_is_special:
-		match special_type:
-			"dash_claw":  # three fanned claw rakes
-				for k in range(3):
-					_spawn_swipe(Color(0.5, 0.95, 1.0, 0.85), 48.0, 6.0, 55.0, 0.18, 42.0, (k - 1) * 18.0)
-			"chomp":
-				_spawn_swipe(Color(1.0, 0.45, 0.4, 0.85), 60.0, 22.0, 95.0, 0.20, 70.0)
-			"headbutt":
-				_spawn_swipe(Color(1.0, 0.9, 0.5, 0.85), 72.0, 26.0, 110.0, 0.24, 88.0)
-			"neck_whip":  # long, wide green sweep
-				_spawn_swipe(Color(0.55, 0.9, 0.55, 0.85), 80.0, 18.0, 150.0, 0.28, 120.0)
-			"tail_smash":  # big brown close smash
-				_spawn_swipe(Color(0.82, 0.62, 0.35, 0.9), 64.0, 30.0, 130.0, 0.22, 100.0)
-			_:
-				_spawn_swipe(Color(0.85, 0.7, 1.0, 0.8), 60.0, 18.0, 90.0, 0.20, 70.0)
-	elif current_is_heavy:  # big slow wind-up swing
-		_spawn_swipe(Color(1.0, 0.78, 0.35, 0.8), 72.0, 24.0, 108.0, 0.26, 88.0)
-	else:  # quick light flick
-		_spawn_swipe(Color(0.95, 0.97, 1.0, 0.75), 50.0, 14.0, 70.0, 0.15, 55.0)
+	if not current_is_special:
+		return
+	match special_type:
+		"dash_claw":  # three fanned claw rakes
+			for k in range(3):
+				_spawn_swipe(Color(0.5, 0.95, 1.0, 0.85), 48.0, 6.0, 55.0, 0.18, 42.0, (k - 1) * 18.0)
+		"chomp":
+			_spawn_swipe(Color(1.0, 0.45, 0.4, 0.85), 60.0, 22.0, 95.0, 0.20, 70.0)
+		"headbutt":
+			_spawn_swipe(Color(1.0, 0.9, 0.5, 0.85), 72.0, 26.0, 110.0, 0.24, 88.0)
+		"neck_whip":  # long, wide green sweep
+			_spawn_swipe(Color(0.55, 0.9, 0.55, 0.85), 80.0, 18.0, 150.0, 0.28, 120.0)
+		"tail_smash":  # big brown close smash
+			_spawn_swipe(Color(0.82, 0.62, 0.35, 0.9), 64.0, 30.0, 130.0, 0.22, 100.0)
+		_:
+			_spawn_swipe(Color(0.85, 0.7, 1.0, 0.8), 60.0, 18.0, 90.0, 0.20, 70.0)
 
 func _spawn_swipe(color: Color, radius: float, thickness: float, span_deg: float, dur: float, sweep_deg: float, offset_deg: float = 0.0) -> void:
 	var arc := Polygon2D.new()
@@ -1972,18 +2498,31 @@ func begin_ringout(go_up: bool = false, center_y: float = 360.0) -> void:
 	hitbox_visual.visible = false
 	if weapon_visual:
 		weapon_visual.visible = false
-	velocity.y = -SKY_INITIAL_VY if go_up else maxf(velocity.y, FALL_INITIAL_VY)
+	if go_up:
+		velocity.y = -SKY_INITIAL_VY
+	else:
+		# Pop up-and-out: keep the knockback's outward drift (min FALL_MIN_VX so a
+		# dead-on hit still arcs sideways), then launch upward for the knock-off arc.
+		var out_dir: float = signf(velocity.x) if absf(velocity.x) > 1.0 else signf(facing.x)
+		if out_dir == 0.0:
+			out_dir = 1.0
+		velocity.x = out_dir * maxf(absf(velocity.x), FALL_MIN_VX)
+		velocity.y = FALL_LAUNCH_VY
+		fall_spin_dir = out_dir  # tumble the way it was flung
 
 func _process_fall(delta: float) -> void:
 	if fall_up:
 		_process_sky_launch(delta)
 		return
-	# Plain drop off the bottom — not recoverable.
+	# Knock-off arc off the bottom — not recoverable. Pops up, then tumbles down.
 	velocity.y += FALL_GRAVITY * delta
 	global_position += velocity * delta
-	rotation += FALL_SPIN * delta
-	scale = scale.move_toward(Vector2(0.35, 0.35), delta * 1.1)
-	modulate.a = clampf(fall_timer / FALL_DURATION, 0.0, 1.0)  # fade as it drops
+	rotation += FALL_SPIN * fall_spin_dir * delta
+	# age 0→1 across the fall. Shrink accelerates (age²) so it "falls away" into
+	# the pit; hold full opacity through the arc, then fade only in the final beat.
+	var age: float = clampf(1.0 - fall_timer / FALL_DURATION, 0.0, 1.0)
+	scale = Vector2.ONE.lerp(Vector2(FALL_END_SCALE, FALL_END_SCALE), age * age)
+	modulate.a = clampf((1.0 - age) / FALL_FADE_FRAC, 0.0, 1.0)
 	fall_timer -= delta
 	if fall_timer <= 0.0:
 		_finish_ringout()
@@ -2068,6 +2607,14 @@ func update_timers(delta: float) -> void:
 		knockdown_immune_timer -= delta
 	if hit_flash_timer > 0.0:
 		hit_flash_timer -= delta
+	if hit_anim_timer > 0.0:
+		hit_anim_timer -= delta
+	if hitstun_timer > 0.0:
+		hitstun_timer -= delta
+	if _buffer_timer > 0.0:
+		_buffer_timer -= delta
+		if _buffer_timer <= 0.0:
+			_buffered_action = ""
 	if special_cooldown_timer > 0.0:
 		special_cooldown_timer -= delta
 	if timed_slow_timer > 0.0:
@@ -2093,7 +2640,8 @@ func update_visual() -> void:
 	if (slow_overlap_count > 0 or timed_slow_timer > 0.0) and defense_state == DefenseState.NORMAL:
 		color = Color(0.6, 0.85, 0.55, 1.0)
 	if hit_flash_timer > 0.0:
-		color = Color(1.6, 1.6, 1.6, 1.0)
+		var b := lerpf(1.35, 1.95, hit_flash_strength)   # soft jab → bright haymaker white-out
+		color = Color(b, b, b, 1.0)
 	elif invuln_timer > 0.0 and defense_state != DefenseState.DODGING:
 		var flash := int(invuln_timer * 30.0) % 2 == 0
 		if flash:
@@ -2114,12 +2662,16 @@ func update_visual() -> void:
 		sprite_tint = Color.WHITE.lerp(sprite_tint, 0.35)
 	if beast_active:
 		color *= BEAST_TINT  # gold glow marks the juggernaut
+	# ENVIRONMENT GRADE: multiply in the island's light so fighters read as lit BY
+	# the scene (warm on lava, cool on the floes…) instead of pasted on top — but
+	# never during a hit-flash, so the white-out impact still punches through clean.
+	var env: Color = env_tint if hit_flash_timer <= 0.0 else Color.WHITE
 	polygon.modulate = color
-	sprite.modulate = color * sprite_tint
+	sprite.modulate = color * sprite_tint * env
 	if rig != null:
 		# Node2D.modulate propagates to every part sprite, so flash + player tint
 		# cover the whole skeleton in one set.
-		rig.modulate = color * sprite_tint
+		rig.modulate = color * sprite_tint * env
 
 # --- THE BEAST (juggernaut) crown toggling ---
 # Paired multiply/divide on the visual scale reverts exactly; HP swaps to a bonus
@@ -2226,6 +2778,14 @@ func respawn() -> void:
 	hitbox_visual.visible = false
 	last_damaged_by = null
 	hit_flash_timer = 0.0
+	hit_flash_strength = 0.0
+	hit_anim_timer = 0.0
+	hitstun_timer = 0.0
+	_buffered_action = ""
+	_buffer_timer = 0.0
+	if is_instance_valid(_special_charge):
+		_special_charge.queue_free()
+		_special_charge = null
 	if not initial_weapons.is_empty():
 		weapons = initial_weapons.duplicate()
 		active_weapon = 0
