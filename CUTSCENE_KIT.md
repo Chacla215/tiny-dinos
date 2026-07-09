@@ -90,23 +90,19 @@ standing closing graphic.
 | 4 | A sword drops from the sky, sticks upright in the sand before Ralph. He looks up. Grips it. Eyes narrow. Stands tall, wind rising. | "But this island takes care of its little king. And sometimes… it sends help. From the sky." |
 | 5 | Ralph CHARGES, leaps sword-high; Max's smug grin collapses into wide-eyed shock — FREEZE mid-air → smash to "TO BE CONTINUED…" | "And Max? Max was about to learn Ralph's second rule." |
 
-**AUDIO A/B (2026-07-09, Charlie's note: likes NARRATED, unsure voice+music fit
-the brand):** four v2 variants built in `wip/ep1/` over the same video —
-new music bed = **Feel Good Island Loop** (CC0, OpenGameArt, Brandon Morris)
-for beats 1–3, keeping the battle-theme drop at the sword moment (36.4s).
-Voices: `ep1_v2_arthur_island` (music change only), `_sterling_`, `_mabel_`,
-`_kevin_` (seed_audio presets), + `voice_audition.m4a` (beat-1 line, all four
-voices back-to-back). Rebuild: `wip/ep1/build_ep1_variants.sh`.
-
-**Round-1 verdict (Charlie):** Arthur most natural but maybe under-energized;
-both beds (menu-soul AND island loop) read too jazzy. **Round 2 (v3, built):**
-new bed = **"Go to the Picnic"** (Loyalty Freak Music, CC0, FreeMusicArchive)
-— bouncy cartoon-comedy, zero jazz — battle drop still at the sword moment.
-`ep1_v3_arthur_picnic.mp4` (original Arthur takes) vs
-`ep1_v3_arthur_energy_picnic.mp4` (Arthur regenerated at speech_rate +10 /
-loudness +15 with punchier punctuation, `vo_e*.wav`). Rebuild:
-`wip/ep1/build_ep1_v3.sh`. DECISION PENDING; winner becomes the template
-voice+bed for the six-story season, loser files get deleted.
+**AUDIO TEMPLATE — LOCKED (Charlie, 2026-07-09, after a 2-round A/B):**
+- **Narrator:** seed_audio preset **"Arthur"** at **speech_rate +10 /
+  loudness_rate +15**, lines punched with exclamation emphasis — deadpan
+  through beats 1–3 (that's the joke), energy ramps at the turn (beats 4–5).
+- **Music bed:** **"Go to the Picnic"** (Loyalty Freak Music, CC0,
+  FreeMusicArchive — bouncy cartoon-comedy, no jazz) at 0.4 for beats 1–3,
+  then the game **battle theme** from the sword/turn moment (36.4s) at 0.75 —
+  the 3.5s buildup lands the drop right on the hero moment. NO-VO mix = same
+  bed without lines. Rejected on the way: menu-soul + island-loop beds (too
+  jazzy), Sterling/Mabel/Kevin narrators (Arthur most natural).
+- Recipe + final mixes: `wip/ep1/build_ep1.sh` (`ep1_narrated.mp4`,
+  `ep1_no_vo.mp4`, takes in `vo_e*.wav`). This voice+bed is the template for
+  the whole six-story season.
 
 **The other five (loglines, script on demand):**
 - **MAX — "FAST ISN'T FIRST":** cocky speedster loses a beach race to slow-and-
@@ -123,8 +119,9 @@ voice+bed for the six-story season, loser files get deleted.
   beg for one last lesson. He blocks everything they throw (spikeback!), taps
   each on the head, retires happy. (Iciest Age.)
 
-Post per story: per-dino label (beat 1-2), light captions, music bed from the
-game tracks, ALWAYS the closing graphic.
+Post per story: per-dino label (beat 1-2), light captions, the LOCKED audio
+template (picnic bed → battle drop at the turn, Arthur+energy narration),
+ALWAYS the closing graphic.
 
 ## Format spec (all)
 
