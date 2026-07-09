@@ -1,5 +1,27 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-08 (v1.0 plan locked + feel-sweep landed on master)
+
+- **ROADMAP.md** (repo root, `46af9e3`): Charlie locked the destination —
+  **v1.0 = public itch.io release** (free/PWYW, price decided at packaging) with
+  the final trailer + the **full shorts campaign** (all 5 remaining dinos +
+  rival clash, after his read of the Ralph action-short pilot). Steam is
+  post-launch-optional. Five phases with gates; sessions steer by it.
+- **Phase 0 DONE — `feat/feel-sweep` merged to master** (PR #17, merge
+  `057f15f`, ~60 commits): the whole painterly restyle (dinos + islands +
+  weapons), combat feel sweep, per-dino passives, beat-drop audio + match
+  intro, fall-feel fix, CAREER MODE end-to-end, trailer assets, ROADMAP.
+  Validation before merge: headless title boot clean + all 6 arena scenes
+  loaded/simulated via the capture harness (only benign `--quit-after`
+  teardown warnings); master re-validated after merge. Branch deleted
+  (remote + local).
+
+> **NEXT = Phase 1, the playtest gate (Charlie's hands):** one controller
+> session — full career run (economy/pacing knobs ready), the stacked
+> auditions (idle-bob amplitude, combat SFX picks, fall feel, beat-drop intro
+> live), and a 2+ pad mode regression sweep. Claude turns findings into
+> atomic fixes, then Phase 2 (UI SFX + settings screen) on a fresh branch.
+
 ## Session — 2026-07-07 (gameplay QA + animation fix + audio SFX)
 
 Charlie's plan: make gameplay good → then build a REAL-gameplay trailer (cutscenes

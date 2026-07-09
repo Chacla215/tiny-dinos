@@ -12,7 +12,7 @@ the shape. Steam is a **post-launch option**, not a v1.0 goal.
 
 ## Phases
 
-### Phase 0 — Land the branch  `[ ]`
+### Phase 0 — Land the branch  `[x]` (2026-07-08, PR #17 → `057f15f`)
 - PR `feat/feel-sweep` → master (≈60 commits), headless validation, merge.
 - Everything after this branches clean off master.
 
