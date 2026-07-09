@@ -90,6 +90,16 @@ standing closing graphic.
 | 4 | A sword drops from the sky, sticks upright in the sand before Ralph. He looks up. Grips it. Eyes narrow. Stands tall, wind rising. | "But this island takes care of its little king. And sometimes… it sends help. From the sky." |
 | 5 | Ralph CHARGES, leaps sword-high; Max's smug grin collapses into wide-eyed shock — FREEZE mid-air → smash to "TO BE CONTINUED…" | "And Max? Max was about to learn Ralph's second rule." |
 
+**AUDIO A/B (2026-07-09, Charlie's note: likes NARRATED, unsure voice+music fit
+the brand):** four v2 variants built in `wip/ep1/` over the same video —
+new music bed = **Feel Good Island Loop** (CC0, OpenGameArt, Brandon Morris)
+for beats 1–3, keeping the battle-theme drop at the sword moment (36.4s).
+Voices: `ep1_v2_arthur_island` (music change only), `_sterling_`, `_mabel_`,
+`_kevin_` (seed_audio presets), + `voice_audition.m4a` (beat-1 line, all four
+voices back-to-back). Rebuild: `wip/ep1/build_ep1_variants.sh`. DECISION
+PENDING Charlie's listen; loser files get deleted, winner becomes the template
+voice+bed for the six-story season.
+
 **The other five (loglines, script on demand):**
 - **MAX — "FAST ISN'T FIRST":** cocky speedster loses a beach race to slow-and-
   steady Steve after showboating; learns to finish. Ends: rematch handshake.
