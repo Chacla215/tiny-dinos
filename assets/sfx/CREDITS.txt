@@ -21,7 +21,18 @@ variation (see play_scene_sfx).
 
 Packs: Kenney "Impact Sounds" + "RPG Audio" (both CC0).
 
-UI SFX (ui_move / ui_confirm / ui_back / emote / win) are still the placeholder
-synths from scripts/tools/gen_sfx.py — combat was the priority pass.
+UI SFX (2026-07-08): sourced from Kenney (CC0), same treatment — the last
+gen_sfx.py placeholder synths are gone. First-guess picks pending Charlie's
+ear; every slot is a one-file swap (both packs re-downloadable, see PROGRESS).
+
+  in-game slot    <- Kenney source pack / file
+  ----------------------------------------------
+  ui_move.wav     <- Interface Sounds / pluck_001.ogg      (soft pluck tick)
+  ui_confirm.wav  <- Interface Sounds / confirmation_001.ogg (rising chime)
+  ui_back.wav     <- Interface Sounds / back_002.ogg       (short downward tick)
+  emote.wav       <- Interface Sounds / question_002.ogg   (playful chirp)
+  win.wav         <- Music Jingles / jingles_PIZZA07.ogg   (cheery folk fanfare)
+
+Packs: Kenney "Interface Sounds" + "Music Jingles" (both CC0).
 
 MUSIC credits live in assets/music/CREDITS.txt (Juhani Junkala, CC0).
