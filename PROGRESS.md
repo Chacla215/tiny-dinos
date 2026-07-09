@@ -22,6 +22,42 @@
 > live), and a 2+ pad mode regression sweep. Claude turns findings into
 > atomic fixes, then Phase 2 (UI SFX + settings screen) on a fresh branch.
 
+## Session — 2026-07-08 (later: Phases 2+3 Claude-side, on `feat/release-polish`)
+
+Charlie skipped playtesting this session ("do as much as we can in other
+areas") — so everything NOT gated on his hands landed, 4 atomic commits:
+
+- **SETTINGS screen (`1f1d452`).** Title menu → SETTINGS (menu is 10 items
+  now, auto-restacks): MUSIC/SFX rows, LEFT/RIGHT drives a 10-segment ColorRect
+  knob (glyph-safe — no font gamble), SFX blips at each step so the mix is set
+  by ear, B backs out. Steps persist per bus (`MetaSave.volume_steps`), applied
+  RELATIVE to the authored bus-layout mix by the Audio autoload at startup
+  (full = shipped balance, 0 = mute via bus mute).
+- **Real UI SFX (`96a0193`).** The last gen_sfx.py placeholder synths replaced
+  with CC0 Kenney: ui_move=pluck, ui_confirm=rising chime, ui_back=tick,
+  emote=question chirp (Interface Sounds); win=jingles_PIZZA07 folk fanfare
+  (Music Jingles). Drop-in same filenames. **Blind picks — Charlie's ear check
+  folds into the Phase 1 session**; every slot is a one-file swap (packs via
+  OpenGameArt mirrors: kenney_interfaceSounds.zip / jingleSounds_Kenney.zip).
+- **Release packaging (`6ecce91`).** `export_presets.cfg` (macOS universal
+  ad-hoc signed / Windows x86_64 / Linux x86_64), 4.6.3 export templates
+  installed, `icon.png` (Ralph's head on a beach gradient, baked by PIL from
+  ralph_hero), version 1.0.0 + icon in project.godot. **ETC2/ASTC VRAM
+  compression enabled** (macOS universal/arm64 export refuses without it —
+  one-time full texture reimport). All 3 platforms exported clean; the
+  exported .app booted headless error-free. `build/` gitignored; 3 zips ready.
+- **itch.io page kit (`6278c00`).** `ITCH_PAGE.md` = full page copy (tagline,
+  body, tags, CONTROLLERS REQUIRED, AI-art disclosure note, ad-hoc-signing
+  install note, rebuild commands) + `assets/concept/itch/` (8 stills + 3 GIFs
+  pulled from the committed trailer — all 6 islands, GET READY card, group).
+
+> Validation: headless title + settings boots clean post-everything; all 6
+> arenas were validated pre-merge this morning. **What's left needing Charlie:**
+> Phase 1 controller session (career pacing, bob, SFX picks incl. the new UI
+> set, fall feel, intro) + itch account steps (create page, price, upload
+> `build/*.zip`, trailer→YouTube). Cover art (630×500) could come from the
+> shorts pipeline.
+
 ## Session — 2026-07-07 (gameplay QA + animation fix + audio SFX)
 
 Charlie's plan: make gameplay good → then build a REAL-gameplay trailer (cutscenes

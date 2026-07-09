@@ -26,17 +26,23 @@ One structured controller session:
 - **Regression sweep**: all 7 modes + season + gauntlet, 2+ pads.
 - Claude turns every finding into an atomic fix.
 
-### Phase 2 — Release-quality polish  `[ ]`
-- **Real UI SFX** (last placeholder synths; same CC0 sourcing recipe as combat).
-- **Settings screen**: music/SFX volume at minimum (couch rooms need to duck music).
-- First-run onboarding check (how-to-play discoverability), win/quit flows.
+### Phase 2 — Release-quality polish  `[~]` (Claude-side done 2026-07-08)
+- ~~**Real UI SFX**~~ `[x]` Kenney Interface Sounds + Music Jingles (CC0),
+  first-guess picks — Charlie's ear check folds into Phase 1.
+- ~~**Settings screen**~~ `[x]` SETTINGS on the title: MUSIC/SFX 10-step
+  knobs, persisted in MetaSave, applied via the Audio buses.
+- First-run onboarding check (how-to-play discoverability), win/quit flows —
+  fold into the Phase 1 controller session.
 - The Phase 1 fix list.
 
-### Phase 3 — Package v1.0  `[ ]`
-- Godot export presets: **macOS + Windows** (+ Linux, nearly free). Icon.
-- "CONTROLLERS REQUIRED" front and center everywhere.
-- itch.io page: screenshots, GIFs, trailer, controls diagram. Price call
-  (free vs PWYW) made here.
+### Phase 3 — Package v1.0  `[~]` (builds + kit done 2026-07-08; page = Charlie)
+- ~~Export presets~~ `[x]` macOS (universal, ad-hoc signed) + Windows + Linux
+  in `export_presets.cfg`; templates installed; all three exported clean to
+  `build/` (zips ready). ~~Icon~~ `[x]` `icon.png` (Ralph head, beach gradient).
+- ~~Page kit~~ `[x]` `ITCH_PAGE.md` (copy + checklist + rebuild commands) and
+  `assets/concept/itch/` (8 stills + 3 GIFs from the trailer).
+- REMAINING (Charlie): create the itch project, price call (free vs PWYW),
+  upload the three zips, trailer to YouTube.
 
 ### Phase 4 — Hype campaign  `[ ]`  (parallel with 2–3)
 - **Final trailer cut** over the shipped music.
