@@ -127,6 +127,16 @@ short (7s) and extend the freeze with `tpad=stop_mode=clone` to 12s.
 | 4 | THE TURN: Steve takes his ONE slow step. Max braces against the giant leg with everything — and slides backward through the sand toward the ring's edge, panic dawning. (BATTLE DROP HERE) | "And Steve? Steve only knows one speed. He just… never… stops!" |
 | 5 | CLIFFHANGER: Max teeters on one toe ON the ring line, arms windmilling, Steve's foot hanging mid-air above him — FREEZE → "TO BE CONTINUED…" (resolution = Ep3 opener: one gentle final step; the flower + handshake.) | "Max was about to learn the difference between being fast… and being STRONG!" |
 
+**PACING RULE (from Ep2's tight recut — apply to every episode):** raw 12s
+Seedance beats carry ~5-8s of real action and the rest is idle standing;
+never ship beats raw. Post pass (`wip/ep2_max/build_ep2_tight.sh` is the
+template): trim each beat to its action window (make 1fps contact sheets to
+find it), speed-ramp slow stretches 1.1-1.6x, replace any freeze-frame hold
+with a slow zoompan push-in (motion, never a static frame), then retime
+VO/captions/music to the measured segment starts (VO must fit its segment:
+check `ffprobe` durations). Ep2 went 65s -> 45s and reads twice as alive.
+Target: no 2 consecutive seconds with a static composition.
+
 **The other four (loglines, script on demand):**
 - **GUS — "THE WALL MOVES":** immovable Gus won't budge for anyone — until
   Jessie's egg-basket rolls toward the lava; the unstoppable charge, for once,
