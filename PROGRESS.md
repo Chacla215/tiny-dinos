@@ -30,10 +30,25 @@ CPU only understood the objective in 2 of 7 modes.
 - **Verification tools** (`shot_arena.gd`, `smoke_hazards.gd`, `smoke_sumo.gd`,
   `smoke_modes.gd`): windowed one-shot arena captures with the debug ring, and
   headless CPU-vs-CPU smoke-sims proving each mechanic fires in live play.
+- **Round 2 (same day, Charlie's picks — events yes, toggle no, bridges
+  selective, spawn-armed yes):**
+  - **Signature island events (`34d21d7`).** Announced + telegraphed ~6-9s
+    twist per island on a ~34s clock, always on: ERUPTION (4 lava bursts),
+    ROGUE WAVE (one shoreline surges, drags the outer band waterward),
+    COLD SNAP (whole platform ices 8s), FLASH FLOOD (current x2.4 + a log
+    bowls downstream), ALL GEYSERS (pools erupt continuously), FRUIT DROP
+    (healing fruit fight-magnet from the tree).
+  - **Walkable piers/bridges (`34d21d7`).** Beach's two diagonal piers and
+    Falls' two rope bridges union into the ring-out polygon
+    (Geometry2D.merge_polygons quad lobes) — narrow shove-off lanes on the
+    painted planks. Verified against the art with debug-ring screenshots.
+  - **Spawn-armed (`4d664d9` + `34d21d7`).** Everyone opens holding their
+    signature weapon (DINOS.weapons non-fists entry), re-granted each round;
+    mid-round drops stay as swap bait.
 - **Still open on this thread:** hurt/KO animation frames (code already looks
-  for "hit"/"ko" clips, none baked); DOHYO_RADIUS / hazard strengths are
-  first-guess tunings for Charlie's controller session; `build/` zips are now
-  two feature-branches stale.
+  for "hit"/"ko" clips, none baked); DOHYO_RADIUS / hazard strengths / event
+  cadence are first-guess tunings for Charlie's controller session; `build/`
+  zips are now two feature-branches stale.
 
 ## Session — 2026-07-09 (Phase 2 close-out: onboarding + UI text sweep)
 

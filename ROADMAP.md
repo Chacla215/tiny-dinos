@@ -52,10 +52,17 @@ CPU objective-blind in 4 of 7 modes. On `feat/arena-overhaul`:
   island.
 - ~~Sumo rework~~ `[x]` real dohyo: rope ring scores, bout resets, first to 5.
 - ~~Mode-aware AI~~ `[x]` bots play the objective in sumo/bombtag/beast/flood.
+- ~~Signature island events~~ `[x]` (2026-07-10, Charlie's pick — always on):
+  ERUPTION / ROGUE WAVE / COLD SNAP / FLASH FLOOD / ALL GEYSERS / FRUIT DROP,
+  announced + telegraphed, ~34s cadence.
+- ~~Walkable painted structures~~ `[x]` Beach's two piers + Falls' two rope
+  bridges are real ground (selective by Charlie's call — not every island).
+- ~~Spawn-armed~~ `[x]` every dino opens holding their signature weapon;
+  drops stay as swap opportunities.
 - REMAINING: hurt/KO fighter frames (nice-to-have); all new tunings
-  (DOHYO_RADIUS, burn rate, current strength, bounce power) are first-guess —
-  they fold into the Phase 1 controller session. Re-export builds after this
-  lands (zips now stale again).
+  (DOHYO_RADIUS, burn rate, current strength, bounce power, event cadence,
+  fruit heal) are first-guess — they fold into the Phase 1 controller
+  session. Re-export builds after this lands (zips now stale again).
 
 ### Phase 3 — Package v1.0  `[~]` (builds + kit done 2026-07-08; page = Charlie)
 - ~~Export presets~~ `[x]` macOS (universal, ad-hoc signed) + Windows + Linux
