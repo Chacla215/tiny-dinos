@@ -49,6 +49,17 @@ const ARENA_SCALE := 1.25
 @export var drown_off_floes: bool = false
 @export var drown_grace: float = 0.35
 
+# --- Island identity (built in code per island; see _build_island_hazards) ---
+## Laughing Lava: when this inner polygon has 3+ points, standing on the island
+## but OUTSIDE it (i.e. on the painted glowing rim) burns via _process_lava.
+var hot_rim_inner: PackedVector2Array = PackedVector2Array()
+## Purple Fields: painted trunk/rocks become solid; mirrored as circles here so
+## random drops (eggs/power-ups/weapons) never land inside them. [{c, r}]
+var obstacle_circles: Array = []
+## Sunny Springs: geyser pools that fling whoever steps in away from the pool.
+var spring_pools: Array = []
+const SPRING_BOUNCE := 560.0
+
 ## Players don't physically collide (that caused latching); instead they're
 ## softly pushed apart in code so you can shove against each other, not stick.
 const PLAYER_SEPARATION := 56.0
@@ -215,6 +226,8 @@ func _ready() -> void:
 	_build_debug_boundary()  # red ring-out outline when debug_draw_safe_zone is on
 	_spawn_ambient()  # [experiment] per-island atmosphere particles
 	_build_play_calm()  # dim the busy play surface so fighters read (readability pass)
+	_build_island_hazards()  # each island's real mechanic — AFTER the calm layer so
+	                         # hazard visuals (spring pools) draw over the dim, under dinos
 	# [experiment] Power-ups in standard versus only (not the balance-tuned solo
 	# ladders, and not the modes that already revolve around their own pickups).
 	var special: bool = (MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet) \
@@ -259,6 +272,148 @@ func _apply_arena_scale() -> void:
 		p.position = c + (p.position - c) * ARENA_SCALE
 		if "spawn_point" in p:
 			p.spawn_point = p.position
+
+# Original-space point -> expanded world space (for positions measured off the
+# 1280x720 paintings, e.g. Purple's tree trunk or the Springs pools).
+func _scaled_pt(p: Vector2) -> Vector2:
+	return Vector2(640, 360) + (p - Vector2(640, 360)) * ARENA_SCALE
+
+# ISLAND IDENTITY PASS: every island gets a real mechanic, wired to what its
+# painting already shows (the lava rim glows, the frozen lake is ice, the falls
+# pour downstream, the tree/rocks sit ON the platform). Built in code like the
+# hill/HUD/ambient so the arena scenes stay dumb; geometry derives from the
+# scaled safe_polygon or from points measured off the paintings.
+# Beauty Beach deliberately stays vanilla — it's the beginner island.
+func _build_island_hazards() -> void:
+	var island: String = MatchConfig.island if MatchConfig and "island" in MatchConfig else ""
+	match island:
+		"laughing_lava":
+			# The platform rim is painted as glowing cracks — make it HOT. The
+			# cool core is safe; the outer band ticks burn damage and shoves you
+			# back toward center (_process_lava). Edges now hurt before they kill.
+			var c := _safe_center()
+			for pt in safe_polygon:
+				hot_rim_inner.append(c + (pt - c) * 0.86)
+		"iciest_age":
+			# The painting IS a frozen lake: the inner ice sheet is slippery
+			# (momentum carries), the snowy rim keeps normal grip.
+			var c := _safe_center()
+			var pts := PackedVector2Array()
+			for pt in safe_polygon:
+				pts.append(c + (pt - c) * 0.80)
+			var ice := Area2D.new()
+			ice.name = "FrozenLake"
+			ice.monitorable = false
+			var cp := CollisionPolygon2D.new()
+			cp.polygon = pts
+			ice.add_child(cp)
+			ice.body_entered.connect(_on_ice_entered)
+			ice.body_exited.connect(_on_ice_exited)
+			add_child(ice)
+		"white_water_falls":
+			# The painted water pours toward the bottom falls (the CurrentHint
+			# arrows point downstream): the whole platform drifts you toward the
+			# edge. Standing still is a choice with consequences.
+			global_current = Vector2(0, 30) * ARENA_SCALE
+		"sunny_springs":
+			# Geyser pools: step in and the spring flings you away from it.
+			# Damage-free pinball — repositioning chaos, brutal near edges.
+			for pos: Vector2 in [Vector2(455, 330), Vector2(831, 330), Vector2(643, 552)]:
+				_build_spring_pool(_scaled_pt(pos), 44.0 * ARENA_SCALE)
+		"purple_fields":
+			# The great tree's trunk and the painted rock stacks become solid —
+			# fighters stop walking over their paint and fight AROUND them.
+			_build_obstacle_capsule(Vector2(717, 252), 300.0, 46.0)
+			_build_obstacle_circle(Vector2(308, 262), 40.0)
+			_build_obstacle_circle(Vector2(1028, 268), 42.0)
+			_build_obstacle_circle(Vector2(494, 610), 30.0)
+
+func _build_spring_pool(pos: Vector2, r: float) -> void:
+	var pool := Area2D.new()
+	pool.name = "SpringPool%d" % spring_pools.size()
+	pool.monitorable = false
+	pool.position = pos
+	var cs := CollisionShape2D.new()
+	var shape := CircleShape2D.new()
+	shape.radius = r * 0.85
+	cs.shape = shape
+	pool.add_child(cs)
+	# Visual: layered translucent pool (perspective ellipse), gently breathing,
+	# with a bright lip so it reads as interactive over the busy paint.
+	var vis := Node2D.new()
+	var base := Polygon2D.new()
+	base.polygon = _circle_points(r * 1.05, r * 0.72, 26)
+	base.color = Color(0.25, 0.7, 0.95, 0.5)
+	var core := Polygon2D.new()
+	core.polygon = _circle_points(r * 0.62, r * 0.42, 22)
+	core.color = Color(0.85, 1.0, 1.0, 0.55)
+	var lip := Line2D.new()
+	var lip_pts := _circle_points(r * 1.05, r * 0.72, 26)
+	lip_pts.append(lip_pts[0])  # close the loop
+	lip.points = lip_pts
+	lip.width = 3.0
+	lip.default_color = Color(1.0, 1.0, 1.0, 0.65)
+	vis.add_child(base)
+	vis.add_child(core)
+	vis.add_child(lip)
+	pool.add_child(vis)
+	var tw := pool.create_tween().set_loops()
+	tw.tween_property(vis, "scale", Vector2(1.08, 1.08), 0.9).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(vis, "scale", Vector2(1.0, 1.0), 0.9).set_trans(Tween.TRANS_SINE)
+	add_child(pool)
+	_insert_under_players(pool)
+	pool.body_entered.connect(_on_spring_entered.bind(pool))
+	spring_pools.append(pool)
+
+func _on_spring_entered(body: Node, pool: Area2D) -> void:
+	if match_over or not round_active:
+		return
+	if not (body in active_players) or body.is_falling:
+		return
+	var dir: Vector2 = body.global_position - pool.global_position
+	dir = dir.normalized() if dir.length() > 1.0 else Vector2.RIGHT.rotated(randf() * TAU)
+	body.apply_burn(0, dir * SPRING_BOUNCE)  # damage-free geyser launch (dodge slips it)
+	play_sfx("dodge", 0.3)
+	shake(5.0, 0.1)
+	pool.modulate = Color(1.6, 1.9, 2.0, 1.0)  # splash flash
+	var t := pool.create_tween()
+	t.tween_property(pool, "modulate", Color(1, 1, 1, 1), 0.35)
+
+func _build_obstacle_circle(pos: Vector2, r: float) -> void:
+	var body := StaticBody2D.new()
+	body.collision_layer = 2  # dinos collide against layer 2
+	body.collision_mask = 0
+	body.position = _scaled_pt(pos)
+	var cs := CollisionShape2D.new()
+	var shape := CircleShape2D.new()
+	shape.radius = r * ARENA_SCALE
+	cs.shape = shape
+	body.add_child(cs)
+	add_child(body)
+	obstacle_circles.append({"c": body.position, "r": r * ARENA_SCALE})
+
+func _build_obstacle_capsule(pos: Vector2, length: float, r: float) -> void:
+	var body := StaticBody2D.new()
+	body.collision_layer = 2
+	body.collision_mask = 0
+	body.position = _scaled_pt(pos)
+	var cs := CollisionShape2D.new()
+	var shape := CapsuleShape2D.new()
+	shape.radius = r * ARENA_SCALE
+	shape.height = length * ARENA_SCALE
+	cs.shape = shape
+	cs.rotation_degrees = 90.0  # lie the capsule along x (the trunk's footprint)
+	body.add_child(cs)
+	add_child(body)
+	# Approximate for drop-point rejection: three circles along the capsule axis.
+	for off: float in [-length * 0.33, 0.0, length * 0.33]:
+		obstacle_circles.append({"c": _scaled_pt(pos + Vector2(off, 0.0)), "r": r * ARENA_SCALE})
+
+func _point_in_obstacle(pt: Vector2, margin: float) -> bool:
+	for ob: Dictionary in obstacle_circles:
+		if pt.distance_to(ob["c"]) <= ob["r"] + margin:
+			return true
+	return false
 
 # Per-island ENVIRONMENT GRADE: a subtle colour multiply applied to every fighter so
 # they read as lit by the scene (warm firelight on lava, cold blue on the floes,
@@ -750,6 +905,8 @@ func _random_safe_point() -> Vector2:
 		else:
 			var r := safe_rect.grow(-60.0)
 			pt = Vector2(randf_range(r.position.x, r.end.x), randf_range(r.position.y, r.end.y))
+		if _point_in_obstacle(pt, 40.0):
+			continue  # never drop pickups inside the trunk/rocks
 		return pt
 	return _safe_center()
 
@@ -1219,7 +1376,7 @@ func _physics_process(delta: float) -> void:
 			continue
 		if clamp_to_bounds:
 			p.global_position = p.global_position.clamp(play_bounds.position, play_bounds.end)
-	if lava_area:
+	if lava_area or hot_rim_inner.size() >= 3:
 		_process_lava(delta)
 	if drown_off_floes:
 		_process_drowning(delta)
@@ -1235,10 +1392,18 @@ func _physics_process(delta: float) -> void:
 		_update_flood(delta)
 
 func _process_lava(delta: float) -> void:
-	var overlapping := lava_area.get_overlapping_bodies()
-	var center := play_bounds.get_center()
+	var overlapping: Array = lava_area.get_overlapping_bodies() if lava_area else []
+	var center := _safe_center()
 	for p in active_players:
-		if not (p in overlapping):
+		if p.is_falling or eliminated.get(p.player_id, false):
+			lava_tick_timers[p.player_id] = 0.0
+			continue
+		var burning: bool = p in overlapping
+		if not burning and hot_rim_inner.size() >= 3:
+			# On the island but off the cool core = standing on the glowing rim.
+			burning = _in_safe_zone(p.global_position) \
+				and not Geometry2D.is_point_in_polygon(p.global_position, hot_rim_inner)
+		if not burning:
 			lava_tick_timers[p.player_id] = 0.0
 			continue
 		var t: float = lava_tick_timers.get(p.player_id, 0.0) - delta
