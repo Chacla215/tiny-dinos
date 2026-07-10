@@ -1,5 +1,40 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-10 (arena overhaul: expansion, island identity, sumo dohyo, mode AI)
+
+On `feat/arena-overhaul` (branched off `feat/release-polish`/PR #18). Charlie
+redirected pre-launch: work the graphics/gameplay depth before shipping. An
+audit found (a) all 6 arenas were mechanically identical — the hazard system in
+`main.gd` was fully coded but no arena scene had the trigger nodes — and (b) the
+CPU only understood the objective in 2 of 7 modes.
+
+- **Arena expansion 1.25x (`c7b9a05`).** `ARENA_SCALE` in `main.gd` scales all
+  world geometry (bg sprite, ring-out polygon, spawns, hazard subtrees) about
+  the screen centre and zooms the camera out to match — sprite scale x camera
+  zoom stays constant, so the painting is pixel-identical on screen and the
+  fighters get ~56% more island. No art regen. Shake compensated.
+- **Island identity pass (`754df54`).** Every island now PLAYS differently,
+  wired to what its painting already shows: LAVA = the glowing rim burns
+  (tick + shove back); ICIEST AGE = the frozen lake's inner 80% is slippery;
+  FALLS = constant downstream current (`global_current`); SPRINGS = three
+  geyser pools fling you away (damage-free `apply_burn` launch, dodge slips
+  it); PURPLE = the tree trunk + rock stacks are solid (drops reject their
+  interiors); BEACH = deliberately vanilla (beginner island).
+- **Sumo reworked into a real dohyo (`addf168`).** Small rope ring at center;
+  forced out = point to your last attacker, POINT! banner, bout resets
+  squared-up. First to 5. Was: rounds-with-renamed-score (the audit's most
+  redundant mode).
+- **Mode-aware AI (`511bbbc`).** Bots now play the objective in sumo (stay in
+  the ring), bombtag (flee the holder), beast (hunt the crown), flood (respect
+  the tide). Sumo CPU went from 5-0 self-elimination to a contested 5-3.
+- **Verification tools** (`shot_arena.gd`, `smoke_hazards.gd`, `smoke_sumo.gd`,
+  `smoke_modes.gd`): windowed one-shot arena captures with the debug ring, and
+  headless CPU-vs-CPU smoke-sims proving each mechanic fires in live play.
+- **Still open on this thread:** hurt/KO animation frames (code already looks
+  for "hit"/"ko" clips, none baked); DOHYO_RADIUS / hazard strengths are
+  first-guess tunings for Charlie's controller session; `build/` zips are now
+  two feature-branches stale.
+
 ## Session — 2026-07-09 (Phase 2 close-out: onboarding + UI text sweep)
 
 On `feat/release-polish` (PR #18). Closed the two Phase 2 items that did not

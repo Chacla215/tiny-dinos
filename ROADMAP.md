@@ -41,6 +41,22 @@ One structured controller session:
   hops home, not a dead end. Left as-is; confirm the feel in Phase 1.
 - The Phase 1 fix list.
 
+### Phase 2.5 — Arena & mode overhaul  `[~]` (Charlie-directed 2026-07-10; Claude-side done)
+Charlie's pre-launch call: graphics/gameplay depth before shipping. Audit found
+the 6 arenas mechanically identical (hazard system coded, never wired) and the
+CPU objective-blind in 4 of 7 modes. On `feat/arena-overhaul`:
+- ~~Arena expansion~~ `[x]` all islands 1.25x via world-scale (`ARENA_SCALE`),
+  painting pixel-identical, no art regen.
+- ~~Island identity~~ `[x]` lava rim burns / frozen-lake ice / falls current /
+  springs geyser pools / purple tree+rock collision; beach stays the beginner
+  island.
+- ~~Sumo rework~~ `[x]` real dohyo: rope ring scores, bout resets, first to 5.
+- ~~Mode-aware AI~~ `[x]` bots play the objective in sumo/bombtag/beast/flood.
+- REMAINING: hurt/KO fighter frames (nice-to-have); all new tunings
+  (DOHYO_RADIUS, burn rate, current strength, bounce power) are first-guess —
+  they fold into the Phase 1 controller session. Re-export builds after this
+  lands (zips now stale again).
+
 ### Phase 3 — Package v1.0  `[~]` (builds + kit done 2026-07-08; page = Charlie)
 - ~~Export presets~~ `[x]` macOS (universal, ad-hoc signed) + Windows + Linux
   in `export_presets.cfg`; templates installed; all three exported clean to
