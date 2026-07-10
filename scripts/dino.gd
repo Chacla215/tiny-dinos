@@ -1579,6 +1579,17 @@ func _spawn_thrown_weapon(id: String, dmg: int, kb: float) -> void:
 	item.global_position = global_position + facing * 40.0 + Vector2(0, -6)
 	item.rotation = facing.angle()
 
+# Spawn-armed: equip a weapon directly (match start / round reset), no ground
+# pickup involved. Throwing/dropping it mid-round still reverts you to fists —
+# the round reset hands it back.
+func grant_weapon(id: String) -> void:
+	if id == "" or id == "fists" or not (MatchConfig and MatchConfig.WEAPONS.has(id)):
+		return
+	var slot := _pickup_slot()
+	weapons[slot] = id
+	active_weapon = slot
+	_refresh_weapon()
+
 # Pickup (LT): grab the nearest weapon resting on the ground within reach and
 # equip it (filling a free fists slot, or replacing the active one).
 func try_pickup() -> void:

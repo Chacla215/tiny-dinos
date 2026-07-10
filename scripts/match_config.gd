@@ -91,8 +91,10 @@ const PLAYER_TINTS := {
 # the spike-projectile path) instead of swinging — its standout trait is reach,
 # paid for with modest damage. "range" still nudges the (unused) melee offset but
 # the shot itself flies via the dino's projectile_speed/lifetime exports.
-# Nobody starts armed: weapons drop onto the island mid-round (main.gd) and are
-# picked up with LT. DINOS.weapons is creator-screen "favorite weapons" flavor.
+# Everyone starts armed with their SIGNATURE weapon (DINOS.weapons' non-fists
+# entry; see signature_weapon / main._grant_signature_weapons). Throw it away
+# and you're on fists until the next round hands it back — or grab one of the
+# drops that keep raining mid-round (picked up with LT) to go off-brand.
 const WEAPONS := {
 	"fists":     {"display_name": "FISTS",     "dmg": 1.0,  "kb": 1.0,  "range": 0,   "windup": 1.0, "recovery": 1.0},
 	"sword":     {"display_name": "SWORD",      "dmg": 1.2,  "kb": 1.1,  "range": 16,  "windup": 1.0, "recovery": 1.0},
@@ -1150,6 +1152,15 @@ func _register_player_actions(prefix: String, device: int) -> void:
 # Held-weapon silhouettes (point along +X). The dino rotates these to its facing
 # while held; weapon_item.gd reuses them for the thrown/dropped weapon so a sword
 # on the ground reads as the same sword you were carrying. Empty poly = fists.
+# The dino's signature weapon: the first non-fists entry of DINOS.weapons.
+# Everyone spawns holding theirs (main._grant_signature_weapons).
+func signature_weapon(dino_id: String) -> String:
+	var arr: Array = DINOS.get(dino_id, {}).get("weapons", [])
+	for w in arr:
+		if w != "fists":
+			return w
+	return ""
+
 # Baked painterly weapon sprite (blade toward +X, see bake_weapon_sprites.py),
 # or null for fists/unknown ids — callers fall back to weapon_shape polygons.
 func weapon_texture(id: String) -> Texture2D:
