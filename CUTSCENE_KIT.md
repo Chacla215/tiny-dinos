@@ -137,18 +137,40 @@ VO/captions/music to the measured segment starts (VO must fit its segment:
 check `ffprobe` durations). Ep2 went 65s -> 45s and reads twice as alive.
 Target: no 2 consecutive seconds with a static composition.
 
-**The other four (loglines, script on demand):**
-- **GUS — "THE WALL MOVES":** immovable Gus won't budge for anyone — until
-  Jessie's egg-basket rolls toward the lava; the unstoppable charge, for once,
-  is FOR someone. (Laughing Lava arena.)
-- **JESSIE — "GROUNDED":** show-off sky ace clips a palm mid-stunt and has to
-  win a scrap on foot; discovers the ground game. Ends: dusts off, flies low.
-- **STEVE — "GENTLE GIANT":** everyone wants pacifist Steve on their team; he
-  won't fight — until a bully knocks Ralph's ice cream over. One (1) gentle
-  bonk. (Sunny Springs.)
-- **FRANK — "ONE MORE ROUND":** the old veteran hangs up his club; the kids
-  beg for one last lesson. He blocks everything they throw (spikeback!), taps
-  each on the head, retires happy. (Iciest Age.)
+**STEVE — "THE GENTLE GIANT" EPISODE 3 (PRE-PRODUCED 2026-07-09 — generation
+awaits the credit top-up, ~400 cr safe):** cold open resolves Ep2 (the one
+gentle step; flower + handshake; Max smiles), then Steve's arc — his sumo win
+makes him famous, everyone drags the pacifist into the springs **TEAM RUMBLE**
+(real mode) where he's sweetly useless… until GUS flattens Ralph's ice cream.
+Signature weapon = the **WAR HAMMER, held in his MOUTH** (bronto grab
+anatomy); cliffhanger = hammer at apex over gulping Gus. Arena: beach beat 1 →
+**SUNNY SPRINGS** beats 2-5 (location change = composite start frame, the v2
+recipe, from the painterly `assets/tilesets/sunny_springs_bg.png`).
+Everything staged in `wip/ep3_steve/`: `seedance_prompts.md` (beats +
+identity locks for Steve AND Gus + VO lines), `beat0_end.png` (Ep2's final
+freeze = cold-open start), `beat2_start.png` (+`make_ep3_start.py`),
+`cap1..5.png` + `tbc_card.png` (+`make_ep3_overlays.py`),
+`build_ep3_tight.sh` (pacing-rule cut, trim windows marked TUNE), picnic bed.
+VO not yet generated (5 lines ≈ the entire remaining 3.5 cr — no retake
+headroom; first step after top-up).
+
+**SEASON HANDOFF CHAIN (locked pattern):** each episode's co-star becomes the
+next protagonist — **Ralph → Max → Steve → Gus → Jessie → Frank** — and each
+cold open resolves the previous cliffhanger. Ep4 = GUS (co-star Jessie),
+Ep5 = JESSIE (co-star Frank), Ep6 = FRANK (everyone; season finale).
+
+**The other three (loglines, script on demand):**
+- **GUS — "THE WALL MOVES" (Ep4):** cold open = Steve's one (1) gentle bonk
+  lands (Gus faints from anticipation; the scoop plops back on Ralph's cone).
+  Then: immovable Gus won't budge for anyone — until Jessie's egg-basket
+  rolls toward the lava; the unstoppable charge, for once, is FOR someone.
+  (Laughing Lava arena, EGGS mode.)
+- **JESSIE — "GROUNDED" (Ep5):** show-off sky ace clips a palm mid-stunt and
+  has to win a scrap on foot; discovers the ground game. Ends: dusts off,
+  flies low.
+- **FRANK — "ONE MORE ROUND" (Ep6):** the old veteran hangs up his club; the
+  kids beg for one last lesson. He blocks everything they throw (spikeback!),
+  taps each on the head, retires happy. (Iciest Age; season finale.)
 
 Post per story: per-dino label (beat 1-2), light captions, the LOCKED audio
 template (picnic bed → battle drop at the turn, Arthur+energy narration),
