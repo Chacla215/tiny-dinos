@@ -161,6 +161,12 @@ func _ready() -> void:
 	dinos_rest = dinos.position
 	_play_intro()
 
+	# Nothing here is bound to a keyboard, so a first-time player has no way to
+	# learn the pad. Open the controller map over the intro on the very first
+	# launch; A or B dismisses it and _close_howto records that it was seen.
+	if not MetaSave.seen_howto:
+		_open_howto()
+
 func _process(delta: float) -> void:
 	t += delta
 	# Idle life: logo bobs, dinos bob out of phase, backdrop sways, prompt pulses.
@@ -277,6 +283,9 @@ func _open_howto() -> void:
 func _close_howto() -> void:
 	howto_open = false
 	howto_panel.visible = false
+	# Reading it once — from the menu or the first-launch prompt — is enough.
+	# Recorded on close, not on open, so quitting mid-panel shows it again.
+	MetaSave.mark_howto_seen()
 
 # Intro: TINY drops from above and slams onto DINOS, which squashes flat and
 # springs back, launching TINY into a few decaying bounces before it settles

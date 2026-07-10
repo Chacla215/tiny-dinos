@@ -38,6 +38,11 @@ var skins: Dictionary = {}
 # the SETTINGS screen writes them live (see Audio.set_volume_step).
 var volume_steps: Dictionary = {}
 
+# The game is gamepad-only with no keyboard fallback, so a first-time player has
+# no way to discover the buttons. The title screen opens HOW TO PLAY once, on the
+# very first launch, then flips this and never does it again.
+var seen_howto: bool = false
+
 # --- CAREER MODE: the ONE persistent dino you raise across the journey. Unlike a
 # gauntlet run (throwaway, lives on MatchConfig), a career survives quitting the
 # game, so its whole state persists here. Forgiving-with-stakes: losses cost mood
@@ -101,6 +106,7 @@ func _load() -> void:
 		volume_steps = cfg.get_value("settings", "volume_steps", {})
 		if typeof(volume_steps) != TYPE_DICTIONARY:
 			volume_steps = {}
+		seen_howto = bool(cfg.get_value("settings", "seen_howto", false))
 		career_started = bool(cfg.get_value("career", "started", false))
 		career_dino = str(cfg.get_value("career", "dino", ""))
 		career_name = str(cfg.get_value("career", "name", ""))
@@ -130,6 +136,7 @@ func _save() -> void:
 	cfg.set_value("cosmetics", "owned_skins", owned_skins)
 	cfg.set_value("cosmetics", "skins", skins)
 	cfg.set_value("settings", "volume_steps", volume_steps)
+	cfg.set_value("settings", "seen_howto", seen_howto)
 	cfg.set_value("career", "started", career_started)
 	cfg.set_value("career", "dino", career_dino)
 	cfg.set_value("career", "name", career_name)
@@ -155,6 +162,12 @@ func set_skin(dino_id: String, idx: int) -> void:
 # Persist one bus's volume step (the Audio autoload owns applying it).
 func set_volume_step(bus: String, step: int) -> void:
 	volume_steps[bus] = step
+	_save()
+
+func mark_howto_seen() -> void:
+	if seen_howto:
+		return
+	seen_howto = true
 	_save()
 
 func has_unlock(id: String) -> bool:
