@@ -1598,7 +1598,7 @@ func end_match(winner: CharacterBody2D, label: String) -> void:
 		var pts: int = dp.get(pid, 0)
 		lines.append("%s   %d DP   %s" % [_dino_name(pid), pts, _grade(pts)])
 	lines.append("")
-	lines.append("press START for character select")
+	lines.append("PRESS START FOR CHARACTER SELECT")
 	hud_hint.text = "\n".join(lines)
 	for p in active_players:
 		p.set_process_input(false)
@@ -1624,7 +1624,7 @@ func _end_match_season(winner: Node) -> void:
 		var revive: String = ""
 		if MetaSave.continue_tokens > 0:
 			revive = "A  USE CONTINUE TOKEN (%d)  -  REVIVE\n" % MetaSave.continue_tokens
-		hud_hint.text = "%s\n\n%spress START for the title" % [_season_standings_text(MatchConfig.season_matchday - 1), revive]
+		hud_hint.text = "%s\n\n%sPRESS START FOR THE TITLE" % [_season_standings_text(MatchConfig.season_matchday - 1), revive]
 		play_sfx("ko", 0.0)
 	elif MatchConfig.season_is_final():
 		season_end = "champion"
@@ -1636,7 +1636,7 @@ func _end_match_season(winner: Node) -> void:
 		hud_win.text = "SEASON CHAMPION!"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
 		var unlock_line: String = "UNLOCKED:  CHAMPION SKIN\n\n" if first_time else ""
-		hud_hint.text = "%s\n\n+%d COINS\n\n%spress START for the title" % [_season_standings_text(MatchConfig.season_matchday), reward, unlock_line]
+		hud_hint.text = "%s\n\n+%d COINS\n\n%sPRESS START FOR THE TITLE" % [_season_standings_text(MatchConfig.season_matchday), reward, unlock_line]
 		play_sfx("win", 0.0)
 	else:
 		# Matchday won (not the finale): pay the matchday coins, then pick a team perk,
@@ -1694,12 +1694,12 @@ func _end_match_career(winner: Node) -> void:
 			career_end = "victory"
 			hud_win.text = "CHAMPION OF THE ISLANDS!"
 			hud_win.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
-			hud_hint.text = "%s\n%d WINS  %d LOSSES\n\npress START for the title" % [MatchConfig.career_story(stop, "win"), MetaSave.career_wins, MetaSave.career_losses]
+			hud_hint.text = "%s\n%d WINS  %d LOSSES\n\nPRESS START FOR THE TITLE" % [MatchConfig.career_story(stop, "win"), MetaSave.career_wins, MetaSave.career_losses]
 		else:
 			career_end = "won"
 			hud_win.text = "STOP %d CLEARED" % (stop + 1)
 			hud_win.add_theme_color_override("font_color", Color(0.4, 0.95, 0.5))
-			hud_hint.text = "%s\n+%d XP  +%d COINS  (LV %d)\n\npress START to travel on" % [MatchConfig.career_story(stop, "win"), rew.xp, rew.coins, MetaSave.career_level()]
+			hud_hint.text = "%s\n+%d XP  +%d COINS  (LV %d)\n\nPRESS START TO TRAVEL ON" % [MatchConfig.career_story(stop, "win"), rew.xp, rew.coins, MetaSave.career_level()]
 		play_sfx("win", 0.0)
 	else:
 		career_end = "lost"
@@ -1707,7 +1707,7 @@ func _end_match_career(winner: Node) -> void:
 		MetaSave.career_record_fight(false, loss_xp, 0, -1, _career_scar(stop))
 		hud_win.text = "KNOCKED OUT"
 		hud_win.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
-		hud_hint.text = "%s  (+%d XP)\nREST UP AND TRY AGAIN.\n\npress START to regroup" % [MatchConfig.career_story(stop, "loss"), loss_xp]
+		hud_hint.text = "%s  (+%d XP)\nREST UP AND TRY AGAIN.\n\nPRESS START TO REGROUP" % [MatchConfig.career_story(stop, "loss"), loss_xp]
 		play_sfx("ko", 0.0)
 
 # One line of loss flavor for the scar log (story texture; display-only).
@@ -1745,7 +1745,7 @@ func _end_match_gauntlet(winner: Node) -> void:
 		var msg: String = "REACHED WAVE %d   -   %d UPGRADES\nBEST WAVE %d" % [wave, MatchConfig.gauntlet_upgrades.size(), MetaSave.best_wave]
 		for u in newly:
 			msg += "\nNEW UNLOCK!   %s  -  %s" % [u["name"], u["blurb"]]
-		msg += "\n\npress START for the title"
+		msg += "\n\nPRESS START FOR THE TITLE"
 		hud_hint.text = msg
 		play_sfx("ko", 0.0)
 		return
