@@ -60,6 +60,21 @@ var obstacle_circles: Array = []
 var spring_pools: Array = []
 const SPRING_BOUNCE := 560.0
 
+# --- Signature island EVENTS: an announced, telegraphed ~6-9s twist that fires
+# a while into the match and then on a cadence. Always on — part of the island.
+const EVENT_FIRST := 24.0
+const EVENT_EVERY := 34.0
+const EVENT_NAMES := {
+	"laughing_lava": "ERUPTION!",
+	"beauty_beach": "ROGUE WAVE!",
+	"iciest_age": "COLD SNAP!",
+	"white_water_falls": "FLASH FLOOD!",
+	"sunny_springs": "ALL GEYSERS!",
+	"purple_fields": "FRUIT DROP!",
+}
+var event_timer: float = EVENT_FIRST
+var event_active: bool = false
+
 ## Players don't physically collide (that caused latching); instead they're
 ## softly pushed apart in code so you can shove against each other, not stick.
 const PLAYER_SEPARATION := 56.0
@@ -222,6 +237,7 @@ func _ready() -> void:
 		kos_to_win = MatchConfig.career_kos_to_win()  # best-of-2, boss best-of-3
 	_ensure_extra_players()   # 3v3+: clone Player5/Player6 into the scene if needed
 	_setup_active_players()
+	_grant_signature_weapons()  # everyone opens the match holding their weapon
 	_layout_spawns()          # 3v3+: arrange six fighters in two team rows
 	_build_extra_huds()       # 3v3+: code-built mid-edge HUD corners for p5/p6
 	_apply_match_colors()
@@ -231,11 +247,12 @@ func _ready() -> void:
 	_setup_game_mode()
 	update_score_display()
 	_load_sfx()
-	_build_debug_boundary()  # red ring-out outline when debug_draw_safe_zone is on
 	_spawn_ambient()  # [experiment] per-island atmosphere particles
 	_build_play_calm()  # dim the busy play surface so fighters read (readability pass)
 	_build_island_hazards()  # each island's real mechanic — AFTER the calm layer so
 	                         # hazard visuals (spring pools) draw over the dim, under dinos
+	_build_debug_boundary()  # red ring-out outline when debug_draw_safe_zone is on
+	                         # (after hazards so it shows merged pier/bridge walkways)
 	# [experiment] Power-ups in standard versus only (not the balance-tuned solo
 	# ladders, and not the modes that already revolve around their own pickups).
 	var special: bool = (MatchConfig and "gauntlet" in MatchConfig and MatchConfig.gauntlet) \
@@ -335,6 +352,320 @@ func _build_island_hazards() -> void:
 			_build_obstacle_circle(Vector2(308, 262), 40.0)
 			_build_obstacle_circle(Vector2(1028, 268), 42.0)
 			_build_obstacle_circle(Vector2(494, 610), 30.0)
+	# Walkable painted structures (selective — only where the paint earns it):
+	# Beach's two piers give the vanilla island its spatial identity; Falls'
+	# rope bridges are narrow flanks the current makes treacherous.
+	match island:
+		"beauty_beach":
+			# The painted piers run diagonally off the bottom shorelines.
+			_merge_walkway(Vector2(320, 555), Vector2(55, 670), 38.0)     # left pier
+			_merge_walkway(Vector2(860, 585), Vector2(1185, 705), 40.0)   # right pier
+		"white_water_falls":
+			_merge_walkway(Vector2(160, 373), Vector2(-95, 373), 35.0)    # left rope bridge
+			_merge_walkway(Vector2(1120, 373), Vector2(1375, 373), 35.0)  # right rope bridge
+
+# Union a painted walkway (a thick segment in ORIGINAL 1280x720 world space,
+# inner end first so it overlaps the island) into the ring-out polygon, making
+# the pier/bridge real ground. Keeps the largest merged ring; a lobe that fails
+# to overlap the island is discarded (island stays intact).
+func _merge_walkway(inner: Vector2, outer: Vector2, half_width: float) -> void:
+	if safe_polygon.size() < 3:
+		return
+	var perp := (outer - inner).normalized().orthogonal() * half_width
+	var pts := PackedVector2Array([
+		_scaled_pt(inner + perp),
+		_scaled_pt(outer + perp),
+		_scaled_pt(outer - perp),
+		_scaled_pt(inner - perp)])
+	var merged := Geometry2D.merge_polygons(safe_polygon, pts)
+	var best := PackedVector2Array()
+	var best_area := 0.0
+	for poly in merged:
+		if Geometry2D.is_polygon_clockwise(poly):
+			continue  # holes can't happen from a rect union; skip just in case
+		var area: float = absf(_polygon_area(poly))
+		if area > best_area:
+			best_area = area
+			best = poly
+	if best.size() >= 3:
+		safe_polygon = best
+
+func _polygon_area(poly: PackedVector2Array) -> float:
+	var a := 0.0
+	for i in range(poly.size()):
+		var j := (i + 1) % poly.size()
+		a += poly[i].x * poly[j].y - poly[j].x * poly[i].y
+	return a * 0.5
+
+# --- Signature island events ---
+
+func _update_island_event(delta: float) -> void:
+	if event_active or match_over:
+		return
+	var island: String = MatchConfig.island if MatchConfig and "island" in MatchConfig else ""
+	if not EVENT_NAMES.has(island):
+		return
+	event_timer -= delta
+	if event_timer > 0.0:
+		return
+	event_timer = EVENT_EVERY
+	_run_island_event(island)
+
+func _run_island_event(island: String) -> void:
+	event_active = true
+	_announce_event(EVENT_NAMES[island])
+	match island:
+		"laughing_lava":
+			await _event_eruption()
+		"beauty_beach":
+			await _event_rogue_wave()
+		"iciest_age":
+			await _event_cold_snap()
+		"white_water_falls":
+			await _event_flash_flood()
+		"sunny_springs":
+			await _event_all_geysers()
+		"purple_fields":
+			await _event_fruit_drop()
+	event_active = false
+
+# Flash the event name mid-screen (borrows the end-of-match hint label, unused
+# until match_over) with a warning sting.
+func _announce_event(event_name: String) -> void:
+	hud_hint.text = event_name
+	hud_hint.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
+	play_sfx("guard_break", 0.25)
+	shake(4.0, 0.1)
+	var t := get_tree().create_timer(1.4, true, false, true)
+	t.timeout.connect(func() -> void:
+		if not match_over:
+			hud_hint.text = ""
+		hud_hint.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85, 1.0)))
+
+# Pulsing danger ring on the ground (ellipse, perspective-squashed).
+func _spawn_telegraph(pt: Vector2, r: float, col: Color) -> Node2D:
+	var vis := Node2D.new()
+	vis.position = pt
+	var ring := Line2D.new()
+	var pts := _circle_points(r, r * 0.62, 30)
+	pts.append(pts[0])
+	ring.points = pts
+	ring.width = 4.0
+	ring.default_color = col
+	vis.add_child(ring)
+	add_child(vis)
+	_insert_under_players(vis)
+	var tw := vis.create_tween().set_loops()
+	tw.tween_property(vis, "scale", Vector2(0.9, 0.9), 0.22)
+	tw.tween_property(vis, "scale", Vector2(1.0, 1.0), 0.22)
+	return vis
+
+# Area hit: flash + burn/launch every fighter inside the (squashed) radius.
+func _burst_at(pt: Vector2, r: float, dmg: int, kb: float, col: Color) -> void:
+	var flash := Polygon2D.new()
+	flash.polygon = _circle_points(r, r * 0.62, 26)
+	flash.position = pt
+	flash.color = col
+	add_child(flash)
+	_insert_under_players(flash)
+	var tw := flash.create_tween()
+	tw.tween_property(flash, "modulate", Color(1, 1, 1, 0), 0.45)
+	tw.tween_callback(flash.queue_free)
+	play_sfx("hit_chomp", 0.15)
+	shake(6.0, 0.12)
+	if not round_active:
+		return  # visuals only while play is frozen (sumo banner etc.)
+	for p in active_players:
+		if p.is_falling or eliminated.get(p.player_id, false):
+			continue
+		var d := (p.global_position - pt) / Vector2(r, r * 0.62)
+		if d.length() > 1.0:
+			continue
+		var dir := (p.global_position - pt).normalized()
+		if dir.length() < 0.5:
+			dir = Vector2.RIGHT.rotated(randf() * TAU)
+		var lethal: bool = p.apply_burn(dmg, dir * kb)
+		if lethal:
+			handle_environmental_kill(p)
+
+# ERUPTION (Laughing Lava): four telegraphed lava bursts, one after another.
+func _event_eruption() -> void:
+	for i in 4:
+		if match_over:
+			return
+		var pt := _random_safe_point()
+		var r := 78.0 * ARENA_SCALE
+		var ring := _spawn_telegraph(pt, r, Color(1.0, 0.5, 0.15, 0.9))
+		await get_tree().create_timer(1.1, true, false, true).timeout
+		ring.queue_free()
+		if match_over:
+			return
+		_burst_at(pt, r, 12, 380.0, Color(1.0, 0.45, 0.1, 0.55))
+		await get_tree().create_timer(0.5, true, false, true).timeout
+
+# ROGUE WAVE (Beauty Beach): one shoreline side foams up, then three surges
+# shove everyone on that outer band toward the water.
+func _event_rogue_wave() -> void:
+	var side := Vector2.RIGHT.rotated(randf() * TAU)
+	var c := _safe_center()
+	# Foam telegraph along the threatened stretch of shoreline.
+	var foam := Line2D.new()
+	var fpts := PackedVector2Array()
+	for pt in safe_polygon:
+		if (pt - c).normalized().dot(side) > 0.35:
+			fpts.append(pt)
+	if fpts.size() < 2:
+		return
+	foam.points = fpts
+	foam.width = 14.0
+	foam.default_color = Color(1.0, 1.0, 1.0, 0.55)
+	add_child(foam)
+	_insert_under_players(foam)
+	var tw := foam.create_tween().set_loops()
+	tw.tween_property(foam, "modulate", Color(1, 1, 1, 0.4), 0.25)
+	tw.tween_property(foam, "modulate", Color(1, 1, 1, 1.0), 0.25)
+	await get_tree().create_timer(1.5, true, false, true).timeout
+	for surge in 3:
+		if match_over:
+			foam.queue_free()
+			return
+		play_sfx("dodge", 0.2)
+		shake(5.0, 0.1)
+		if round_active:
+			for p in active_players:
+				if p.is_falling or eliminated.get(p.player_id, false):
+					continue
+				var off := p.global_position - c
+				if off.normalized().dot(side) > 0.35 \
+						and not Geometry2D.is_point_in_polygon(c + off / 0.72, safe_polygon):
+					# outer band on the threatened side: dragged toward the water
+					p.apply_burn(3, off.normalized() * 330.0)
+		await get_tree().create_timer(0.8, true, false, true).timeout
+	foam.queue_free()
+
+# COLD SNAP (Iciest Age): the whole platform ices over for a stretch.
+func _event_cold_snap() -> void:
+	var iced: Array = []
+	for p in active_players:
+		if eliminated.get(p.player_id, false):
+			continue
+		p.enter_ice()
+		iced.append(p)
+	await get_tree().create_timer(8.0, true, false, true).timeout
+	for p in iced:
+		if is_instance_valid(p) and p.ice_overlap_count > 0:
+			p.exit_ice()  # respawn zeroed it already for anyone who fell
+
+# FLASH FLOOD (White Water Falls): the current doubles and a log sweeps
+# downstream through the middle of the platform.
+func _event_flash_flood() -> void:
+	var saved_current := global_current
+	global_current = saved_current * 2.4
+	var bb := _polygon_bounds(safe_polygon)
+	var log_x := randf_range(bb.position.x + bb.size.x * 0.25, bb.end.x - bb.size.x * 0.25)
+	var log := Node2D.new()
+	var body := Polygon2D.new()
+	var lr := 88.0 * ARENA_SCALE
+	body.polygon = _circle_points(lr, lr * 0.28, 22)
+	body.color = Color(0.42, 0.28, 0.16, 0.95)
+	var rim := Line2D.new()
+	var rpts := _circle_points(lr, lr * 0.28, 22)
+	rpts.append(rpts[0])
+	rim.points = rpts
+	rim.width = 3.0
+	rim.default_color = Color(0.25, 0.16, 0.09, 0.9)
+	log.add_child(body)
+	log.add_child(rim)
+	log.position = Vector2(log_x, bb.position.y - 60.0)
+	add_child(log)
+	_insert_under_players(log)
+	var hit: Dictionary = {}
+	var dur := 3.6
+	var t := 0.0
+	while t < dur:
+		await get_tree().create_timer(0.05, true, false, true).timeout
+		if match_over:
+			break
+		t += 0.05
+		log.position.y = lerpf(bb.position.y - 60.0, bb.end.y + 80.0, t / dur)
+		if not round_active:
+			continue
+		for p in active_players:
+			if hit.has(p.player_id) or p.is_falling or eliminated.get(p.player_id, false):
+				continue
+			var d := (p.global_position - log.position) / Vector2(lr, lr * 0.5)
+			if d.length() <= 1.0:
+				hit[p.player_id] = true
+				play_sfx("hit_claw", 0.1)
+				var lethal: bool = p.apply_burn(6, Vector2(0, 1) * 430.0 + Vector2(randf_range(-80, 80), 0))
+				if lethal:
+					handle_environmental_kill(p)
+	log.queue_free()
+	global_current = saved_current
+
+# ALL GEYSERS (Sunny Springs): every pool erupts continuously for a stretch.
+func _event_all_geysers() -> void:
+	var t := 0.0
+	while t < 8.0:
+		await get_tree().create_timer(0.65, true, false, true).timeout
+		if match_over:
+			return
+		t += 0.65
+		for pool: Area2D in spring_pools:
+			if not is_instance_valid(pool):
+				continue
+			pool.modulate = Color(1.6, 1.9, 2.0, 1.0)
+			var tw := pool.create_tween()
+			tw.tween_property(pool, "modulate", Color(1, 1, 1, 1), 0.3)
+			if not round_active:
+				continue
+			for body in pool.get_overlapping_bodies():
+				if body in active_players and not body.is_falling:
+					var dir: Vector2 = body.global_position - pool.global_position
+					dir = dir.normalized() if dir.length() > 1.0 else Vector2.RIGHT.rotated(randf() * TAU)
+					body.apply_burn(0, dir * SPRING_BOUNCE)
+		play_sfx("dodge", 0.15)
+
+# FRUIT DROP (Purple Fields): the great tree drops a healing fruit — an
+# instant fight magnet. First dino on it eats it (+40 HP).
+func _event_fruit_drop() -> void:
+	var pt := _random_safe_point()
+	var fruit := Node2D.new()
+	var flesh := Polygon2D.new()
+	var fr := 16.0 * ARENA_SCALE
+	flesh.polygon = _circle_points(fr, fr, 16)
+	flesh.color = Color(0.9, 0.3, 0.55, 1.0)
+	var leaf := Polygon2D.new()
+	leaf.polygon = PackedVector2Array([Vector2(0, -fr), Vector2(10, -fr - 12), Vector2(3, -fr - 3)])
+	leaf.color = Color(0.4, 0.75, 0.35, 1.0)
+	fruit.add_child(flesh)
+	fruit.add_child(leaf)
+	fruit.position = pt + Vector2(0, -170.0)
+	fruit.modulate = Color(1, 1, 1, 0)
+	add_child(fruit)
+	var drop := fruit.create_tween()
+	drop.set_parallel(true)
+	drop.tween_property(fruit, "position", pt, 0.7).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	drop.tween_property(fruit, "modulate", Color(1, 1, 1, 1), 0.25)
+	var t := 0.0
+	while t < 11.0:
+		await get_tree().create_timer(0.1, true, false, true).timeout
+		if match_over:
+			break
+		t += 0.1
+		if t < 0.8 or not round_active:
+			continue
+		for p in active_players:
+			if p.is_falling or eliminated.get(p.player_id, false):
+				continue
+			if p.global_position.distance_to(fruit.position) <= 48.0:
+				p.hp = mini(p.hp + 40, p.max_hp)
+				p.update_hp_bar()
+				play_sfx("pickup", 0.1)
+				_burst_at(fruit.position, 40.0, 0, 0.0, Color(0.95, 0.5, 0.7, 0.4))
+				fruit.queue_free()
+				return
+	fruit.queue_free()
 
 func _build_spring_pool(pos: Vector2, r: float) -> void:
 	var pool := Area2D.new()
@@ -506,6 +837,17 @@ func _spawn_ambient() -> void:
 	p.color = s["color"]
 	p.z_index = 55  # in front of fighters/effects, behind the HUD layer
 	add_child(p)  # world-space at the arena centre (camera barely moves)
+
+# SPAWN-ARMED: every fighter opens holding their signature weapon (the non-fists
+# entry of their DINOS.weapons). Mid-round drops stay on as swap opportunities.
+func _grant_signature_weapons() -> void:
+	for p in active_players:
+		if eliminated.get(p.player_id, false):
+			continue
+		var dino_id: String = MatchConfig.dino_choices.get(p.player_id, "")
+		var sig: String = MatchConfig.signature_weapon(dino_id)
+		if sig != "" and p.has_method("grant_weapon"):
+			p.grant_weapon(sig)
 
 func _setup_active_players() -> void:
 	var count: int = MatchConfig.player_count
@@ -1496,6 +1838,7 @@ func _physics_process(delta: float) -> void:
 		_update_beast(delta)
 	elif game_mode == "flood":
 		_update_flood(delta)
+	_update_island_event(delta)  # the island's signature twist, on its own clock
 
 func _process_lava(delta: float) -> void:
 	var overlapping: Array = lava_area.get_overlapping_bodies() if lava_area else []
@@ -1819,6 +2162,7 @@ func _end_round(winner_pid: String) -> void:
 		p.set_process_input(true)
 		if p.has_method("respawn"):
 			p.respawn()
+	_grant_signature_weapons()  # a thrown-away signature comes back each round
 	hud_win.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 	# Announce the mode by name on the opening round of a standard versus match so
 	# the rule is clear before the fight (gauntlet/season have their own banners).
