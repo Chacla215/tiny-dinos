@@ -28,6 +28,13 @@ const SFX_PATHS := {
 @export var clamp_to_bounds: bool = false
 @export var play_bounds: Rect2 = Rect2(24, 24, 1232, 672)
 
+## ARENA EXPANSION: world geometry (background, ring-out polygon, spawns, baked
+## hazard nodes) is scaled up about the screen centre and the camera zooms out by
+## the same factor, so the painted island renders at the SAME on-screen pixel
+## density — the fighters (unscaled) simply get more island to brawl across.
+## 1.0 = the original pre-expansion framing.
+const ARENA_SCALE := 1.25
+
 @export_group("Hazards")
 ## "kill" = touching Water is an instant ring-out (default).
 ## "lava" = Water burns: repeated damage + a shove back toward center.
@@ -186,6 +193,7 @@ func _ready() -> void:
 				child.body_exited.connect(_on_floe_exited)
 	hud_win.text = ""
 	hud_hint.text = ""
+	_apply_arena_scale()  # enlarge the island + zoom out BEFORE anything reads geometry
 	game_mode = MatchConfig.game_mode if MatchConfig and "game_mode" in MatchConfig else "rounds"
 	if MatchConfig and "season" in MatchConfig and MatchConfig.season:
 		kos_to_win = 2  # snappy matchdays
@@ -214,6 +222,43 @@ func _ready() -> void:
 	powerups_enabled = not special and game_mode in ["rounds", "koth", "sumo", "flood"]
 	powerup_spawn_timer = 6.0
 	_match_intro()  # dino roster intro over the buildup, then FIGHT on the beat drop
+
+# ARENA EXPANSION (see ARENA_SCALE). Scales every piece of world geometry about the
+# screen centre and zooms the camera out to match. Background sprite scale × camera
+# zoom stays constant, so the painting is pixel-identical on screen — only the
+# fighters end up smaller relative to the island, which IS the expansion. Baked
+# hazard/decoration nodes (Water/Floe/IcePatches/…) are scaled as whole subtrees so
+# arena scenes stay authored in the original 1280×720 background space.
+func _apply_arena_scale() -> void:
+	if absf(ARENA_SCALE - 1.0) < 0.001:
+		return
+	var c := Vector2(640, 360)
+	if camera:
+		camera.zoom /= ARENA_SCALE
+	for node_name in ["BackgroundImage", "CurrentHint", "IcePatches", "Water",
+			"Floe", "SlowZone", "Platform", "PlatformRim", "DangerZone"]:
+		var n := get_node_or_null(NodePath(node_name))
+		if n is Node2D:
+			n.position = c + (n.position - c) * ARENA_SCALE
+			n.scale *= ARENA_SCALE
+	# The flat ocean-colour backdrop only peeks out during screen shake — grow it
+	# well past the widened view so the window colour never shows.
+	var backdrop := get_node_or_null("Background")
+	if backdrop is Node2D:
+		backdrop.position = c + (backdrop.position - c) * (ARENA_SCALE * 1.6)
+		backdrop.scale *= ARENA_SCALE * 1.6
+	var poly := PackedVector2Array()
+	for pt in safe_polygon:
+		poly.append(c + (pt - c) * ARENA_SCALE)
+	safe_polygon = poly
+	safe_rect = Rect2(c + (safe_rect.position - c) * ARENA_SCALE, safe_rect.size * ARENA_SCALE)
+	play_bounds = Rect2(c + (play_bounds.position - c) * ARENA_SCALE, play_bounds.size * ARENA_SCALE)
+	# Baked fighters: reposition AND re-stamp spawn_point (dino._ready captured the
+	# unscaled position before this ran — children ready before the parent).
+	for p in all_players:
+		p.position = c + (p.position - c) * ARENA_SCALE
+		if "spawn_point" in p:
+			p.spawn_point = p.position
 
 # Per-island ENVIRONMENT GRADE: a subtle colour multiply applied to every fighter so
 # they read as lit by the scene (warm firelight on lava, cold blue on the floes,
@@ -277,7 +322,7 @@ func _spawn_ambient() -> void:
 	# gently drift, rather than streaming in from one edge.
 	p.position = camera.global_position
 	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	p.emission_rect_extents = Vector2(820, 480)  # covers the zoomed-out view
+	p.emission_rect_extents = Vector2(820, 480) * ARENA_SCALE  # covers the zoomed-out view
 	p.direction = Vector2(0, -1) if rise else Vector2(0, 1)
 	p.spread = 22.0
 	p.gravity = Vector2(8.0, -12.0 if rise else 14.0)  # slight sideways drift
@@ -564,7 +609,7 @@ func _build_play_calm() -> void:
 	calm.texture = tex
 	calm.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	calm.position = _safe_center()
-	calm.scale = Vector2(5.0, 3.1)   # wide oval over the play surface
+	calm.scale = Vector2(5.0, 3.1) * ARENA_SCALE   # wide oval over the play surface
 	calm.modulate = Color(1.0, 1.0, 1.0, strength)
 	add_child(calm)
 	_insert_under_players(calm)
@@ -2129,6 +2174,9 @@ func _fight_drop() -> void:
 # --- Camera juice (called from dinos) ---
 
 func shake(intensity: float, duration: float) -> void:
+	# Offset is world-space, so the zoomed-out expanded camera would render the
+	# same intensity ~ARENA_SCALE weaker on screen — compensate to keep the feel.
+	intensity *= ARENA_SCALE
 	shake_amount = max(shake_amount, intensity)
 	shake_remaining = max(shake_remaining, duration)
 
