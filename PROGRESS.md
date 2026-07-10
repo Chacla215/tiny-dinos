@@ -1,5 +1,28 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-09 (Phase 2 close-out: onboarding + UI text sweep)
+
+On `feat/release-polish` (PR #18). Closed the two Phase 2 items that did not
+actually need Charlie's controller session.
+
+- **First-run onboarding (`31ec53a`).** The game is gamepad-only with no
+  keyboard fallback, and HOW TO PLAY was the 8th of 10 title items — a
+  first-time player had nothing telling them the buttons exist. `title.gd`
+  now opens the existing controller-map panel over the logo intro on the
+  first launch ever; A or B dismisses it. New `MetaSave.seen_howto` flag
+  (settings section, defaults false, so existing saves see it once). Recorded
+  in `_close_howto`, not `_open_howto`, so quitting mid-panel re-shows it and
+  opening from the menu also counts. Verified against the real `title.tscn`
+  with a throwaway headless SceneTree probe (opens on fresh flag, stays shut
+  on set flag, closes + records on dismiss).
+- **UI text sweep (`7e5aecb`).** Seven end-of-match hints shipped lowercase
+  (`"press START for the title"` and friends) across exhibition, season,
+  career and gauntlet, against the ALL CAPS convention in CLAUDE.md.
+- **Win/quit flows: audited, no change.** The win screen is START-only because
+  `pause_manager.gd` deliberately gates pause off once `match_over` is true
+  (START is the restart button there). START → select → B → title, so it is
+  two hops home rather than a dead end. Feel-check it in Phase 1.
+
 ## Session — 2026-07-09 (brand logo + shorts template v2 + Episode 1 produced)
 
 All on `feat/release-polish` (PR #18 still open, now includes this). Charlie

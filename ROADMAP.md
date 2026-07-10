@@ -31,8 +31,14 @@ One structured controller session:
   first-guess picks — Charlie's ear check folds into Phase 1.
 - ~~**Settings screen**~~ `[x]` SETTINGS on the title: MUSIC/SFX 10-step
   knobs, persisted in MetaSave, applied via the Audio buses.
-- First-run onboarding check (how-to-play discoverability), win/quit flows —
-  fold into the Phase 1 controller session.
+- ~~**First-run onboarding**~~ `[x]` (2026-07-09) The title opens HOW TO PLAY
+  once on the very first launch (`MetaSave.seen_howto`); A/B dismisses. Fixes
+  discoverability on a gamepad-only game where the item sat 8th of 10.
+- ~~**UI text sweep**~~ `[x]` (2026-07-09) The seven end-of-match START prompts
+  were lowercase; now ALL CAPS per the convention.
+- Win/quit flows: audited — the win screen is START-only (pause is deliberately
+  gated off once `match_over`), and START → select → B → title, so it is two
+  hops home, not a dead end. Left as-is; confirm the feel in Phase 1.
 - The Phase 1 fix list.
 
 ### Phase 3 — Package v1.0  `[~]` (builds + kit done 2026-07-08; page = Charlie)
