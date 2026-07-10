@@ -455,7 +455,7 @@ const MODE_BLURBS := {
 	"stock": "{lives} LIVES EACH  -  LAST DINO STANDING",
 	"koth": "HOLD THE HILL  -  FIRST TO {koth}s  -  KOs RESPAWN",
 	"eggs": "GRAB EGGS  -  FIRST TO {eggs}  -  KOs RESPAWN",
-	"sumo": "NO HP  -  SHOVE THEM OFF  -  FIRST TO {sumo} RING-OUTS",
+	"sumo": "STAY IN THE RING  -  FORCE THEM OUT  -  FIRST TO {sumo} POINTS",
 	"bombtag": "PASS THE BOMB OR BOOM  -  SURVIVE TO WIN",
 	"beast": "BE THE CROWNED BEAST  -  FIRST TO {beast}s",
 	"flood": "THE TIDE RISES  -  LAST DINO ON DRY LAND WINS",

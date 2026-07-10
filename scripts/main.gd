@@ -111,6 +111,14 @@ var hill_center: Vector2 = Vector2.ZERO
 var hill_visual: Node2D = null
 var hill_ring: Line2D = null
 const HILL_RADIUS := 130.0
+# SUMO: the dohyo — a small rope ring at center, much smaller than the island.
+# Getting forced out of it scores against you (bout resets); the island edge
+# almost never comes into play. Radius is pre-expansion, scaled at build.
+const DOHYO_RADIUS := 240.0
+const DOHYO_SQUASH := 0.62           # ground-plane perspective (matches the paintings)
+var dohyo_center: Vector2 = Vector2.ZERO
+var dohyo_radius: float = 0.0        # 0 = no dohyo built (not sumo)
+var sumo_resetting: bool = false     # a bout point was just scored; freeze the checks
 var eliminated: Dictionary = {}      # STOCK: pid -> true once out of lives
 var season_end: String = ""          # SEASON end-state: "advance" / "champion" / "gameover"
 var career_end: String = ""          # CAREER end-state: "won" / "lost" / "victory"
@@ -699,9 +707,13 @@ func _setup_game_mode() -> void:
 		"eggs":
 			egg_spawn_timer = 0.5
 		"sumo":
-			# HP is off — hits only shove. The edge does the KO-ing.
+			# HP is off — hits only shove. The DOHYO does the scoring: forced
+			# out of the rope ring = point against you, quick bout reset. (A
+			# full island ring-out still counts, via _award_ko_sumo.)
 			for p in active_players:
 				p.ringout_only = true
+			_build_dohyo()
+			_sumo_reset_bout(false)  # open the match already squared up in the ring
 		"bombtag":
 			# HP/edge are neutral here; the bomb is the only thing that costs lives.
 			for p in active_players:
@@ -723,6 +735,98 @@ func _circle_points(rx: float, ry: float, segs: int) -> PackedVector2Array:
 		var a: float = TAU * float(i) / float(segs)
 		pts.append(Vector2(cos(a) * rx, sin(a) * ry))
 	return pts
+
+# --- SUMO: the dohyo ---
+
+func _build_dohyo() -> void:
+	dohyo_center = _safe_center()
+	dohyo_radius = DOHYO_RADIUS * ARENA_SCALE
+	var vis := Node2D.new()
+	vis.name = "Dohyo"
+	vis.position = dohyo_center
+	# Faint clay disc so the ring reads as a place, not just a line.
+	var disc := Polygon2D.new()
+	disc.polygon = _circle_points(dohyo_radius, dohyo_radius * DOHYO_SQUASH, 48)
+	disc.color = Color(1.0, 0.92, 0.72, 0.10)
+	vis.add_child(disc)
+	# The rope: a doubled ring, like straw bales marking the boundary.
+	for w in [{"r": 1.0, "width": 6.0, "a": 0.9}, {"r": 0.94, "width": 3.0, "a": 0.5}]:
+		var ring := Line2D.new()
+		var pts := _circle_points(dohyo_radius * w["r"], dohyo_radius * w["r"] * DOHYO_SQUASH, 48)
+		pts.append(pts[0])
+		ring.points = pts
+		ring.width = w["width"]
+		ring.default_color = Color(0.95, 0.88, 0.68, w["a"])
+		vis.add_child(ring)
+	add_child(vis)
+	_insert_under_players(vis)
+
+func _in_dohyo(pos: Vector2) -> bool:
+	if dohyo_radius <= 0.0:
+		return true
+	var d := (pos - dohyo_center) / Vector2(dohyo_radius, dohyo_radius * DOHYO_SQUASH)
+	return d.length() <= 1.0
+
+# Square everyone up inside the ring (evenly spaced, p1 on the left). With
+# announce, freeze play for a beat under a POINT! banner first.
+func _sumo_reset_bout(announce: bool = true) -> void:
+	if sumo_resetting:
+		return
+	sumo_resetting = true
+	var n: int = active_players.size()
+	for i in range(n):
+		var p: CharacterBody2D = active_players[i]
+		var a: float = PI + TAU * float(i) / float(n)
+		p.global_position = dohyo_center + Vector2(
+			cos(a) * dohyo_radius * 0.55,
+			sin(a) * dohyo_radius * DOHYO_SQUASH * 0.55)
+		p.velocity = Vector2.ZERO
+		if "knockback_active" in p:
+			p.knockback_active = false
+		if "last_damaged_by" in p:
+			p.last_damaged_by = null  # each bout starts with a clean credit slate
+		if p.get("is_downed"):
+			p.get_up()
+	if announce and not match_over:
+		round_active = false
+		hud_win.text = "POINT!"
+		# Freeze the fighters too (like _end_round) — otherwise they keep
+		# brawling through the banner and re-shove each other straight out.
+		for p in active_players:
+			p.set_physics_process(false)
+			p.set_process_input(false)
+		await get_tree().create_timer(0.9, true, false, true).timeout
+		sumo_resetting = false
+		if match_over:
+			return
+		for p in active_players:
+			p.set_physics_process(true)
+			p.set_process_input(true)
+		hud_win.text = ""
+		round_active = true
+	else:
+		sumo_resetting = false
+
+# A fighter left the rope ring: their last attacker (1v1: the opponent) takes
+# the point. Self-stumbles with no valid credit still reset the bout.
+func _update_sumo(_delta: float) -> void:
+	if sumo_resetting or dohyo_radius <= 0.0:
+		return
+	for p in active_players:
+		if p.is_falling or eliminated.get(p.player_id, false):
+			continue
+		if _in_dohyo(p.global_position):
+			continue
+		var killer: Node = p.last_damaged_by if "last_damaged_by" in p else null
+		if killer == null and active_players.size() == 2:
+			killer = active_players[1] if p == active_players[0] else active_players[0]
+		play_sfx("ko", 0.1)
+		shake(6.0, 0.12)
+		if killer != null and killer != p and _side(killer.player_id) != _side(p.player_id):
+			_award_sumo_point(killer)
+		if not match_over:
+			_sumo_reset_bout()
+		return  # one bout point per frame; the reset moved everyone anyway
 
 # The arena background is at z 0 but earlier in the tree, so a runtime node at a
 # lower z hides BEHIND it. Insert just before Player1 instead: same z 0, but tree
@@ -1337,7 +1441,7 @@ func _score_text(p: Node) -> String:
 		"eggs":
 			return "%sEGGS %d / %d" % [team, int(mode_score.get(side, 0.0)), MatchConfig.EGG_TARGET]
 		"sumo":
-			return "%sK.O. %d / %d" % [team, int(mode_score.get(side, 0.0)), MatchConfig.SUMO_TARGET]
+			return "%sPTS %d / %d" % [team, int(mode_score.get(side, 0.0)), MatchConfig.SUMO_TARGET]
 		"bombtag":
 			return "LIVES %d%s" % [stocks.get(pid, 0), "  [BOMB]" if pid == bomb_holder else ""]
 		"beast":
@@ -1382,6 +1486,8 @@ func _physics_process(delta: float) -> void:
 		_process_drowning(delta)
 	if game_mode == "koth":
 		_update_koth(delta)
+	elif game_mode == "sumo":
+		_update_sumo(delta)
 	elif game_mode == "eggs":
 		_update_eggs(delta)
 	elif game_mode == "bombtag":
@@ -1655,9 +1761,14 @@ func award_ko(killer: Node, victim: Node) -> void:
 		_:
 			_award_ko_rounds(killer)
 
-# SUMO: every ring-out is a point. The victim has already respawned by here; first
-# to the target wins. (HP can't KO in sumo, so this only fires on a shove-off.)
+# SUMO: a full island ring-out still counts as a bout point (the victim has
+# already respawned by here) — the reset pulls them back into the dohyo.
 func _award_ko_sumo(killer: Node) -> void:
+	_award_sumo_point(killer)
+	if not match_over:
+		_sumo_reset_bout()
+
+func _award_sumo_point(killer: Node) -> void:
 	var kp: String = killer.player_id
 	var side: String = _side(kp)
 	mode_score[side] = mode_score.get(side, 0.0) + 1.0
