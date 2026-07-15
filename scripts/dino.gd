@@ -31,6 +31,8 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 156, 154), Rect2(156, 0, 156, 154), Rect2(312, 0, 156, 154), Rect2(468, 0, 156, 154)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 154, 156, 154), Rect2(156, 154, 156, 154), Rect2(312, 154, 156, 154), Rect2(468, 154, 156, 154), Rect2(624, 154, 156, 154), Rect2(780, 154, 156, 154), Rect2(936, 154, 156, 154), Rect2(1092, 154, 156, 154)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 308, 156, 154), Rect2(156, 308, 156, 154), Rect2(312, 308, 156, 154), Rect2(468, 308, 156, 154), Rect2(624, 308, 156, 154)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 462, 156, 154), Rect2(156, 462, 156, 154), Rect2(312, 462, 156, 154)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 616, 156, 154), Rect2(156, 616, 156, 154), Rect2(312, 616, 156, 154), Rect2(468, 616, 156, 154), Rect2(624, 616, 156, 154)]},
 	},
 	"ralph": {
 		# Painterly motion sheet (135x153 cells, one row per anim) from
@@ -40,6 +42,8 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 135, 153), Rect2(135, 0, 135, 153), Rect2(270, 0, 135, 153), Rect2(405, 0, 135, 153)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 153, 135, 153), Rect2(135, 153, 135, 153), Rect2(270, 153, 135, 153), Rect2(405, 153, 135, 153), Rect2(540, 153, 135, 153), Rect2(675, 153, 135, 153), Rect2(810, 153, 135, 153), Rect2(945, 153, 135, 153)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 306, 135, 153), Rect2(135, 306, 135, 153), Rect2(270, 306, 135, 153), Rect2(405, 306, 135, 153), Rect2(540, 306, 135, 153)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 459, 135, 153), Rect2(135, 459, 135, 153), Rect2(270, 459, 135, 153)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 612, 135, 153), Rect2(135, 612, 135, 153), Rect2(270, 612, 135, 153), Rect2(405, 612, 135, 153), Rect2(540, 612, 135, 153)]},
 	},
 	"trike": {
 		# Painterly motion sheet (131x156 cells) from gen_dino_motion.py.
@@ -48,6 +52,8 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 131, 156), Rect2(131, 0, 131, 156), Rect2(262, 0, 131, 156), Rect2(393, 0, 131, 156)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 156, 131, 156), Rect2(131, 156, 131, 156), Rect2(262, 156, 131, 156), Rect2(393, 156, 131, 156), Rect2(524, 156, 131, 156), Rect2(655, 156, 131, 156), Rect2(786, 156, 131, 156), Rect2(917, 156, 131, 156)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 312, 131, 156), Rect2(131, 312, 131, 156), Rect2(262, 312, 131, 156), Rect2(393, 312, 131, 156), Rect2(524, 312, 131, 156)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 468, 131, 156), Rect2(131, 468, 131, 156), Rect2(262, 468, 131, 156)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 624, 131, 156), Rect2(131, 624, 131, 156), Rect2(262, 624, 131, 156), Rect2(393, 624, 131, 156), Rect2(524, 624, 131, 156)]},
 	},
 	"pterry": {
 		# Painterly motion sheet (244x157 cells — wide for the wings) from gen_dino_motion.py.
@@ -56,6 +62,8 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 244, 157), Rect2(244, 0, 244, 157), Rect2(488, 0, 244, 157), Rect2(732, 0, 244, 157)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 157, 244, 157), Rect2(244, 157, 244, 157), Rect2(488, 157, 244, 157), Rect2(732, 157, 244, 157), Rect2(976, 157, 244, 157), Rect2(1220, 157, 244, 157), Rect2(1464, 157, 244, 157), Rect2(1708, 157, 244, 157)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 314, 244, 157), Rect2(244, 314, 244, 157), Rect2(488, 314, 244, 157), Rect2(732, 314, 244, 157), Rect2(976, 314, 244, 157)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 471, 244, 157), Rect2(244, 471, 244, 157), Rect2(488, 471, 244, 157)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 628, 244, 157), Rect2(244, 628, 244, 157), Rect2(488, 628, 244, 157), Rect2(732, 628, 244, 157), Rect2(976, 628, 244, 157)]},
 	},
 	"bronto": {
 		# Painterly motion sheet (237x155 cells — wide for the neck-whip) from gen_dino_motion.py.
@@ -64,6 +72,8 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 237, 155), Rect2(237, 0, 237, 155), Rect2(474, 0, 237, 155), Rect2(711, 0, 237, 155)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 155, 237, 155), Rect2(237, 155, 237, 155), Rect2(474, 155, 237, 155), Rect2(711, 155, 237, 155), Rect2(948, 155, 237, 155), Rect2(1185, 155, 237, 155), Rect2(1422, 155, 237, 155), Rect2(1659, 155, 237, 155)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 310, 237, 155), Rect2(237, 310, 237, 155), Rect2(474, 310, 237, 155), Rect2(711, 310, 237, 155), Rect2(948, 310, 237, 155)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 465, 237, 155), Rect2(237, 465, 237, 155), Rect2(474, 465, 237, 155)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 620, 237, 155), Rect2(237, 620, 237, 155), Rect2(474, 620, 237, 155), Rect2(711, 620, 237, 155), Rect2(948, 620, 237, 155)]},
 	},
 	"anky": {
 		# Painterly motion sheet (231x161 cells) from gen_dino_motion.py.
@@ -72,6 +82,8 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 231, 161), Rect2(231, 0, 231, 161), Rect2(462, 0, 231, 161), Rect2(693, 0, 231, 161)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 161, 231, 161), Rect2(231, 161, 231, 161), Rect2(462, 161, 231, 161), Rect2(693, 161, 231, 161), Rect2(924, 161, 231, 161), Rect2(1155, 161, 231, 161), Rect2(1386, 161, 231, 161), Rect2(1617, 161, 231, 161)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 322, 231, 161), Rect2(231, 322, 231, 161), Rect2(462, 322, 231, 161), Rect2(693, 322, 231, 161), Rect2(924, 322, 231, 161)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 483, 231, 161), Rect2(231, 483, 231, 161), Rect2(462, 483, 231, 161)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 644, 231, 161), Rect2(231, 644, 231, 161), Rect2(462, 644, 231, 161), Rect2(693, 644, 231, 161), Rect2(924, 644, 231, 161)]},
 	},
 }
 
