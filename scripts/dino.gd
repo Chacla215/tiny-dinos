@@ -1597,9 +1597,19 @@ func _spawn_thrown_weapon(id: String, dmg: int, kb: float) -> void:
 func grant_weapon(id: String) -> void:
 	if id == "" or id == "fists" or not (MatchConfig and MatchConfig.WEAPONS.has(id)):
 		return
-	var slot := _pickup_slot()
-	weapons[slot] = id
-	active_weapon = slot
+	# Idempotent: re-granting a signature you already hold just re-selects it (so
+	# the per-round re-grant after respawn doesn't stack two copies into slot 2).
+	if id in weapons:
+		active_weapon = weapons.find(id)
+	else:
+		var slot := _pickup_slot()
+		weapons[slot] = id
+		active_weapon = slot
+	# A signature weapon is OWNED — bake it into the respawn loadout so it comes
+	# back on EVERY life. Round modes re-grant via _end_round, but koth/eggs/beast/
+	# flood/bombtag never do; without this a KO'd fighter spends the rest of those
+	# matches on bare fists (respawn restores initial_weapons, captured pre-grant).
+	initial_weapons = weapons.duplicate()
 	_refresh_weapon()
 
 # Pickup (LT): grab the nearest weapon resting on the ground within reach and
