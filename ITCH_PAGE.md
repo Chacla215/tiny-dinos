@@ -43,9 +43,12 @@ Gus, screeching Jessie, gentle-giant Steve, and spike-tailed Frank — every
 dino has its own stats, signature special, and a passive that changes how
 you play them. No recolored clones.
 
-**SIX ISLANDS.** Beauty Beach, Laughing Lava, Iciest Age, White Water Falls,
-Sunny Springs, Purple Fields — each its own hand-painted arena with its own
-tricks.
+**SIX LIVING ISLANDS.** Beauty Beach, Laughing Lava, Iciest Age, White Water
+Falls, Sunny Springs, Purple Fields — each a hand-painted arena that PLAYS
+differently: the lava rim burns, the frozen lake sends you skating, the falls
+drag you downstream, the geysers launch you skyward. And every island has a
+signature EVENT that flips the fight mid-brawl — an eruption, a rogue wave, a
+cold snap, a flash flood. Learn them or drown.
 
 **SEVEN WAYS TO BRAWL.** Classic rounds, King of the Hill, egg hunts, sumo
 shove-offs, bomb tag, THE BEAST, and the rising flood — plus team battles.
@@ -66,7 +69,14 @@ Music & sounds are CC0 gems from Juhani Junkala, HoliznaCC0, and Kenney.*
 
 ## Builds
 
-Rebuild any time (from the repo root, templates already installed):
+> **Before the release export, reinstall the export templates.** The three
+> presets are configured and ready, but `~/Library/Application Support/Godot/
+> export_templates/` is currently empty (a 4.6.3 build with no templates fails).
+> Install via the editor (**Editor → Manage Export Templates → Download and
+> Install**) or drop the `4.6.3.stable` `.tpz`. The `build/` zips on disk are
+> **stale** (pre-overhaul, Jul 8) — re-export after the arena-overhaul merge.
+
+Rebuild any time (from the repo root, once templates are installed):
 
     /opt/homebrew/bin/godot --headless --export-release "macOS" build/TinyDinos-macOS.zip
     /opt/homebrew/bin/godot --headless --export-release "Windows Desktop" build/TinyDinos-Windows/TinyDinos.exe
