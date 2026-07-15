@@ -1,5 +1,39 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-15 (hurt + KO fighter clips — last arena-overhaul thread closed)
+
+On `feat/arena-overhaul`. The one open item flagged across the last two
+sessions was fighter hurt/KO frames: `dino.gd` has always *played* "hit"
+(flinch, `hit_anim_timer`) and "ko" (`is_downed`) clips whenever a motion
+sheet carries them, but the Seedance sources for those states were never
+generated — every `<dino>_motion.png` had idle/walk/attack only, so a jab, a
+heavy, and a full topple all showed the same pose.
+
+- **Hurt/KO clips synthesized, no new art (`f078d45`).** New
+  `scripts/tools/gen_dino_hurt.py` lifts each dino's idle pose off its baked
+  `_motion.png` and builds the two clips from cheap transforms (the
+  `gen_ralph_fighter.py` trick): **hit** = a 3-frame backward recoil
+  (lean + squash + shove that relaxes); **ko** = a 5-frame tip-over onto the
+  back (progressive flatten + impact squash + settle), the non-looping clip
+  holding the flat frame for the rest of the knockdown, then `get_up()` snaps
+  to idle. Rows appended below the existing grid (same cell, same feet
+  baseline), so every prior `ANIM_LAYOUTS` rect stays valid; `dino.gd` gained
+  the two new rows per dino across all 6 sheets. Real Seedance hit/ko clips
+  can replace this wholesale later via `gen_dino_motion.py`.
+- **Verified headless (`smoke_hurt.gd`).** Spawns one of each body plan on the
+  beach, forces `take_damage` then `knock_down`, asserts the sheet switches
+  `hit → ko → back to idle` on recovery. **4/4** across ralph/raptor/trike/
+  bronto. Caught + confirmed one true-positive: STEVE/bronto's **bulwark**
+  poise correctly no-flinches jabs ≤ `BULWARK_POISE_DMG` (24), so the test
+  hits at 30 to stagger through it — not a clip bug.
+- **Housekeeping (`191a549`).** Committed the orphan `.uid` sidecars the
+  arena-overhaul tool commits left behind. Tree is clean.
+- **feat/arena-overhaul is now Claude-side COMPLETE.** Every thread the
+  overhaul opened is landed + smoke-verified. What remains is all Charlie's:
+  the controller session on the first-guess tunings (DOHYO_RADIUS, hazard
+  strengths, event cadence, and now the hit/ko clip *feel*), then merge
+  PR #18 + this branch → re-export the stale `build/` zips → itch.
+
 ## Session — 2026-07-10 (arena overhaul: expansion, island identity, sumo dohyo, mode AI)
 
 On `feat/arena-overhaul` (branched off `feat/release-polish`/PR #18). Charlie
