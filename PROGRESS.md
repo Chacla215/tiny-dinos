@@ -46,11 +46,34 @@ heavy, and a full topple all showed the same pose.
     bout` doesn't clear `is_falling` on a mid-sky-suction reset; `_safe_center()`
     centroid skews slightly after the pier/bridge polygon merge (look-only).
 - **feat/arena-overhaul is now Claude-side COMPLETE + hardened.** Every thread
-  the overhaul opened is landed, smoke-verified, and bug-swept. What remains is
-  all Charlie's: the controller session on the first-guess tunings (DOHYO_RADIUS,
-  hazard strengths, event cadence, hit/ko clip *feel*), then merge PR #18 + this
-  branch → re-export the stale `build/` zips → itch. **Not yet pushed to remote /
-  no PR opened for this branch** (per the plan, merge is Charlie's gate).
+  the overhaul opened is landed, smoke-verified, and bug-swept.
+
+### Launch-prep pass (same session — "as far as we can without playing")
+- **Pushed + opened draft PR #19** (`feat/arena-overhaul` → `feat/release-polish`,
+  so the diff is overhaul-only; #18 merges first, then this). Full summary in the
+  PR body.
+- **AI balance sim re-run** (`sim_ai.gd`, HARD vs HARD, lava+beach, rounds).
+  Sanity check that the 1.25× expansion + hazards + events didn't break match
+  resolution or balance: **every match resolved, no hangs.** Win% spread (both
+  arenas): ralph 73 / bronto 70 / trike 59 / anky 53 / **raptor 28 / pterry 16**.
+  pterry is crushed on the confined burn arena (0-10 vs bronto) and rung out on
+  beach — a real tuning flag for Charlie, NOT auto-tuned (CPU-only, 2-arena,
+  rounds-only, and dino feel is his gate; the tool's own caveat).
+- **Builds NOT re-exported — export templates are gone** (`~/Library/.../Godot/
+  export_templates` is empty; a 4.6.3 export fails without them). Re-downloading
+  ~1GB for a throwaway pre-playtest build isn't worth it; flagged in `ITCH_PAGE.md`
+  so the real post-merge export is a known one-command step once templates are
+  reinstalled. Existing `build/` zips remain stale (pre-overhaul, Jul 8).
+- **itch page copy refreshed** (`5e1f298`) — the "six islands, each its own tricks"
+  line predated the overhaul (aspirational when written, now literally true);
+  rewrote as "SIX LIVING ISLANDS" naming the real per-island mechanics + the
+  signature mid-brawl EVENTS (a selling point that was missing).
+
+### Remaining — all Charlie's gate
+Controller session on the first-guess tunings (DOHYO_RADIUS, hazard strengths,
+event cadence, hit/ko clip *feel*, and the pterry/raptor balance flag above) →
+merge PR #18 then #19 → reinstall export templates + re-export builds → itch
+(account/upload steps in `ITCH_PAGE.md`).
 
 ## Session — 2026-07-10 (arena overhaul: expansion, island identity, sumo dohyo, mode AI)
 
