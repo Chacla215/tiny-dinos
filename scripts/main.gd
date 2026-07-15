@@ -539,7 +539,8 @@ func _event_rogue_wave() -> void:
 				if off.normalized().dot(side) > 0.35 \
 						and not Geometry2D.is_point_in_polygon(c + off / 0.72, safe_polygon):
 					# outer band on the threatened side: dragged toward the water
-					p.apply_burn(3, off.normalized() * 330.0)
+					if p.apply_burn(3, off.normalized() * 330.0):
+						handle_environmental_kill(p)  # low HP + the surge = a KO
 		await get_tree().create_timer(0.8, true, false, true).timeout
 	foam.queue_free()
 
@@ -2096,7 +2097,7 @@ func award_ko(killer: Node, victim: Node) -> void:
 			# so a ring-out wrongly ended the match ("RALPH WINS").
 			dp[killer.player_id] = dp.get(killer.player_id, 0) + 40
 		"sumo":
-			_award_ko_sumo(killer)
+			_award_ko_sumo(killer, victim)
 		"beast":
 			dp[killer.player_id] = dp.get(killer.player_id, 0) + 60
 			if victim.player_id == beast_pid and killer.player_id != beast_pid:
@@ -2106,8 +2107,14 @@ func award_ko(killer: Node, victim: Node) -> void:
 
 # SUMO: a full island ring-out still counts as a bout point (the victim has
 # already respawned by here) — the reset pulls them back into the dohyo.
-func _award_ko_sumo(killer: Node) -> void:
-	_award_sumo_point(killer)
+func _award_ko_sumo(killer: Node, victim: Node = null) -> void:
+	# Mirror _update_sumo: the dohyo-exit path already handled this bout, and a
+	# point is only cross-side (no friendly-fire scoring in 2v2). Reset regardless
+	# so a full-island ring-out still squares everyone back up.
+	if sumo_resetting:
+		return
+	if victim == null or _side(killer.player_id) != _side(victim.player_id):
+		_award_sumo_point(killer)
 	if not match_over:
 		_sumo_reset_bout()
 
