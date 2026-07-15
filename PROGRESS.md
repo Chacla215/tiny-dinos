@@ -28,11 +28,29 @@ heavy, and a full topple all showed the same pose.
   hits at 30 to stagger through it — not a clip bug.
 - **Housekeeping (`191a549`).** Committed the orphan `.uid` sidecars the
   arena-overhaul tool commits left behind. Tree is clean.
-- **feat/arena-overhaul is now Claude-side COMPLETE.** Every thread the
-  overhaul opened is landed + smoke-verified. What remains is all Charlie's:
-  the controller session on the first-guess tunings (DOHYO_RADIUS, hazard
-  strengths, event cadence, and now the hit/ko clip *feel*), then merge
-  PR #18 + this branch → re-export the stale `build/` zips → itch.
+- **Pre-playtest bug-hunt + hardening pass** (same session, so the controller
+  session isn't wasted on crashes). A static review agent traced the +704-line
+  `main.gd` / `dino_ai.gd` overhaul code; three fixes landed:
+  - `fix(weapons)` — **signature weapon was lost on first death in round-less
+    modes.** `grant_weapon` set `weapons[]` but never `initial_weapons`, so
+    `respawn()` restored bare fists; koth/eggs/beast/flood/bombtag never
+    re-grant (no `_end_round`). Now baked into the respawn loadout + idempotent.
+    New `smoke_weapon_respawn.gd`: 4/4 keep their weapon post-respawn in koth.
+  - `fix(arena)` — **ROGUE WAVE dropped `apply_burn`'s lethal return** (0-HP
+    zombie); every sibling event checks it. And **`_award_ko_sumo` diverged
+    from `_update_sumo`** (no `sumo_resetting` skip, no cross-side guard) →
+    possible double-count / friendly-fire point in 2v2 sumo. Both aligned.
+  - Re-verified: smoke_sumo → clean 5-0 MATCH OVER, smoke_events all six fire,
+    headless boot no parse errors.
+  - Left as NOTED-not-fixed (narrow/cosmetic, safe for playtest): `_sumo_reset_
+    bout` doesn't clear `is_falling` on a mid-sky-suction reset; `_safe_center()`
+    centroid skews slightly after the pier/bridge polygon merge (look-only).
+- **feat/arena-overhaul is now Claude-side COMPLETE + hardened.** Every thread
+  the overhaul opened is landed, smoke-verified, and bug-swept. What remains is
+  all Charlie's: the controller session on the first-guess tunings (DOHYO_RADIUS,
+  hazard strengths, event cadence, hit/ko clip *feel*), then merge PR #18 + this
+  branch → re-export the stale `build/` zips → itch. **Not yet pushed to remote /
+  no PR opened for this branch** (per the plan, merge is Charlie's gate).
 
 ## Session — 2026-07-10 (arena overhaul: expansion, island identity, sumo dohyo, mode AI)
 
