@@ -23,7 +23,8 @@ passive, styling lifted from the title logo). Source personalities from
 | ralph | RALPH | THE TINY KING | struts up, tiny but fearless, chomps the air, cocky grin to camera |
 | raptor | MAX | THE SPEEDSTER | blurs across frame, skids to a stop, sickle claws up, smug head-tilt |
 | trike | GUS | THE BULWARK | lowers three horns, paws the ground, unstoppable charge past camera |
-| pterry | JESSIE | THE SKY ACE | drops in on a wing, cocky landing, screech, dust settles |
+| pterry | ACE | THE SKY ACE | drops in on a wing, cocky landing, screech, dust settles |
+| spino | JESSIE | THE DEEP DIVER | leaps high, tucks into a flawless cannonball, splash-lands, sunflower settles in her sail |
 | bronto | STEVE | THE GENTLE GIANT | ambles in with a flower in mouth, dreamy sweep of the long neck |
 | anky | FRANK | THE VETERAN | steady stance, club-tail thud, grizzled nod — "seen it all" |
 
@@ -155,17 +156,20 @@ VO not yet generated (5 lines ≈ the entire remaining 3.5 cr — no retake
 headroom; first step after top-up).
 
 **SEASON HANDOFF CHAIN (locked pattern):** each episode's co-star becomes the
-next protagonist — **Ralph → Max → Steve → Gus → Jessie → Frank** — and each
-cold open resolves the previous cliffhanger. Ep4 = GUS (co-star Jessie),
-Ep5 = JESSIE (co-star Frank), Ep6 = FRANK (everyone; season finale).
+next protagonist — **Ralph → Max → Steve → Gus → Ace → Frank** — and each
+cold open resolves the previous cliffhanger. Ep4 = GUS (co-star Ace),
+Ep5 = ACE (co-star Frank), Ep6 = FRANK (everyone; season finale).
+(2026-07-18: the pterodactyl was renamed JESSIE → ACE; the name JESSIE now
+belongs to the new 7th roster dino, a spinosaurus diver. She's post-season
+material — a "new challenger appears" episode or a devlog short.)
 
 **The other three (loglines, script on demand):**
 - **GUS — "THE WALL MOVES" (Ep4):** cold open = Steve's one (1) gentle bonk
   lands (Gus faints from anticipation; the scoop plops back on Ralph's cone).
-  Then: immovable Gus won't budge for anyone — until Jessie's egg-basket
+  Then: immovable Gus won't budge for anyone — until Ace's egg-basket
   rolls toward the lava; the unstoppable charge, for once, is FOR someone.
   (Laughing Lava arena, EGGS mode.)
-- **JESSIE — "GROUNDED" (Ep5):** show-off sky ace clips a palm mid-stunt and
+- **ACE — "GROUNDED" (Ep5):** show-off sky ace clips a palm mid-stunt and
   has to win a scrap on foot; discovers the ground game. Ends: dusts off,
   flies low.
 - **FRANK — "ONE MORE ROUND" (Ep6):** the old veteran hangs up his club; the

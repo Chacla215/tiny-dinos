@@ -1,6 +1,6 @@
 extends Node
 
-const ROSTER_ORDER := ["ralph", "raptor", "trike", "pterry", "bronto", "anky"]
+const ROSTER_ORDER := ["ralph", "raptor", "trike", "pterry", "bronto", "anky", "spino"]
 
 # ---- Cosmetic skins (shared across every dino) -------------------------------
 # A skin is a live recolor of the fighter via assets/shaders/skin_recolor.gdshader
@@ -156,7 +156,7 @@ const DINOS := {
 		"special_cooldown": 5.0,
 	},
 	"pterry": {
-		"display_name": "JESSIE",
+		"display_name": "ACE",
 		"weapons": ["fists", "bow"],
 		"dino_color": Color(0.85, 0.45, 0.30, 1.0),
 		"sprite_role": "pterry",
@@ -398,6 +398,59 @@ const DINOS := {
 		"special_cooldown": 6.0,
 		"special_lifesteal": 0.20,
 	},
+	# Jessie the spinosaurus — THE DEEP DIVER (2026-07-18). An ex-champion
+	# platform diver: the roster's best dodge, quick light hands, and the
+	# SWAN DIVE signature that turns a well-timed dodge into a burst opening.
+	# Her heavy is a hip check (she's bottom-heavy — biggest single-hit shove
+	# on the roster) and her special is CANNONBALL, a leaping splash that hits
+	# everyone around the landing. Light sunflower-yellow, flower in her sail.
+	"spino": {
+		"display_name": "JESSIE",
+		"weapons": ["fists", "nunchucks"],
+		"dino_color": Color(1.0, 0.93, 0.58, 1.0),
+		"sprite_role": "spino",
+		"sprite_scale": 0.58,
+		"sprite_offset_y": -31.0,
+		"grip_offset": Vector2(20.0, -22.0),   # hands, mid-height (biped)
+		"hit_sfx_name": "hit_claw",
+		"max_speed": 340.0,
+		"ground_accel": 3600.0,
+		"ground_friction": 4200.0,
+		"ice_accel": 800.0,
+		"ice_friction": 260.0,
+		"max_hp": 128,
+		"attack_damage": 18,
+		"attack_knockback": 300.0,
+		"attack_windup": 0.10,
+		"attack_active": 0.10,
+		"attack_recovery": 0.24,
+		"attack_hitbox_size": Vector2(62, 50),
+		"attack_hitbox_offset": 46.0,
+		"heavy_damage": 30,
+		"heavy_knockback": 780.0,
+		"heavy_windup": 0.28,
+		"heavy_active": 0.14,
+		"heavy_recovery": 0.50,
+		"heavy_hitbox_size": Vector2(84, 70),
+		"heavy_hitbox_offset": 48.0,
+		"heavy_self_dash": 600.0,
+		"max_block": 85.0,
+		"block_regen": 30.0,
+		"dodge_duration": 0.24,
+		"dodge_cooldown": 0.5,
+		"dodge_distance": 210.0,
+		"dodge_block_cost": 26.0,
+		"signature": "swan_dive",   # a hit right out of a dodge lands empowered
+		"special_type": "cannonball",
+		"special_damage": 24,
+		"special_knockback": 620.0,
+		"special_windup": 0.26,
+		"special_active": 0.10,
+		"special_recovery": 0.50,
+		"special_radius": 150.0,
+		"special_self_dash": 950.0,
+		"special_cooldown": 5.0,
+	},
 }
 
 # Iciest Age (Frozen Floes) re-added to the roster 2026-05-24. It was cut on
@@ -569,7 +622,7 @@ const SEASON_DIFFS := ["easy", "normal", "normal", "hard", "brutal"]
 # 1v1, [0..1] for 2v2, [0..2] for 3v3.
 const RIVAL_TEAMS := [
 	{"name": "BEACH BRAWLERS", "island": "beauty_beach",      "dinos": ["ralph", "raptor", "trike"]},
-	{"name": "TIDE RIDERS",    "island": "white_water_falls", "dinos": ["pterry", "raptor", "bronto"]},
+	{"name": "TIDE RIDERS",    "island": "white_water_falls", "dinos": ["spino", "pterry", "bronto"]},
 	{"name": "SPRING STAMPEDE", "island": "sunny_springs",    "dinos": ["bronto", "trike", "ralph"]},
 	{"name": "FROST FANGS",    "island": "iciest_age",        "dinos": ["anky", "pterry", "raptor"]},
 	{"name": "MAGMA TYRANTS",  "island": "laughing_lava",     "dinos": ["trike", "anky", "bronto"]},

@@ -38,10 +38,10 @@ your friends into the sea.
 **🎮 CONTROLLERS REQUIRED** — this is a couch game. Keyboard is not supported.
 One gamepad per player (any mix of common controllers).
 
-**SIX DINOS, SIX PERSONALITIES.** Ralph the tiny king, speedy Max, armored
-Gus, screeching Jessie, gentle-giant Steve, and spike-tailed Frank — every
-dino has its own stats, signature special, and a passive that changes how
-you play them. No recolored clones.
+**SEVEN DINOS, SEVEN PERSONALITIES.** Ralph the tiny king, speedy Max, armored
+Gus, screeching Ace, gentle-giant Steve, spike-tailed Frank, and Jessie the
+champion diver — every dino has its own stats, signature special, and a
+passive that changes how you play them. No recolored clones.
 
 **SIX LIVING ISLANDS.** Beauty Beach, Laughing Lava, Iciest Age, White Water
 Falls, Sunny Springs, Purple Fields — each a hand-painted arena that PLAYS

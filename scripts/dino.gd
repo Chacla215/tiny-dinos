@@ -18,6 +18,11 @@ const SHEET_TRIKE := "res://assets/sprites/trike_motion.png"
 const SHEET_PTERRY := "res://assets/sprites/pterry_motion.png"
 const SHEET_BRONTO := "res://assets/sprites/bronto_motion.png"
 const SHEET_ANKY := "res://assets/sprites/anky_motion.png"
+# JESSIE (spino) is the one hero-bake fighter (gen_ralph_fighter.py --smooth):
+# no "motion" flag, so in-match she runs on the live limb rig (parts/spino/)
+# with this sheet as the menu/portrait + fallback art. Upgrade her to a
+# Seedance motion sheet like the rest next credits top-up.
+const SHEET_SPINO := "res://assets/sprites/spino_fighter.png"
 
 const ANIM_LAYOUTS := {
 	# Every fighter below is a 3D-baked sheet (Meshy model -> Blender toon bake,
@@ -84,6 +89,13 @@ const ANIM_LAYOUTS := {
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 322, 231, 161), Rect2(231, 322, 231, 161), Rect2(462, 322, 231, 161), Rect2(693, 322, 231, 161), Rect2(924, 322, 231, 161)]},
 		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 483, 231, 161), Rect2(231, 483, 231, 161), Rect2(462, 483, 231, 161)]},
 		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 644, 231, 161), Rect2(231, 644, 231, 161), Rect2(462, 644, 231, 161), Rect2(693, 644, 231, 161), Rect2(924, 644, 231, 161)]},
+	},
+	"spino": {
+		# Smooth hero bake (gen_ralph_fighter.py spino --smooth), cell 141x168.
+		"sheet": SHEET_SPINO,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 141, 168), Rect2(141, 0, 141, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(282, 0, 141, 168), Rect2(423, 0, 141, 168), Rect2(564, 0, 141, 168), Rect2(705, 0, 141, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(846, 0, 141, 168), Rect2(987, 0, 141, 168), Rect2(1128, 0, 141, 168)]},
 	},
 }
 
@@ -223,14 +235,18 @@ const BEAST_TINT := Color(1.5, 1.2, 0.5)
 # and its one special move. Set per-dino in MatchConfig.DINOS; the CPU inherits
 # every one for FREE because they hook the shared input/damage code, not a
 # player-only path. Values (see the hooks): combo_king (RALPH) / dash_cancel
-# (MAX) / charger (GUS) / bulwark (STEVE) / flighty (JESSIE) / spikeback (FRANK).
+# (MAX) / charger (GUS) / bulwark (STEVE) / flighty (ACE) / spikeback (FRANK) /
+# swan_dive (JESSIE).
 @export var signature: String = "none"
 const COMBO_KING_PER_HIT := 0.12   # RALPH: windup+recovery cut per live combo hit…
 const COMBO_KING_MAX_CUT := 0.36   # …capped here (3-hit chain = -36%, a real ramp)
 const BULWARK_POISE_DMG := 24      # STEVE: hits at/under this can't stagger or shove him
 const BULWARK_KB_FACTOR := 0.0     # …and their knockback is nullified (he stays planted)
-const FLIGHTY_DODGE_REFUND := 0.6  # JESSIE: landing a hit refunds this much of her dodge cd
+const FLIGHTY_DODGE_REFUND := 0.6  # ACE: landing a hit refunds this much of his dodge cd
 const SPIKEBACK_REFLECT := 0.35    # FRANK: reflects this share of BLOCKED damage at attacker
+const SWAN_DIVE_WINDOW := 1.2      # JESSIE: seconds after a dodge her next hit is empowered
+const SWAN_DIVE_DMG_MULT := 1.35   # …bonus damage on that dive-out strike
+const SWAN_DIVE_KB_MULT := 1.25    # …and bonus knockback (one hit, then it's spent)
 
 @export_group("Input")
 @export var player_id: String = "p1"
@@ -251,8 +267,8 @@ var ai: RefCounted = null
 @export var sprite_offset_y: float = -10.0
 ## Where a held weapon / carried foe anchors on THIS dino's body, so the grab
 ## reads as anatomically true: x = distance forward along facing, y = vertical
-## (negative = up). Hand-grabbers (Ralph/Max) sit near hand height; the wing-claw
-## (Jessie) a touch higher; mouth-grabbers (Gus/Frank low, Steve high on his neck)
+## (negative = up). Hand-grabbers (Ralph/Max/Jessie) sit near hand height; the
+## wing-claw (Ace) a touch higher; mouth-grabbers (Gus/Frank low, Steve high on his neck)
 ## anchor up at the snout. DINOS overrides this per dino; default = old hand anchor.
 @export var grip_offset: Vector2 = Vector2(18.0, -6.0)
 # Global visual-scale multiplier on every fighter (readability on the busy arenas).
@@ -294,6 +310,7 @@ var hit_targets_this_swing: Array = []
 var defense_state: int = DefenseState.NORMAL
 var block_durability: float
 var dodge_timer: float = 0.0
+var swan_dive_timer: float = 0.0   # JESSIE: live window where her next hit is empowered
 var dodge_cooldown_timer: float = 0.0
 var dodge_velocity: Vector2 = Vector2.ZERO
 var guard_break_timer: float = 0.0
@@ -1713,7 +1730,9 @@ func update_attack(delta: float) -> void:
 			attack_phase_dur = maxf(current_attack_active, 0.001)
 			if current_is_special:
 				_spawn_special_flash()  # release "pop" (also clears the telegraph)
-			if current_is_special and (special_type == "screech" or special_type == "stomp"):
+			# cannonball (JESSIE) rides the same radial path: the self-dash leap
+			# happens through the windup, then the splash hits around the landing.
+			if current_is_special and (special_type == "screech" or special_type == "stomp" or special_type == "cannonball"):
 				_do_screech()
 			elif current_is_special and special_type == "tail_smash":
 				_do_tail_smash()  # FRANK: shockwave in every direction, no safe side
@@ -1758,6 +1777,12 @@ func try_hit(body: Node) -> void:
 	if beast_active:
 		dmg = int(round(dmg * BEAST_DMG_MULT))
 		kb *= BEAST_KB_MULT
+	# JESSIE swan dive: the first hit right out of a dodge strikes harder, then
+	# the window is spent — dodge again to set up the next one.
+	if signature == "swan_dive" and swan_dive_timer > 0.0:
+		dmg = int(round(dmg * SWAN_DIVE_DMG_MULT))
+		kb *= SWAN_DIVE_KB_MULT
+		swan_dive_timer = 0.0
 	body.take_damage(dmg, kb, self)
 	# Attacker follow-through: our own torso lurches into the blow so a clean
 	# connect has weight on the giving end, not just the receiving one.
@@ -1776,7 +1801,7 @@ func try_hit(body: Node) -> void:
 	# DASH CLAW: landing the rake renews the hunt — most of the cooldown refunds.
 	if current_is_special and special_type == "dash_claw":
 		special_cooldown_timer = minf(special_cooldown_timer, special_cooldown * 0.35)
-	# JESSIE flighty: landing a blow refunds most of her dodge cooldown, so she can
+	# ACE flighty: landing a blow refunds most of his dodge cooldown, so he can
 	# immediately dart back out — a relentless hit-and-run flyer.
 	if signature == "flighty" and dodge_cooldown_timer > 0.0:
 		dodge_cooldown_timer *= (1.0 - FLIGHTY_DODGE_REFUND)
@@ -1811,6 +1836,7 @@ func start_dodge() -> void:
 	play_scene_sfx("dodge", 0.1)
 
 func update_dodge(delta: float) -> void:
+	swan_dive_timer = maxf(0.0, swan_dive_timer - delta)
 	if defense_state == DefenseState.DODGING:
 		dodge_timer -= delta
 		afterimage_timer -= delta
@@ -1820,6 +1846,10 @@ func update_dodge(delta: float) -> void:
 		if dodge_timer <= 0.0:
 			defense_state = DefenseState.NORMAL
 			dodge_velocity = Vector2.ZERO
+			# JESSIE swan dive: coming out of a dodge opens a short window where
+			# her next hit lands with championship form (see try_hit).
+			if signature == "swan_dive":
+				swan_dive_timer = SWAN_DIVE_WINDOW
 
 func _spawn_afterimage() -> void:
 	var ghost := Sprite2D.new()
