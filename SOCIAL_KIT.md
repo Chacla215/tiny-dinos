@@ -4,6 +4,38 @@ The posting arm of `CUTSCENE_KIT.md` (rules + scripts live there). Everything
 below is paste-ready. Post NATIVELY on each platform — IG Reels, TikTok,
 YouTube Shorts — same handle, same file, three algorithms.
 
+## GO-LIVE SEQUENCE (Charlie's ask, 2026-07-18)
+
+**Principles:** no intro stings ever (the 1.5s hook is sacred — brand at the
+END); the cast reveals EPISODE BY EPISODE, never all at once (Charlie's
+call); photos seed the grid before the first video; the trailer waits for
+the itch page.
+
+- **Day 0 — set up + seed.** Accounts (checklist below). Avatar = Ralph
+  crop. Banner = `assets/concept/brand/banner_cast.png` (static branding is
+  fine — the STORIES don't front-load the cast). One grid-seed photo post:
+  Ralph hero card, caption `meet ralph. king of a very tiny island. 🍃` —
+  so the profile isn't empty when Ep1 traffic lands.
+- **Day 1 — Ep1 v3** (first video; copy below). Reply to every comment in
+  the first hour — the algorithm reads early replies as a live account.
+- **Day 4 — sumo reel** ("it's a real game" proof).
+- **Week 2 — Ep2 (once fixed) + the JESSIE "new challenger" reel.**
+- **Week 3 — Ep3 (top-up) + chaos reel.** From Ep3 the episode outro
+  upgrades to `brand/outro_cast.png` (the all-cast card + NEW EPISODE EVERY
+  WEEK) — by then most of the cast has appeared, so the group shot is a
+  payoff, not a spoiler. The full-cast 4:5 (`grid_cast_4x5.png`) posts as a
+  photo the same week ("the whole gang").
+- **Season finale week** — the "whole gang" energy peaks; itch page live by
+  then, real-capture TRAILER drops as its own post, link in bio flips on.
+
+**LONGFORM (landscape) plan:** shorts stay the growth engine; longform is
+the library. After Ep3 exists: "SEASON SO FAR" compilation on YouTube
+(episodes back-to-back with the cold-opens as natural stitches; 720x1280
+sources get a blurred-pillar-box 16:9 frame — same technique as the reels,
+rotated). At season end: the full six-episode movie (~5 min) — and IF a
+future top-up allows, key beats regenerate natively in 16:9 for a true
+landscape master. Don't gate weekly posting on any of this.
+
 ## One-time account setup (15 min)
 
 - [ ] Same handle everywhere (suggestion: **@tinydinosgame** — check free).
