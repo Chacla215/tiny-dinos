@@ -1,5 +1,36 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-18 (JESSIE the Deep Diver joins the roster; pterry → ACE)
+
+Charlie's ask: a personalized dino for his girlfriend named JESSIE — so the
+pterodactyl (who held the name) was renamed **ACE** (bio already called him a
+"self-proclaimed sky ace") and a brand-new **7th roster dino** was built:
+
+- **JESSIE (`spino`) — THE DEEP DIVER.** Light sunflower-yellow chibi
+  spinosaurus, sunflower-petal sail, straw bucket hat with brown band +
+  sunflower (her real hat), brown polka dots, big golden-hazel eyes (matched
+  to an iris photo), proudly bottom-heavy. Ex-D1-diver identity throughout:
+  - **Signature `swan_dive`** (dino.gd): ending a dodge opens a 1.2s window
+    where her next hit deals +35% damage / +25% knockback, then it's spent.
+    The inverse of ACE's flighty (hit→dodge refund; hers is dodge→hit).
+  - **Special `cannonball`**: leaping splash — self-dash 950 through the
+    windup, then the screech-path radial (r=150) fires around the landing.
+  - **Heavy = hip check**: 780 kb, the biggest single-hit shove in the game.
+  - Stats: 2nd-fastest (340), agile accel, roster-best dodge (210px, 0.5s cd,
+    cheap at 26 block), light 128 HP. Signature weapon: **nunchucks** (was
+    the only weapon with no owner).
+- **Art pipeline (no Charlie needed):** hero generated in-session via
+  Higgsfield nano_banana (ralph_hero as style ref; ~12 credits), iterated
+  live from Charlie's references (eye color macro, hat/polka-dot IG shots) →
+  `assets/concept/spino/spino_hero.png` → `gen_ralph_fighter.py spino
+  --smooth` (fallback/menu sheet, cell 141x168) + `--parts` (runtime limb
+  rig). She's the one rig-driven fighter (no `motion` flag); upgrade her to a
+  Seedance motion sheet at the next credits top-up.
+- **Wiring:** MatchConfig DINOS+ROSTER_ORDER (7 dinos), TIDE RIDERS rival
+  team now led by spino, creator grid 3+4 with a LEGENDARY-rarity profile,
+  sim_ai ROSTER, PLAYTEST/ITCH_PAGE/CUTSCENE_KIT copy (shorts chain now
+  Ralph→Max→Steve→Gus→Ace→Frank; new-Jessie is post-season material).
+
 ## Session — 2026-07-15 (hurt + KO fighter clips — last arena-overhaul thread closed)
 
 On `feat/arena-overhaul`. The one open item flagged across the last two
