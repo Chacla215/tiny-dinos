@@ -242,13 +242,37 @@ public clips.)
 - Safe margins: keep action + text in the middle 80% (platform UI eats edges).
 - Each ships as its own file → `assets/concept/shorts/<name>.mp4`.
 
-## Rollout
+## Rollout — SOCIAL-FIRST (Charlie, 2026-07-18)
 
-1. **Pilot first** — generate ONE (RALPH intro card, 9:16) end-to-end, bake the
-   name card + sting, review with Charlie. Lock the look.
-2. Batch A (remaining 5 intro cards) once the pilot look is approved.
-3. Batch B teasers.
-4. Charlie posts; track which format lands and double down.
+Strategy call: **build the audience NOW, build the game alongside.** Reels
+production is the priority track; game work continues underneath.
+
+**The reel factory (zero credits, all true-to-game):** capture harness →
+ffmpeg 9:16 assembly (blurred-fill + centered gameplay + Jersey25 caption
+overlays + battle-theme audio, TINY DINOS end card). First three built
+2026-07-18 in `wip/reels/`: `reel_sumo` ("LAST DINO IN THE RING WINS"),
+`reel_chaos` ("4 PLAYERS. 1 ISLAND. 0 MERCY"), `reel_jessie` ("NEW
+CHALLENGER — JESSIE THE DEEP DIVER"). Build script lives in the session
+scratchpad; regenerate any time from fresh captures.
+
+**Cadence:** 2–3 posts/week, same handle everywhere (IG Reels + TikTok +
+YouTube Shorts — post natively to all three, the formats are identical).
+Alternate content types: real-gameplay reel → story short (Ep1/Ep2) →
+real-gameplay reel. Game name visible in every clip (end card). Track saves
++ completion rate over views; double down on whichever mode/island clips
+retain best.
+
+**Episode QA before posting** (Charlie's continuity review):
+- Ep1 ~29–34s: the sky-sword beat — it's actually the game's real
+  weapon-drop mechanic, but unexplained it reads as a continuity error.
+  Fix on Charlie's edit pass: one caption ("WEAPONS RAIN FROM THE SKY.
+  REALLY. IT'S A MODE.") or trim the beat.
+- Ep2 (Max) mid-episode sumo/race beats: confusing per Charlie — consider
+  swapping in real sumo capture or trimming to the race gag only.
+1. Charlie posts Ep1 (post-QA) + the three reels to seed the account.
+2. Batch A intro cards + Batch B teasers stay on the menu once credits
+   allow — story content only, never framed as gameplay.
+3. Track which format lands and double down.
 
 Open question for Charlie: audio — reuse the battle/menu tracks for stings, or
 source short CC0 stingers per clip? (Recommend: a 1–2s sting from the battle
