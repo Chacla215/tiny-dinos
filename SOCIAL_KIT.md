@@ -1,5 +1,22 @@
 # SOCIAL KIT — ready-to-post copy + launch checklist
 
+## AUTOMATED POSTING (Charlie asked Claude to make all the posts, 2026-07-18)
+
+The pipeline lives in `scripts/social/`: `post_calendar.json` (the whole
+season: files + captions + days + per-post status) drives
+`publish_youtube.py` and `publish_instagram.py` (stdlib-only, secrets
+git-ignored). Capability map, honestly:
+- **YouTube Shorts — full auto** (upload + scheduled publish) after a
+  one-time ~10-min OAuth (steps in the script header).
+- **Instagram — full auto** (photos + reels; reels kept off-grid during
+  launch month to protect the mosaic) after a one-time ~30-min Meta
+  Professional-account + dev-app setup (steps in the script header).
+- **TikTok — stays 1-tap manual**: their API needs an app audit for direct
+  posting, so the calendar doubles as the prep pack (file + caption per
+  post); Charlie taps publish.
+Once tokens exist, Claude runs the calendar in-session (and can wire a
+launchd timer for hands-off scheduling later).
+
 The posting arm of `CUTSCENE_KIT.md` (rules + scripts live there). Everything
 below is paste-ready. Post NATIVELY on each platform — IG Reels, TikTok,
 YouTube Shorts — same handle, same file, three algorithms.
