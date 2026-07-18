@@ -163,18 +163,43 @@ Ep5 = ACE (co-star Frank), Ep6 = FRANK (everyone; season finale).
 belongs to the new 7th roster dino, a spinosaurus diver. She's post-season
 material — a "new challenger appears" episode or a devlog short.)
 
-**The other three (loglines, script on demand):**
-- **GUS — "THE WALL MOVES" (Ep4):** cold open = Steve's one (1) gentle bonk
-  lands (Gus faints from anticipation; the scoop plops back on Ralph's cone).
-  Then: immovable Gus won't budge for anyone — until Ace's egg-basket
-  rolls toward the lava; the unstoppable charge, for once, is FOR someone.
-  (Laughing Lava arena, EGGS mode.)
-- **ACE — "GROUNDED" (Ep5):** show-off sky ace clips a palm mid-stunt and
-  has to win a scrap on foot; discovers the ground game. Ends: dusts off,
-  flies low.
-- **FRANK — "ONE MORE ROUND" (Ep6):** the old veteran hangs up his club; the
-  kids beg for one last lesson. He blocks everything they throw (spikeback!),
-  taps each on the head, retires happy. (Iciest Age; season finale.)
+**FULL DRAFTS — Ep4-6 (written 2026-07-18, AWAITING CHARLIE'S READ before
+any generation; same formula: cold open resolves the last cliffhanger,
+deadpan beats 1-3, battle-drop turn at 4, freeze at 5):**
+
+**GUS — "THE WALL MOVES" (Ep4). Laughing Lava, EGGS mode, co-star Ace.**
+| beat | 12s clip | narrator line |
+|---|---|---|
+| 1 | COLD OPEN = Ep3 payoff: Steve's impossibly gentle bonk taps Gus on the noggin; Gus faints from sheer anticipation; a fresh scoop plops onto Ralph's cone; Steve picks his daisy back up. | "When we last saw Gus… he was one bonk away from bedtime. The bonk was very gentle. Gus fainted anyway." |
+| 2 | EGG DAY on Laughing Lava: eggs everywhere, dinos scrambling to collect them. Gus stands dead-center like furniture; everyone bounces off him. Ace swoops laps, piling eggs into a basket, showing off. | "Egg day on Laughing Lava! Grab the eggs, keep them safe. Simple! …Unless you are a wall." |
+| 3 | LOW POINT: eggs roll right past Gus's feet; he does not budge. Lava geysers pop behind. Ace stacks his overloaded basket on a rock ledge to take a bow — it wobbles. | "Gus does not chase. Gus does not scramble. Gus… stands. It's kind of his whole thing." |
+| 4 | THE TURN (battle drop): the basket TIPS — a river of eggs rolls toward the lava. Ace dives but can't catch them all. Gus's eyes narrow. The ground SHAKES. The wall moves: full charge, horns down, scooping eggs as he goes. | "And then the basket tipped. And every single egg… rolled toward the lava." |
+| 5 | CLIFFHANGER: Gus mid-charge, eggs balanced on frill and horns, as the LAST egg arcs out over the lava's edge — his horn-tip stretching for it — FREEZE → "TO BE CONTINUED…" | "That day, the island learned something brand new: the wall… MOVES!" |
+
+Resolution (Ep5 cold open, do NOT show): the egg lands on the horn-tip; Ace
+sweeps in and crowns Gus with the empty basket like a trophy.
+
+**ACE — "GROUNDED" (Ep5). White Water Falls, co-star Frank.**
+| beat | 12s clip | narrator line |
+|---|---|---|
+| 1 | COLD OPEN = Ep4 payoff: the last egg lands on Gus's horn-tip; crowd erupts; Ace crowns Gus with the basket, then launches into a celebratory airshow. | "When we last saw Ace… actually, when has anyone NOT seen Ace? He makes sure of it." |
+| 2 | The airshow over the falls: loops, dives, wing-taps off the water — then CLIPS a palm frond, spins out, crash-lands through the rope-bridge planks. Sits up: one wing in his signature bandage. Grounded. | "One palm tree. ONE. And just like that… the sky ace was grounded." |
+| 3 | LOW POINT: Frank offers a friendly ground scrap ("ground school"). On foot, Ace's dive-bomb instincts are useless — he bounces off Frank's armor, gets tail-swatted, wobbles dizzy. Frank waits, patient as rock. | "Down here there's no swooping. No diving. Down here there's just Frank. And Frank has seen… everything." |
+| 4 | THE TURN (battle drop): Ace stops flapping and starts WATCHING. Reads the slow wind-up of Frank's tail, ducks under it ON FOOT, lands his first clean sidestep-jab. Frank's brow lifts — impressed. | "So Ace stopped flying… and started paying attention. Turns out the ground has moves too." |
+| 5 | CLIFFHANGER: Frank's biggest tail-smash yet comes down; Ace crouches — not to take off, to DODGE — FREEZE with the club-tail mid-descent, sand rings spreading → "TO BE CONTINUED…" | "The old tail came down like thunder! And for the first time ever… Ace didn't need his wings!" |
+
+Resolution (Ep6 cold open, do NOT show): the smash lands on empty sand — Ace
+has already sidestepped; Frank nods the biggest nod of his life.
+
+**FRANK — "ONE MORE ROUND" (Ep6, SEASON FINALE — resolves, no cliffhanger).
+Iciest Age, co-stars: everyone.**
+| beat | 12s clip | narrator line |
+|---|---|---|
+| 1 | COLD OPEN = Ep5 payoff: the tail-smash lands — Ace is already gone, standing to the side, bowing. Frank smiles… then walks to a palm and HANGS UP his axe. The island goes silent. | "The smash came down… and Ace was already gone. Frank smiled. Then Frank did something nobody expected. He quit." |
+| 2 | Retirement at Iciest Age: Frank naps on a floe. The kids — Ralph, Max, Steve, Gus, Ace — slide across the ice begging for one last lesson. Head shake. More begging. Sadder head shake. | "Every legend hangs up the club someday. Frank figured… today. The kids figured… absolutely not." |
+| 3 | LOW POINT: the kids train themselves. It goes terribly — Ralph slips, Max crashes into a snowbank, Gus skids into a berg, Steve apologizes to a snowman he flattened. Frank watches through one open eye. Sighs. | "Training without Frank went… honestly? About how you'd expect." |
+| 4 | THE TURN (battle drop): Frank steps onto the ice ring and taps his club twice: one more round — ALL of you, at once. Five dinos rush him; he blocks everything (spikes flashing), pivots, deflects — a masterclass, grinning for the first time all season. | "So the old veteran stepped onto the ice for ONE more round. All of them. At once. He blocked… everything." |
+| 5 | FINALE: snow settles; five happy dinos flopped in a pile. Frank taps each little head one by one… then places his club in tiny Ralph's arms. Sunset over the floes, group huddle — FREEZE → "SEASON ONE — THE END" card, then the closing graphic. | "And when the snow settled, Frank tapped each little head… and handed the club to the tiniest king of all. Class dismissed." |
 
 Post per story: per-dino label (beat 1-2), light captions, the LOCKED audio
 template (picnic bed → battle drop at the turn, Arthur+energy narration),
@@ -251,14 +276,22 @@ as gameplay (launch trailer, store page, the real-capture reels) but story
 shorts are openly cinematic. Clarity rules still bind EVERYTHING (a beat a
 first-time viewer can't follow gets fixed or cut).
 
-**QA verdicts (2026-07-18 frame audit):**
-- **Ep1 — POSTABLE AS-IS.** The sky-sword lands with a sparkle trail while
-  the narration says "it sends help from the sky" — staged AND explained.
+**QA verdicts (2026-07-18 frame audit, corrected by Charlie):**
+- **Ep1 — HELD.** Beat 4 (sky-sword arrival) is fine — staged AND narrated.
+  But beat 5 (~37-49s, the leap at Max) breaks continuity: Ralph carries
+  TWO swords (one raised + a second hilt behind his head) and sprouts an
+  orange CAPE from nowhere (Charlie caught it). Fix = regenerate beat 5
+  with an identity ref from beat 4 + guard line "exactly ONE sword, no
+  cape" (~15-25cr), or end the episode on the beat-4 stand-tall moment
+  with a re-cut freeze (0cr, loses the leap).
 - **Ep2 — HELD.** Mid-episode beats (~16-30s) are OFF-MODEL: a toy-styled
   bronto w/ pink flower + non-roster crowd (orange-spot trike, purple ptero).
   Fix = regenerate those beats with Ep3-style identity locks (~40-80cr,
   needs Charlie's ok — it eats most of the 82.5cr balance) or trim to the
   on-model beats only.
+- **PROCESS (Charlie, 2026-07-18): script read-through BEFORE generation.**
+  No episode gets generated until Charlie has read its full beat table + VO
+  lines and signed off. Ep4-6 full drafts below exist for exactly that.
 - **QUARANTINED (never post):** act_sword.mp4, ralph_action_short*.mp4,
   v2_clash/v2_drop — colosseum/off-island sword content; wrong weapon,
   wrong world. Keep as style history only.
