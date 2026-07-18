@@ -217,13 +217,23 @@ safe area). Music with a clean build/drop (the battle track's ~3.5s buildup →
 drop is the FIGHT! beat — cut to it). Nothing scary, nothing edgy — the brand
 is "Saturday-morning couch chaos."
 
-**New-dino devlog angle (unlocked today):** "I put my girlfriend in my game"
-is a proven high-engagement indie-dev hook and we now have the full asset
-chain for it: her hero art evolution (no-hat → golden eyes → straw hat +
-polka dots), the creator-screen profile reveal, and real gameplay of JESSIE
-cannonballing people off Beauty Beach. Storyboard: hook "my girlfriend asked
-to be in my dino game" (0-1.5s) → art iterations flip-through (beats every
-2s) → profile card reveal → gameplay proof → "she mains herself now" button.
+**1b. CONTINUITY QA (Charlie, 2026-07-18 — from reviewing the cuts).** Two
+real examples of clips that break trust, and the standing rule they set:
+- *Ralph pulls a second sword from nowhere* — AI-generated shots hallucinate
+  props. In-game a dino holds ONE weapon (and Ralph's is a hammer). QA every
+  generated clip frame-by-frame: props/weapons must persist, nothing appears
+  or vanishes, nobody wields gear their kit doesn't have. If a shot fails,
+  regenerate it or replace it with real capture.
+- *The sumo clip is confusing* — a mode moment must be SELF-EXPLANATORY to a
+  first-time viewer. Test: could someone who's never seen the game say what
+  happened and who won? Real sumo capture passes on its own (the dohyo ring +
+  a shove-out reads instantly); add at most one caption ("LAST DINO IN THE
+  RING WINS") — if it needs more explaining than that, cut it.
+
+**New-dino angle:** market JESSIE purely in-universe — "A NEW CHALLENGER
+DIVES IN" reveal: profile-card flash → real gameplay of the CANNONBALL splash
+and a swan-dive KO. (Per Charlie: keep the personal story behind her OUT of
+public clips.)
 
 ## Format spec (all)
 

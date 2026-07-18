@@ -6,6 +6,8 @@ extends Node2D
 #   /opt/homebrew/bin/godot --write-movie /tmp/td_capture/beach.avi \
 #       scenes/_capture_gameplay.tscn -- --seconds 12 --arena beach
 # --arena: beach|lava|floes|falls|springs|purple (default beach)
+# --mode:  rounds|koth|eggs|sumo|bombtag|beast|flood (default rounds) — so mode
+#          clips (the sumo dohyo, the flood tide) can be REAL footage too.
 
 const ARENAS := {
 	"beach": ["res://scenes/arena_beach.tscn", "beauty_beach"],
@@ -35,7 +37,7 @@ func _ready() -> void:
 	# JESSIE up front so the newest dino features in every capture).
 	MatchConfig.dino_choices = {"p1": "spino", "p2": "ralph", "p3": "raptor", "p4": "anky", "p5": "pterry", "p6": "trike"}
 	MatchConfig.island = entry[1]
-	MatchConfig.game_mode = "rounds"
+	MatchConfig.game_mode = _arg("--mode", "rounds")
 	MatchConfig.teams_enabled = false
 
 	var packed: PackedScene = load(entry[0])

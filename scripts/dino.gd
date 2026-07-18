@@ -91,11 +91,11 @@ const ANIM_LAYOUTS := {
 		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 644, 231, 161), Rect2(231, 644, 231, 161), Rect2(462, 644, 231, 161), Rect2(693, 644, 231, 161), Rect2(924, 644, 231, 161)]},
 	},
 	"spino": {
-		# Smooth hero bake (gen_ralph_fighter.py spino --smooth), cell 141x168.
+		# Smooth hero bake (gen_ralph_fighter.py spino --smooth), cell 129x168.
 		"sheet": SHEET_SPINO,
-		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 141, 168), Rect2(141, 0, 141, 168)]},
-		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(282, 0, 141, 168), Rect2(423, 0, 141, 168), Rect2(564, 0, 141, 168), Rect2(705, 0, 141, 168)]},
-		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(846, 0, 141, 168), Rect2(987, 0, 141, 168), Rect2(1128, 0, 141, 168)]},
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 129, 168), Rect2(129, 0, 129, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(258, 0, 129, 168), Rect2(387, 0, 129, 168), Rect2(516, 0, 129, 168), Rect2(645, 0, 129, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(774, 0, 129, 168), Rect2(903, 0, 129, 168), Rect2(1032, 0, 129, 168)]},
 	},
 }
 
