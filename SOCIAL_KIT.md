@@ -11,6 +11,24 @@ END); the cast reveals EPISODE BY EPISODE, never all at once (Charlie's
 call); photos seed the grid before the first video; the trailer waits for
 the itch page.
 
+**Stories lead, intro cards follow (Charlie asked, 2026-07-18):** no
+character-intro campaign before the stories — cards to a cold audience are
+announcements with nothing to retain; Ep1's opening line IS Ralph's intro.
+The Batch-A character cards become PRE-EPISODE TEASERS instead: each card
+posts a few days before its character's episode ("meet Steve" lands between
+Ep2 and Ep3), one character at a time.
+
+**Platforms (post natively to all three, same file, same day):**
+1. **TikTok** — biggest cold reach for all-ages cartoon; priority one.
+2. **Instagram Reels** — second algorithm + Charlie's IRL network seeds
+   early engagement; the grid is why the photo posts exist. Creator
+   account ON for analytics.
+3. **YouTube Shorts** — permanent library; longform compilations + the
+   season movie live here later.
+Register the handle on X/Facebook too (squat protection) but don't post
+there. Bio link from day 0 = tinydinos.higgsfield.app (the live site),
+swapped to itch at launch.
+
 - **Day 0 — set up + seed.** Accounts (checklist below). Avatar = Ralph
   crop. Banner = `assets/concept/brand/banner_cast.png` (static branding is
   fine — the STORIES don't front-load the cast). One grid-seed photo post:
