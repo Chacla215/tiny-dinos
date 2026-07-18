@@ -242,7 +242,34 @@ public clips.)
 - Safe margins: keep action + text in the middle 80% (platform UI eats edges).
 - Each ships as its own file → `assets/concept/shorts/<name>.mp4`.
 
-## Rollout — SOCIAL-FIRST (Charlie, 2026-07-18)
+## Rollout — STORY-FIRST (Charlie, 2026-07-18, supersedes below)
+
+Second strategy refinement the same day: **the shorts lead with STORY, not
+gameplay.** Serialized character episodes draw the audience; the game
+releases slowly behind them. True-to-game stays binding for anything framed
+as gameplay (launch trailer, store page, the real-capture reels) but story
+shorts are openly cinematic. Clarity rules still bind EVERYTHING (a beat a
+first-time viewer can't follow gets fixed or cut).
+
+**QA verdicts (2026-07-18 frame audit):**
+- **Ep1 — POSTABLE AS-IS.** The sky-sword lands with a sparkle trail while
+  the narration says "it sends help from the sky" — staged AND explained.
+- **Ep2 — HELD.** Mid-episode beats (~16-30s) are OFF-MODEL: a toy-styled
+  bronto w/ pink flower + non-roster crowd (orange-spot trike, purple ptero).
+  Fix = regenerate those beats with Ep3-style identity locks (~40-80cr,
+  needs Charlie's ok — it eats most of the 82.5cr balance) or trim to the
+  on-model beats only.
+- **QUARANTINED (never post):** act_sword.mp4, ralph_action_short*.mp4,
+  v2_clash/v2_drop — colosseum/off-island sword content; wrong weapon,
+  wrong world. Keep as style history only.
+
+**Slow-release story cadence:** wk1 Ep1 → wk1 reel (sumo) → wk2 Ep2 (once
+fixed) → wk2 reel (Jessie) → wk3 Ep3 (on credit top-up; it's fully
+pre-produced) → then Ep4-6 loglines. Episodes carry the story hook; the
+real-capture reels slot between as "oh, it's a real game" proof — story
+draws them in, gameplay converts them.
+
+## (superseded same-day) Rollout — SOCIAL-FIRST
 
 Strategy call: **build the audience NOW, build the game alongside.** Reels
 production is the priority track; game work continues underneath.
