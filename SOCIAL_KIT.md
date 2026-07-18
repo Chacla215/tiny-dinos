@@ -29,11 +29,23 @@ Register the handle on X/Facebook too (squat protection) but don't post
 there. Bio link from day 0 = tinydinos.higgsfield.app (the live site),
 swapped to itch at launch.
 
-- **Day 0 — set up + seed.** Accounts (checklist below). Avatar = Ralph
-  crop. Banner = `assets/concept/brand/banner_cast.png` (static branding is
-  fine — the STORIES don't front-load the cast). One grid-seed photo post:
-  Ralph hero card, caption `meet ralph. king of a very tiny island. 🍃` —
-  so the profile isn't empty when Ep1 traffic lands.
+- **Day 0 — set up + seed with the 3x3 GRID MOSAIC.** Accounts (checklist
+  below). Avatar = Ralph crop. Banner = `assets/concept/brand/banner_cast.png`.
+  Then the launch stunt Charlie asked for: the cast art sliced into 9 posts
+  that assemble into one image on the profile —
+  `assets/concept/brand/grid_mosaic/post_1_of_9.png … post_9_of_9.png`.
+  **Post them in FILENAME ORDER, back-to-back** (IG shows newest first, so
+  post_1 = bottom-right tile, post_9 = top-left; the files already encode
+  this — just go 1→9). Captions: keep them tiny (`🦕`, or one word each);
+  put the real caption on post_9 (top-left, posted last):
+  `the whole island is here. episode one drops tomorrow. 🌋`
+  Tiles are 1080x1350 with real bleed margins, so seams stay aligned in
+  BOTH the feed and the 3:4 grid crop.
+  **Mosaic upkeep:** never pin posts (pinning reshuffles the grid); future
+  photo posts go up in multiples of 3; share reels WITHOUT the profile-grid
+  placement during launch month so the mosaic stays whole — after the
+  account has real followers, let reels on the grid and let the mosaic
+  scroll down (it stays intact as long as photo posts come in threes).
 - **Day 1 — Ep1 v3** (first video; copy below). Reply to every comment in
   the first hour — the algorithm reads early replies as a live account.
 - **Day 4 — sumo reel** ("it's a real game" proof).
