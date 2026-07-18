@@ -618,8 +618,16 @@ func _refresh_profile(dino_id: String) -> void:
 
 
 # A one-line "playstyle" tag derived from whichever core stat (HP/ATK/DEF/SPD)
-# stands out most for this dino — tracks balance automatically.
+# stands out most for this dino — tracks balance automatically. A dino holding
+# the roster's BEST dodge reads as a skirmisher instead: mobility is their
+# identity but isn't one of the four bars (added for JESSIE, applies to
+# whoever tops dodge_distance as balance shifts).
 func _playstyle_tag(dino_id: String) -> String:
+	var best_dodge := 0.0
+	for d in MatchConfig.ROSTER_ORDER:
+		best_dodge = maxf(best_dodge, float(MatchConfig.DINOS[d].get("dodge_distance", 0.0)))
+	if float(MatchConfig.DINOS.get(dino_id, {}).get("dodge_distance", 0.0)) >= best_dodge:
+		return "GRACEFUL SKIRMISHER"
 	var rows: Array = _stats_for(dino_id)
 	var maxes: Array = _stat_maxes()
 	var labels := ["FRONTLINE BRUISER", "HEAVY HITTER", "STONE WALL", "HIT-AND-RUN"]
