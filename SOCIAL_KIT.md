@@ -85,7 +85,11 @@ landscape master. Don't gate weekly posting on any of this.
 
 ## One-time account setup (15 min)
 
-- [ ] Same handle everywhere (suggestion: **@tinydinosgame** — check free).
+- [x] **Handles CLAIMED (2026-07-18):** TikTok **@_tinydinos** · Instagram
+      **@_tinydinos** · YouTube **@Thetinydinos** (display name "Tiny
+      Dinos"). Cross-links in every bio: point IG/TikTok bios at each
+      other and at the YT channel so the underscore/The mismatch never
+      loses anyone.
 - [ ] Avatar: Ralph hero crop. Banner/bio image: the TINY DINOS closing card.
 - [ ] Bio line: `tiny dinos. big feelings. a couch brawler for 1-4 players 🦕`
       + itch link when the page goes live (until then: "coming soon").
