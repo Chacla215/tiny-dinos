@@ -180,6 +180,51 @@ Post per story: per-dino label (beat 1-2), light captions, the LOCKED audio
 template (picnic bed → battle drop at the turn, Arthur+energy narration),
 ALWAYS the closing graphic.
 
+## POSTING RULES — true-to-game, retention, all-ages (Charlie, 2026-07-18)
+
+Charlie's three asks, locked as rules for every clip we post:
+
+**1. TRUE TO THE GAME.** Anything presented as gameplay must BE gameplay.
+Real footage is now zero-effort with no controller: the capture harness
+records CPU-vs-CPU matches in Movie Maker mode (smooth 60fps, faster than
+real-time):
+```
+/opt/homebrew/bin/godot --write-movie /tmp/td_capture/<arena>.avi \
+    scenes/_capture_gameplay.tscn -- --seconds 14 --arena <arena>
+ffmpeg -i /tmp/td_capture/<arena>.avi -c:v libx264 -crf 20 -pix_fmt yuv420p \
+    -movflags +faststart wip/captures/<arena>_gameplay.mp4     # + 9:16 crop
+```
+Seedance painterly clips stay legal for STORY shorts (they're cutscenes /
+character content, clearly stylized) — but every trailer or "look at this
+game" post leads with or cuts to real capture. Rule of thumb: hook may be
+cinematic ≤2s; proof must be gameplay. (First captures live in
+`wip/captures/` — git-ignored; regenerate any time.)
+
+**2. RETENTION (hold them to the last frame).**
+- Hook inside 1.5s: motion + an implicit question (a dino mid-flight, a bomb
+  about to pass, "wait, the island floods?"). Never open on a logo.
+- A new beat every 2–4s: camera change, KO, hazard fires, mode twist. If
+  nothing changes for 4s, cut it.
+- Escalate: save the biggest moment (ring-out, wave-KO, 4-dino pileup) for
+  the final 3s so watch-through pays off.
+- Loop-friendly: last frame ≈ first frame family, so the rewatch feels
+  seamless (rewatches count as retention).
+- Captions on everything (most viewers are muted); name-card LATE, not first.
+**3. ALL AGES.** Cute cast + slapstick physics is already universal — protect
+it: no niche memes, no text walls, no irony that needs context. Bright
+readable action at phone size (zoom the crop tight on the fight, middle 80%
+safe area). Music with a clean build/drop (the battle track's ~3.5s buildup →
+drop is the FIGHT! beat — cut to it). Nothing scary, nothing edgy — the brand
+is "Saturday-morning couch chaos."
+
+**New-dino devlog angle (unlocked today):** "I put my girlfriend in my game"
+is a proven high-engagement indie-dev hook and we now have the full asset
+chain for it: her hero art evolution (no-hat → golden eyes → straw hat +
+polka dots), the creator-screen profile reveal, and real gameplay of JESSIE
+cannonballing people off Beauty Beach. Storyboard: hook "my girlfriend asked
+to be in my dino game" (0-1.5s) → art iterations flip-through (beats every
+2s) → profile card reveal → gameplay proof → "she mains herself now" button.
+
 ## Format spec (all)
 
 - **9:16**, 720p, ~5–6s, `generate_audio:false` (we add stings/music in post).
