@@ -126,13 +126,13 @@
     "tiktok"
    ],
    "type": "video",
-   "file": "assets/concept/shorts/wip/ep1/ep1_v5_narrated.mp4",
+   "file": "assets/concept/shorts/wip/ep1/ep1_v6_narrated.mp4",
    "title": "TINY DINOS — Ep. 1: The Leaf",
    "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts",
    "cover_hint": "the leap over Max — it IS the first frame (0.4s)",
    "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-   "status": "ready (VO line 5 pending Arthur voice install)",
-   "note": "V5 STORY CUT (32.1s, LOOPS): climax restored from the quarantined beat5 (its continuity break only starts ~8.4s; the clean 8.3s before it hold the charge, leap and lunge). Hook = the leap, dip-to-black into a '12 SECONDS EARLIER' signpost, ends on the RULE TWO button framed on the EXACT hook frame so last frame == first frame (seam 1.65). No outro card — it broke the loop. 27 cuts, -13.7 LUFS. OPEN: the narrator still doesn't say 'second rule' (vo_e5 trimmed before the 'SEC' misread) — needs the macOS 'Arthur' voice installed to regenerate the line in the matching narrator voice."
+   "status": "ready",
+   "note": "V6 (28.1s, LOOPS, complete): narration regenerated with macOS 'Daniel' — Arthur (the original voice) is unavailable, and the old vo_e5 said 'SEC' instead of 'second' with no clean splice point. Daniel says it correctly (verified by transcribing the finished file) and reads 19.8s vs 28.4s, so the episode tightened 32.1s -> 28.1s with the same beats. Climax restored from the quarantined beat5 (break starts ~8.4s; clean 8.3s before it hold charge/leap/lunge). Hook = the leap, dip-to-black into '12 SECONDS EARLIER', ends on the RULE TWO button framed on the exact hook frame so last frame == first frame (seam 1.65). No outro card. 25 cuts, longest gap 2.0s, -13.1 LUFS."
   },
   {
    "id": "ep1-short",
