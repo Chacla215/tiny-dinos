@@ -126,13 +126,13 @@
     "tiktok"
    ],
    "type": "video",
-   "file": "assets/concept/shorts/wip/ep1/ep1_v6_narrated.mp4",
+   "file": "assets/concept/shorts/wip/ep1/ep1_v7_narrated.mp4",
    "title": "TINY DINOS — Ep. 1: The Leaf",
    "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts",
    "cover_hint": "the leap over Max — it IS the first frame (0.4s)",
    "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
    "status": "ready",
-   "note": "V6 (28.1s, LOOPS, complete): narration regenerated with macOS 'Daniel' — Arthur (the original voice) is unavailable, and the old vo_e5 said 'SEC' instead of 'second' with no clean splice point. Daniel says it correctly (verified by transcribing the finished file) and reads 19.8s vs 28.4s, so the episode tightened 32.1s -> 28.1s with the same beats. Climax restored from the quarantined beat5 (break starts ~8.4s; clean 8.3s before it hold charge/leap/lunge). Hook = the leap, dip-to-black into '12 SECONDS EARLIER', ends on the RULE TWO button framed on the exact hook frame so last frame == first frame (seam 1.65). No outro card. 25 cuts, longest gap 2.0s, -13.1 LUFS."
+   "note": "V7 (33.0s, LOOPS, original narrator). The Daniel rebuild (v6) was rejected — bad voice; ORIGINAL VO is authoritative. The broken line is solved by cutting earlier: the TTS said 'SEC' not 'second', the word is coarticulated with 'rule' (5 splice boundaries all left fragments) and 'second' appears in none of this narrator's Ep1/Ep2 recordings. Cut after 'learn' instead -> 'Max was about to learn.' is a complete sentence and the RULE TWO button delivers the object. Charge caption rewritten to match ('AND MAX WAS ABOUT TO LEARN...'). Climax restored from quarantined beat5 (break starts ~8.4s). Hook = the leap, dip-to-black into '12 SECONDS EARLIER', button framed on the exact hook frame so last frame == first frame (seam 1.66), 2.4s hold with the caption clearing before the end. 26 cuts, -13.6 LUFS."
   },
   {
    "id": "ep1-short",
