@@ -5,6 +5,24 @@
 the shipped `ep1_rev.mp4`, which revealed three failures the old prompts
 caused. Both prompts below are rewritten against those failures.
 
+> **SAME-DAY UPDATE — CLIP 1 IS CANCELLED.** The failures were real but the
+> file was stale: `ep1_rev.mp4` (02:08) predates the restyled tide stills
+> (02:15), and `build_ep1_final.sh` had never been rewired to them. Fixed for
+> zero credits: `tide_styled_leaf.png` composited (leaf lifted from the old
+> still onto the restyled frame), build pointed at `tide_styled_a.png` +
+> `tide_styled_leaf.png`, rebuilt. **`ep1_final.mp4` now passes all four
+> locked plants** (look = last beat, leaf drifts in, style-matched, on-model)
+> at −13.7 LUFS. Ep1 is READY pending Charlie's eyeball.
+>
+> The clip-1 prompt below is kept as the paid fallback if Charlie watches the
+> still-based ending in motion and wants a fully animated look instead.
+> **Budget drops to ~110–160: Ep2 only, plus re-roll headroom.**
+>
+> Extra lesson for the pile: the world-change refusal (dry→flooded ignored by
+> image-to-video) means clip 1, if ever fired, should ALSO use a composite
+> start frame with the water already high — not the 8.15 dry frame + rising
+> water as written below.
+
 Lives at repo root with the other kits (`wip/` is gitignored). Companion to
 `SAGA_RISING_TIDE.md` (Ep1 brief, identity locks) and
 `SAGA_OUTLINE.md` (the arc, Ep2's original kit — **superseded by this file**).
@@ -74,23 +92,37 @@ QA that frame before generating: one sword, no cape, Ralph's teal spikes tall
 and clearly visible. If the spikes don't read in the start frame, the clip
 will not fix them.
 
+**Frame QA result (2026-07-19, done):** `tide_look_start.png` built and
+verified — identity is clean (spikes, spot pattern, Max's tufts and stripes
+all read; one sword; no cape). Two notes it produced:
+
+- The **tan patch on Ralph's head is sand from the fight**, present in this
+  frame too — it is continuity, not drift. Don't re-roll over it.
+- The frame is **mid-action** (Ralph atop the rock over Max, dry beach,
+  footprints visible), so the prompt below opens with a one-line bridge —
+  they step apart — and stages the water as RISING during the clip rather
+  than already risen. Frames later than 8.15 were checked and are worse
+  (Ralph goes airborne); 8.15 stands.
+
 ### Prompt
 
 > Painterly chibi cartoon dinosaurs, storybook picture-book style, vivid
-> colors, bright sunny tropical beach. A small round chibi green dinosaur —
-> sage-green body, cream belly plates, tall teal-blue back spikes and teal
-> tail tip, big amber eyes, pink blush cheeks — and a small chibi red raptor —
-> brick-red body with darker red stripes, cream belly, tiny white feather
-> tufts at the elbows, yellow eyes — stand side by side, and slowly turn their
-> heads to look directly AT EACH OTHER. They hold that look for a long moment,
-> wary and calculating, neither one attacking. That look is the entire shot.
-> They are standing on the last small patch of dry sand. Calm seawater has
-> come all the way up the beach behind them: it covers the rows of footprints
-> in the sand, and the trunks of the palm trees are standing in water. The sea
-> is flat and calm, not stormy, which makes it worse. Slow gentle push in on
-> the two of them. No fighting, no weapons, no leaf. Exactly ONE green
-> dinosaur and exactly ONE red raptor in the entire scene. NO cape on either
-> dinosaur. All-ages, nobody is in danger, nobody drowns.
+> colors, bright sunny tropical beach. The fight is over: a small round chibi
+> green dinosaur — sage-green body, cream belly plates, tall teal-blue back
+> spikes and teal tail tip, big amber eyes, pink blush cheeks, a little sand
+> dusted on his head — steps down off the rock and lets the sword drop to the
+> sand, and the small chibi red raptor — brick-red body with darker red
+> stripes, cream belly, tiny white feather tufts at the elbows, yellow eyes —
+> hops down beside him. They stand side by side, and slowly turn their heads
+> to look directly AT EACH OTHER. They hold that look for a long moment, wary
+> and calculating, neither one attacking. That look is the heart of the shot
+> and the final frame. While they stand there, calm seawater rises steadily
+> up the beach behind them: it slides over the rows of footprints in the sand
+> and reaches the trunks of the palm trees, until the two of them are on the
+> last small patch of dry sand. The sea is flat and calm, not stormy, which
+> makes it worse. Slow gentle push in on the two of them. No fighting. Exactly
+> ONE green dinosaur and exactly ONE red raptor in the entire scene. NO cape
+> on either dinosaur. All-ages, nobody is in danger, nobody drowns.
 
 ### QA before accepting (re-roll if any fail)
 
@@ -140,11 +172,22 @@ dropped tail would be **Max in the doorway**, which is the entire hook. So:
 ### Start frame — build it, don't skip it
 
 The den is a new location, so there's no end frame to chain from, and clip 1
-just showed what happens without one. Build a composite start frame the way
-Ep3's `beat2_start.png` was built (keyed hero on a composed background) —
-`assets/concept/shorts/wip/ep3_steve/make_ep3_start.py` is the working pattern. **Free, and it is the
-single highest-value drift insurance on this clip.** Only generate without one
-if the composite genuinely can't be made to read.
+just showed what happens without one.
+
+**DONE (2026-07-19):** `assets/concept/shorts/wip/ep2_den/ep2_start.png` —
+built by `make_ep2_start.py` in the same folder. The den interior itself was
+generated with nano_banana_2 (1.5 cr, A/B'd two candidates; `den_bg_A.png`
+won on drying-rock prominence + readable wall + clean doorway) and is now the
+**series' standing set**: every future Type B episode composites onto this
+same den, which is both free and the strongest possible location continuity.
+Ralph (hero, keyed, warmed) stands by the marked wall; Max (hero, keyed,
+darkened to silhouette) stands in the doorway against the sunset sea.
+
+Two facts the frame changed about the plan:
+- **Ralph wears the leaf behind his head** (it's baked into the hero art) —
+  better than compositing it onto the rock: he carried it home. The
+  leaf-on-rock post composite is now optional.
+- Ralph is **standing**, so the prompt below says "stands", not "sits".
 
 ### Prompt
 
@@ -156,7 +199,8 @@ if the composite genuinely can't be made to read.
 > feather tufts at the elbows, yellow eyes — soaking wet, holding nothing, not
 > attacking, not coming in, just standing there. Inside the den, a small round
 > chibi green dinosaur — sage-green body, cream belly plates, tall teal-blue
-> back spikes and teal tail tip, big amber eyes, pink blush cheeks — sits
+> back spikes and teal tail tip, big amber eyes, pink blush cheeks, a small
+> green leaf tucked behind his head — stands
 > soaking wet with water dripping off him. He reaches up and scratches one
 > short horizontal mark high on the stone wall with his claw. On the wall
 > below that new mark are several older scratched marks, all of them lower —
