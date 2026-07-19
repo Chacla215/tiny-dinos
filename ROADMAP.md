@@ -92,3 +92,91 @@ CPU objective-blind in 4 of 7 modes. On `feat/arena-overhaul`:
   autonomously, surface the reasoning).
 - Ship quality bar: headless boot clean, no placeholder assets in the
   player-facing path, pick == play everywhere.
+
+---
+
+# THE NEXT FEW MONTHS — non-gameplay plan (Claude, 2026-07-19)
+
+Charlie's ask: where the project moves **without touching gameplay**, since
+every gameplay knob now waits on the Phase 1 controller session. Answer: the
+repo has three parallel lanes that don't touch `scripts/*.gd` at all, plus a
+release lane that only needs Charlie's hands twice. Sessions steer by this
+section until Phase 1 happens; gameplay work resumes the moment it does.
+
+## The four lanes
+
+### LANE A — The saga (weekly, the heartbeat)
+The RISING TIDE series (`SAGA_RISING_TIDE.md` + `SAGA_OUTLINE.md`) is written
+through Ep6 and sketched through act three. The machine is now: write the ep
+→ build the start-frame composite (free) → generate ONE clip (~54cr) → post
+chain (free) → publish. The den standing set (`ep2_den/den_bg_A.png`) makes
+every Type B episode near-zero marginal cost.
+
+- **Cadence:** 1 episode/week sustained (2/week only if a clip lands clean
+  first try). Alternate A/B per the brief; keep formats varied (YT
+  channel-level repetition risk — memory `social-research-2026-07`).
+- **Budget:** ~54-110cr per episode with re-roll headroom → **~250-450cr/month.**
+- **Production rules now locked** (learned, in `NEXT_TWO_CLIPS.md`): one
+  action per clip; the un-losable beat first; composite start frames always;
+  world-changes happen in stills, not video; fragile props in post.
+- **Write ahead:** Ep3 "SHARE THE ROCK" + Ep4 production kits are the next
+  zero-credit writing tasks; each episode's kit should exist a week before
+  its clip fires.
+
+### LANE B — Channel & audience ops (daily-touch, near-zero cost)
+- Publishing machinery DONE 2026-07-19: YouTube verified-pinned, Instagram
+  authorized (@_tinydinos) + hosting solved (Higgsfield CDN, see
+  `scripts/social/hosted_media.json`), TikTok stays 1-tap manual.
+- **Remaining human steps:** Charlie eyeballs `ep1_final.mp4` → post; IG
+  mosaic day-0 (5/9 tiles pre-hosted, rest host at post time).
+- **Weekly ritual (Claude-runnable):** read completion rate + follows-per-post
+  per platform, log to `PLAYTEST.md`-style notes in `scripts/social/`, adjust
+  the calendar. Whatever retains, make more of exactly that.
+- **Community once comments exist:** reply in-voice (all-ages, no memes),
+  pin the serialization comment on each ep.
+
+### LANE C — Store & web presence (one-time builds, then drip)
+- **itch page:** kit is done (`ITCH_PAGE.md`); needs Charlie to create the
+  project + price call. Claude: refresh the 8 stills/3 GIFs to painterly
+  current-build art, re-export the 3 zips AFTER the overhaul merges.
+- **Website:** live at tinydinos.higgsfield.app; swap real links in config.ts
+  once itch + socials are public (task 7 of the site build), add an EPISODES
+  page that embeds the saga as it grows.
+- **Trailer:** stays channel furniture (YT channel trailer + itch header),
+  NOT a feed post. A 9:16 recut becomes worth it around ~500 followers or
+  the itch launch, whichever first.
+- **Press-kit-lite** (zero cost, one session): logo pack + 6 hero PNGs + 10
+  stills + boilerplate in `press/` — needed the day anyone asks, embarrassing
+  to build the day someone asks.
+
+### LANE D — Release management (the merge train)
+The repo's actual blocker is that THREE branches of value sit unmerged:
+1. **PR #18** (settings/onboarding/builds) — OPEN, clean, mergeable now.
+2. **`feat/arena-overhaul`** — Claude-side complete, all tunings first-guess.
+3. Master carries Phase 0-1 states.
+
+**Order (as soon as Charlie has one controller evening):**
+Phase 1 session on arena-overhaul build → fold findings as atomic fixes →
+merge #18 → merge overhaul → re-export 3 platform zips → itch upload →
+launch post = Ep-current + "the game is out" (the ONE allowed direct-promo
+beat). Everything in lanes A-C survives this unchanged.
+
+## Month-by-month sketch (calendar time, launch-relative)
+
+- **Month 1 (now):** Ep1 posted (today, pending eyeball); Ep2 on top-up;
+  Ep3-4 kits written; IG mosaic day-0 fired; weekly metrics ritual starts.
+  Charlie: ONE controller evening (Phase 1) when life allows.
+- **Month 2:** merge train + itch launch mid-month once Phase 1 lands; saga
+  hits Ep5-6 (act one finale = the den floods = natural launch-week beat:
+  "they had to leave home" ↔ "the game is out"); press-kit-lite.
+- **Month 3:** saga act two opens (new islands = new visual variety, feeds
+  the channel-repetition defense); read launch data; decide the first
+  post-launch gameplay axis from Phase 5 by what players/viewers actually
+  respond to; Max-spinoff greenlight check (needs act one fully public).
+- **Steam stays post-launch** and only if itch+socials show real pull.
+
+## Standing budget note
+Episode credits are the ONLY recurring cost (~250-450cr/mo at 1 ep/week).
+Everything else in lanes B-D is zero-credit. Image work (den sets, start
+frames, ice-style props) runs 1.5-3cr and should never be batched into video
+budget decisions — just do it.
