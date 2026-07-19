@@ -8,13 +8,22 @@
  ],
  "base": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE",
  "hosted": {
-  "ep1": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/286c7766-b5f5-49fe-95fc-2c7fa6da9842.mp4",
+  "ep1": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/684ed8e9-89cd-4972-9e52-5d475dd9fff3.mp4",
   "mosaic-1": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/8b128a1e-ac60-4808-8238-f6a36be2eb31.png",
   "mosaic-2": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/265598c0-f7d1-45d2-924e-5240bb373785.png",
   "mosaic-3": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/b58c0b4e-c285-4ff6-b4f0-a7d64f929e6c.png",
   "mosaic-4": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/c2fa6aeb-689a-469b-91b9-482c5889d55e.png",
   "mosaic-5": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/ca377bf2-9930-4e7d-91b2-ea829e0ed9ef.png"
  },
- "pending_upload": ["mosaic-6", "mosaic-7", "mosaic-8", "mosaic-9", "cast-photo", "reel-sumo", "reel-jessie", "reel-chaos"],
- "note_ep1": "hosted file = ep1_final.mp4 rebuilt 2026-07-19 10:03 (restyled stills). If the video is rebuilt again, re-host and update this URL."
+ "pending_upload": [
+  "mosaic-6",
+  "mosaic-7",
+  "mosaic-8",
+  "mosaic-9",
+  "cast-photo",
+  "reel-sumo",
+  "reel-jessie",
+  "reel-chaos"
+ ],
+ "note_ep1": "hosted file = ep1_final.mp4 v2 (40.8s, BONK landing + ocean-POV ending, 2026-07-19 PM). Old 35.5s URL retired: .../286c7766-...mp4"
 }
