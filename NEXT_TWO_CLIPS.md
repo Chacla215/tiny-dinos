@@ -1,244 +1,137 @@
-# NEXT TWO CLIPS — fire on top-up
+# NEXT TWO CLIPS — the definitive spec (read this FIRST, trust nothing older)
 
-**Claude, 2026-07-19.** Two generations, in this order: **Ep1's ending
-(re-shoot)**, then **Ep2 "HIGH WATER MARK"**. Written after frame-inspecting
-the shipped `ep1_rev.mp4`, which revealed three failures the old prompts
-caused. Both prompts below are rewritten against those failures.
+**Rewritten 2026-07-19 evening after two rule violations in one day.**
+Supersedes every earlier version of this file and every Ep1 ending before it.
 
-> **SAME-DAY UPDATE — CLIP 1 IS CANCELLED.** The failures were real but the
-> file was stale: `ep1_rev.mp4` (02:08) predates the restyled tide stills
-> (02:15), and `build_ep1_final.sh` had never been rewired to them. Fixed for
-> zero credits: `tide_styled_leaf.png` composited (leaf lifted from the old
-> still onto the restyled frame), build pointed at `tide_styled_a.png` +
-> `tide_styled_leaf.png`, rebuilt. **`ep1_final.mp4` now passes all four
-> locked plants** (look = last beat, leaf drifts in, style-matched, on-model)
-> at −13.7 LUFS. Ep1 is READY pending Charlie's eyeball.
->
-> The clip-1 prompt below is kept as the paid fallback if Charlie watches the
-> still-based ending in motion and wants a fully animated look instead.
-> **Budget drops to ~110–160: Ep2 only, plus re-roll headroom.**
->
-> Extra lesson for the pile: the world-change refusal (dry→flooded ignored by
-> image-to-video) means clip 1, if ever fired, should ALSO use a composite
-> start frame with the water already high — not the 8.15 dry frame + rising
-> water as written below.
+## THE TWO IRON RULES (Charlie's, violated twice today — never again)
 
-Lives at repo root with the other kits (`wip/` is gitignored). Companion to
-`SAGA_RISING_TIDE.md` (Ep1 brief, identity locks) and
-`SAGA_OUTLINE.md` (the arc, Ep2's original kit — **superseded by this file**).
+1. **NO SUBTITLES.** No narration captions, ever. Allowed on-screen text:
+   the hook card, a time signpost ("12 SECONDS EARLIER"), and momentary
+   impact cards in the game's emote language (BONK!). The caption code has
+   been DELETED from `build_ep1_final.sh` — do not resurrect it from any
+   older build script. This rule was violated twice by branching old scripts.
+2. **NO STILLS IN THE SHIPPED VIDEO.** A still with a zoompan push-in is
+   still a still and it reads as the video breaking. Stills are PRODUCTION
+   AIDS ONLY: generate the changed world as a still (~1.5cr, iterate cheap),
+   then use it as a **video START FRAME** so the model merely continues an
+   already-changed world. Every second of a shipped episode is real footage
+   or generated video. No exceptions, no "brief" stills, no dissolves
+   between stills.
 
----
+## Current Ep1 state (be precise — do not overclaim)
 
-## What the shipped Ep1 ending actually did wrong
+`wip/ep1/ep1_final.mp4` (40.8s, −13.4 LUFS) is **NOT POSTABLE**. What's right
+and wrong with it:
 
-Verified by extracting frames from `assets/concept/shorts/wip/ep1/ep1_rev.mp4`, not by watching it.
+- ✅ acts 0–2 (hook → flashback → leaf → sword → charge): real footage,
+  subtitle-free, approved structure
+- ✅ THE LANDING (new): leap → white flash + BONK! → tide.mp4 0.8–5.4s
+  (Ralph lands on the rock, reclaims the leaf, Max deflates) — the strike
+  reads; Charlie's note #1 addressed
+- ✅ t1: the real tide footage tail (water creeps over the footprints)
+- ❌ the ending after t1 is TWO STILLS with push-ins (shore still + ocean-POV
+  still) — **rule 2 violation, this is the part that must be replaced**
 
-| # | failure | cause | fix encoded below |
-|---|---|---|---|
-| 1 | **Ralph and Max change design in the final clip** — Ralph loses his tall teal back spikes and cream belly, goes smaller and darker, gains a tan head patch; Max loses his white elbow tufts and stripes | TIDE-2 used an abbreviated identity string instead of the full lock, and chained from a weak start frame | full lock verbatim, every clip, plus a mandatory `start_image` |
-| 2 | **The look between them is not the last frame** — both face camera | the look was the *fourth* action in a four-action prompt; the model dropped the tail | **one action per clip**, and the look IS the clip |
-| 3 | **The leaf never floats away** | asked of the generator when it was always meant to be a post composite | stays in post, free — do not put it in the prompt |
-| 4 | **The tide reads as a normal beach** — a gentle lick at the shoreline, not "the water is at the tree line" | "shrinking patch of dry sand" is an abstraction; the model rendered an ordinary shore | concrete, measurable staging: *water covering the footprints, palm trunks standing in water* |
+## CLIP 1 — Ep1's true ending: the ocean-POV shot IN MOTION (~54cr)
 
-**The generalized lesson, worth carrying to every future episode:**
-Seedance renders prompts front-to-back and runs out of clip. Put the
-non-negotiable beat FIRST. Describe geography in things that can be measured
-against (footprints, tree trunks, a rock), never in adjectives ("shrinking",
-"half-submerged").
+`wip/ep1/tide_ocean_pov.png` is APPROVED CONTENT (Charlie's own camera idea:
+looking at them from the ocean) and it is already perfect as a START FRAME:
+world already flooded (no state change asked of the video model), leaf
+already in the foreground, both dinos on-model on the last sand, mid-look.
 
----
+**Generate:** 12s, 9:16, 720p std, `generate_audio:false`, DECLINE the
+recommended preset. `start_image = wip/ep1/tide_ocean_pov.png`.
+`image_references`: `assets/concept/ralph/ralph_hero.png` +
+`assets/concept/raptor/raptor_hero.png`.
 
-## Settings (both clips — the proven recipe)
-
-**12s, 9:16, 720p std, `generate_audio:false`, DECLINE the recommended
-preset** (pass its id as `declined_preset_id` and resubmit).
-
-`image_references` on both clips:
-- `assets/concept/ralph/ralph_hero.png`
-- `assets/concept/raptor/raptor_hero.png`
-
-**~54 cr per clip.** Two clips = ~108. Budget ~250 for re-roll headroom —
-clip 2 is a new location and historically the highest-risk shot in the saga.
-
-### Identity locks — paste VERBATIM, never abbreviate
-
-> **RALPH:** small round chibi green dinosaur, sage-green body, cream belly
-> plates, tall teal-blue back spikes and teal tail tip, big amber eyes, pink
-> blush cheeks
-
-> **MAX:** small chibi red raptor, brick-red body with darker red stripes,
-> cream belly, tiny white feather tufts at the elbows, yellow eyes
-
-Guards, every prompt: *"exactly ONE green dinosaur and exactly ONE red raptor
-in the entire scene"* + *"NO cape on either dinosaur"*.
-
----
-
-## CLIP 1 — Ep1 ending re-shoot ("THE LOOK")
-
-Replaces the current finishing clip. **The look between them is the whole
-clip** — it is the first thing described and the only action requested.
-
-**Start frame (mandatory — this is the drift fix):** the last clean frame of
-the existing `assets/concept/shorts/wip/ep1/beat5.mp4` at **8.15s**, so the new clip inherits the correct
-character designs from footage that already looks right.
-
-```
-ffmpeg -ss 8.15 -i assets/concept/shorts/wip/ep1/beat5.mp4 \
-  -frames:v 1 assets/concept/shorts/wip/ep1/tide_look_start.png
-```
-
-QA that frame before generating: one sword, no cape, Ralph's teal spikes tall
-and clearly visible. If the spikes don't read in the start frame, the clip
-will not fix them.
-
-**Frame QA result (2026-07-19, done):** `tide_look_start.png` built and
-verified — identity is clean (spikes, spot pattern, Max's tufts and stripes
-all read; one sword; no cape). Two notes it produced:
-
-- The **tan patch on Ralph's head is sand from the fight**, present in this
-  frame too — it is continuity, not drift. Don't re-roll over it.
-- The frame is **mid-action** (Ralph atop the rock over Max, dry beach,
-  footprints visible), so the prompt below opens with a one-line bridge —
-  they step apart — and stages the water as RISING during the clip rather
-  than already risen. Frames later than 8.15 were checked and are worse
-  (Ralph goes airborne); 8.15 stands.
-
-### Prompt
+**Prompt (one action; the look is the shot):**
 
 > Painterly chibi cartoon dinosaurs, storybook picture-book style, vivid
-> colors, bright sunny tropical beach. The fight is over: a small round chibi
-> green dinosaur — sage-green body, cream belly plates, tall teal-blue back
-> spikes and teal tail tip, big amber eyes, pink blush cheeks, a little sand
-> dusted on his head — steps down off the rock and lets the sword drop to the
-> sand, and the small chibi red raptor — brick-red body with darker red
-> stripes, cream belly, tiny white feather tufts at the elbows, yellow eyes —
-> hops down beside him. They stand side by side, and slowly turn their heads
-> to look directly AT EACH OTHER. They hold that look for a long moment, wary
-> and calculating, neither one attacking. That look is the heart of the shot
-> and the final frame. While they stand there, calm seawater rises steadily
-> up the beach behind them: it slides over the rows of footprints in the sand
-> and reaches the trunks of the palm trees, until the two of them are on the
-> last small patch of dry sand. The sea is flat and calm, not stormy, which
-> makes it worse. Slow gentle push in on the two of them. No fighting. Exactly
-> ONE green dinosaur and exactly ONE red raptor in the entire scene. NO cape
-> on either dinosaur. All-ages, nobody is in danger, nobody drowns.
+> colors. Continue this exact scene: camera low over calm turquoise sea,
+> looking at the last small patch of dry sand where a small sage-green chibi
+> dinosaur with tall teal-blue back spikes and cream belly and a small
+> brick-red chibi raptor with darker red stripes stand side by side. They
+> slowly turn their heads and look at EACH OTHER, wary and calculating, and
+> hold that look. That is the entire shot. The water ripples gently, the
+> single green leaf drifts slowly past in the foreground, palm trees stand
+> in the water behind them. Very slow, very quiet. The camera pushes in
+> very slightly. Exactly ONE green dinosaur and exactly ONE red raptor.
+> No other creatures, no boats, nobody swims, nobody is in danger, all-ages.
 
-### QA before accepting (re-roll if any fail)
+**QA:** one of each dino, on-model (spikes/belly/stripes), they end looking
+at each other, leaf drifts, no new objects. Re-roll on any failure.
 
-- [ ] Ralph's **tall teal back spikes and cream belly** present and matching
-      the earlier acts — this is the failure that shipped
-- [ ] Max's **white elbow tufts and stripes** present
-- [ ] exactly one of each dino, none cloned into the background
-- [ ] **they are looking at each other**, and that is the final frame
-- [ ] water covers the footprints and reaches the palm trunks
-- [ ] no cape, no sword, no leaf in hand
+**Build change** (in `build_ep1_final.sh`): replace the current t2/t3 stills
+block with the best ~4–6s of this clip (trim to where the look lands; end ON
+the look, no outro). Keep t1 → hard cut to this clip. Then rebuild, verify
+NO text after the signpost, −14 LUFS, re-host to CDN, update
+`scripts/social/hosted_media.json` + calendar.
 
-### Post (free, after the clip lands)
+## CLIP 2 — Ep2 "HIGH WATER MARK" (~54cr) — unchanged, staged, correct
 
-1. **Composite the floating leaf** drifting across the water — slow horizontal
-   drift plus a gentle bob, cut from `ralph_hero.png` or a beat-1 frame.
-   Nobody reaches for it. This is plant #1 and it has never yet shipped.
-2. Music **stops** at the turn (a stop, not a fade); water, then wind.
-3. No outro card. The episode ends dead on the look.
-4. Re-master to −14 LUFS. (Current cut measures −13.7 LUFS / −1.5 dBTP, so
-   the existing chain is already correct — just re-run it.)
-
----
-
-## CLIP 2 — Ep2 "HIGH WATER MARK"
-
-Type B, low tide, den. Speech bubbles, **no narrator** (the Arthur voice is
-unavailable — den episodes need none). ~18s final.
-
-### Three changes from the kit in SAGA_OUTLINE.md
-
-The original Ep2 prompt asks for **six** sequential actions: sit soaking → set
-the leaf down → reach up → scratch the mark → stare at it → turn sharply to
-find Max in the doorway. Ep1 just proved the tail gets dropped — and here the
-dropped tail would be **Max in the doorway**, which is the entire hook. So:
-
-1. **Max is in frame from the first second**, standing silhouetted in the
-   opening. He is not a reveal the model can fail to reach. Ralph *turning to
-   find him already there* is the shot.
-2. **Cut to two actions**: scratch the mark, turn to Max. Setting the leaf
-   down is now a **post composite** — the leaf sits on the drying rock as a
-   static prop, which costs nothing and cannot be dropped.
-3. **The ice is NOT in the prompt.** It is composited at the threshold in
-   post, guaranteed. Asking a generator for "a piece of melting ice on a
-   tropical island" invites a weird object in the saga's single most important
-   plant.
-
-### Start frame — build it, don't skip it
-
-The den is a new location, so there's no end frame to chain from, and clip 1
-just showed what happens without one.
-
-**DONE (2026-07-19):** `assets/concept/shorts/wip/ep2_den/ep2_start.png` —
-built by `make_ep2_start.py` in the same folder. The den interior itself was
-generated with nano_banana_2 (1.5 cr, A/B'd two candidates; `den_bg_A.png`
-won on drying-rock prominence + readable wall + clean doorway) and is now the
-**series' standing set**: every future Type B episode composites onto this
-same den, which is both free and the strongest possible location continuity.
-Ralph (hero, keyed, warmed) stands by the marked wall; Max (hero, keyed,
-darkened to silhouette) stands in the doorway against the sunset sea.
-
-Two facts the frame changed about the plan:
-- **Ralph wears the leaf behind his head** (it's baked into the hero art) —
-  better than compositing it onto the rock: he carried it home. The
-  leaf-on-rock post composite is now optional.
-- Ralph is **standing**, so the prompt below says "stands", not "sits".
-
-### Prompt
+Everything in `wip/ep2_den/` is ready and rule-compliant:
+- `ep2_start.png` = composite start frame (den standing set + Ralph by the
+  marked wall + Max silhouetted in the doorway) — the world is already
+  built, the model only animates
+- prompt = in this file's previous version, reproduced here:
 
 > Painterly chibi cartoon dinosaur, storybook picture-book style, vivid
 > colors. Interior of a small cosy den in the rocks above a tropical beach:
-> warm low evening light from a wide opening, sandy floor, a flat drying rock.
-> Standing silhouetted in the den opening the whole time is a small chibi red
-> raptor — brick-red body with darker red stripes, cream belly, tiny white
-> feather tufts at the elbows, yellow eyes — soaking wet, holding nothing, not
-> attacking, not coming in, just standing there. Inside the den, a small round
-> chibi green dinosaur — sage-green body, cream belly plates, tall teal-blue
-> back spikes and teal tail tip, big amber eyes, pink blush cheeks, a small
-> green leaf tucked behind his head — stands
-> soaking wet with water dripping off him. He reaches up and scratches one
-> short horizontal mark high on the stone wall with his claw. On the wall
-> below that new mark are several older scratched marks, all of them lower —
-> the new mark is clearly the highest. He looks at it. Then he turns his head
+> warm low evening light from a wide opening, sandy floor, a flat drying
+> rock. Standing silhouetted in the den opening the whole time is a small
+> chibi red raptor — brick-red body with darker red stripes, cream belly,
+> tiny white feather tufts at the elbows, yellow eyes — soaking wet, holding
+> nothing, not attacking, not coming in, just standing there. Inside the
+> den, a small round chibi green dinosaur — sage-green body, cream belly
+> plates, tall teal-blue back spikes and teal tail tip, big amber eyes, pink
+> blush cheeks, a small green leaf tucked behind his head — stands soaking
+> wet with water dripping off him. He reaches up and scratches one short
+> horizontal mark high on the stone wall with his claw. On the wall below
+> that new mark are several older scratched marks, all of them lower — the
+> new mark is clearly the highest. He looks at it. Then he turns his head
 > and sees the red raptor in the doorway. Hold on the two of them looking at
 > each other across the den. Slow, quiet, melancholy, nobody fights. Exactly
 > ONE green dinosaur and exactly ONE red raptor in the entire scene. NO
 > weapons. NO cape on either dinosaur. All-ages, warm and sad.
 
-### QA before accepting (re-roll if any fail)
+- Settings: 12s, 9:16, 720p std, `generate_audio:false`, decline preset,
+  `start_image = wip/ep2_den/ep2_start.png`, both hero PNGs as references.
+- **CAUTION — the ice insert:** `build_ep2.sh`'s current ending is an
+  `ice_insert.png` still push-in — that NOW VIOLATES RULE 2. Fix before
+  shipping Ep2: either (a) composite the ice INTO the generated clip's final
+  seconds as a static prop over moving footage, or (b) spend ~54cr on a
+  second tiny clip from `ice_insert.png` as start frame (slow push toward
+  the ice, nothing else moves). Decide by what the generated den clip's
+  tail looks like. The QA gates in `wip/ep2_den/` and the overlays
+  (bub_dots, cap_open, cap_close) remain valid.
 
-- [ ] exactly one of each dino — **Ep2's original shoot failed by cloning the
-      hero into the background; check the whole frame**
-- [ ] Ralph's tall teal spikes + cream belly, Max's white elbow tufts
-- [ ] the wall marks **visibly stack, newest highest** (this is the series'
-      dread-meter — if it doesn't read, the episode has no plot)
-- [ ] Max stays in the doorway and never enters or attacks
-- [ ] no weapons, no cape
+## Budget for the top-up
 
-### Post (free)
+| item | cr |
+|---|---|
+| clip 1 (Ep1 ocean ending) | 54 |
+| clip 2 (Ep2 den) | 54 |
+| possible Ep2 ice mini-clip | 54 |
+| re-roll headroom | ~60 |
+| **safe top-up** | **~220** |
 
-1. Composite **the leaf** on the drying rock.
-2. Composite **the piece of ice** at the threshold where Max set it down,
-   slightly melted with a small wet patch under it. Saga's central mystery —
-   it must be unmistakable and it must be the last thing the eye lands on.
-3. Speech bubbles only, no narrator, no captions. Language rhymes with the
-   game's own `MatchConfig.EMOTES` (`HI!`, `HUH?`, `ZZZ`).
-4. Ambient water + wind bed. Master to −14 LUFS. ~18s.
-5. No outro card.
+Balance at write time: **2.5**.
 
----
+## Fire order (next session)
 
-## Fire order
+1. Top-up lands → generate clip 1 → QA → patch `build_ep1_final.sh` ending
+   → rebuild → text sweep + LUFS check → re-host → **Charlie watches** → post
+2. Generate clip 2 → QA → decide the ice ending (composite vs mini-clip) →
+   `build_ep2.sh` → Charlie watches → schedule per calendar
+3. Only after both ship: write Ep3 "SHARE THE ROCK" production kit
 
-1. Build `tide_look_start.png`, QA it, generate **clip 1**, QA, re-roll if needed
-2. Post-finish Ep1 (leaf composite, music stop, re-master) → Ep1 is postable
-3. Build Ep2's composite start frame (free), generate **clip 2**, QA
-4. Post-finish Ep2 (leaf, ice, bubbles, bed) → Ep2 is postable
-5. Update `scripts/social/post_calendar.json` — its `ep1` and `ep2` entries are
-   both **stale**: ep1 still reads BLOCKED, and ep2 still points at the
-   pre-reboot `wip/ep2_max/ep2_narrated.mp4`, which is not this episode.
+## Everything already DONE today (don't redo)
+
+- Ep1 landing beat (BONK) built into `build_ep1_final.sh`; subtitles deleted
+- `tide_ocean_pov.png` generated + approved-in-content (needs motion only)
+- Ep2: den standing set, `ep2_start.png`, overlays, `build_ep2.sh` chain
+  placeholder-verified, ice element generated
+- Socials: YT verified-pinned; IG authorized + hosting solved
+  (`scripts/social/hosted_media.json`, Higgsfield CDN, ep1 URL there is the
+  SUBTITLE-FREE STILLS interim — replace after clip 1); TikTok 1-tap
+- Calendar reconciled; ROADMAP "THE NEXT FEW MONTHS" plan committed

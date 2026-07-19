@@ -132,7 +132,7 @@
    "caption": "nobody touches the leaf. then the ocean did. 🍃🌊 (ep. 1)",
    "cover_hint": "the leap over Max — it IS the first frame (0.4s)",
    "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-   "status": "ready — v2 rebuilt on Charlie's notes 2026-07-19: strike lands (BONK flash + tide-clip resolution restored), ending = ocean-POV reverse still; 40.8s, -13.4 LUFS; awaiting Charlie eyeball",
+   "status": "BLOCKED on ~54cr: ending must be VIDEO (ocean-POV clip from tide_ocean_pov.png as start frame) — current cut ends on stills, rule violation. Spec = NEXT_TWO_CLIPS.md clip 1. Acts 0-2 + landing DONE.",
    "note": "EP1 REVISION (35.8s). Fixes from Charlie: subtitles REMOVED (the v8 decision had been dropped by mistake), and the fight now RESOLVES — tide.mp4 0.8-5.4s (Ralph over Max, sword lowering, they separate) was ignored in the first build, which is why it jumped from mid-charge to two calm dinos in water and left the viewer confused. NO STILLS IN REELS (Charlie's rule) — stills are production aids only, so the flooded-island reveal is currently ABSENT and the episode ends weakly on a wave at their feet. TO FINISH: generate a video with tide_styled_a.png (already style-matched to the footage) as the START FRAME so the model only has to CONTINUE an already-flooded scene — the ask it failed when told to flood a dry beach. 54cr."
   },
   {
