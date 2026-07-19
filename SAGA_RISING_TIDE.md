@@ -47,6 +47,30 @@ temporary, so every island has one more fight on it.
 Stays **all-ages**: nobody drowns. It's a scramble for higher ground, played
 as much for comedy as for tension.
 
+### How they still have a den — TIDES GO OUT (Charlie's catch, 2026-07-19)
+
+A permanent flood and a home to return to are contradictory. A **tide** isn't:
+the sea comes in and then retreats, **but every high tide is higher than the
+last.** That single rule resolves the geography and hands us the series clock:
+
+- **The den is on HIGH GROUND** — up in the rocks above the beach, still dry.
+- **HIGH TIDE:** the island shrinks to a few patches of sand. This is when
+  they fight over ground → **TYPE A episodes.**
+- **LOW TIDE:** the water pulls back, the beach returns, everyone breathes.
+  This is when life happens → **TYPE B episodes.**
+- **The mark on the den wall is a high-tide mark** — literal, not symbolic.
+  Every cycle it climbs.
+
+So the two episode types are not merely alternating for variety — **they are
+the tide cycle**, which is why the rhythm never feels arbitrary.
+
+And it gives a countdown the audience can read without being told: **when the
+marks reach the den, they have to leave the island.** That is the end of act
+one and the beginning of the career-mode journey across the six islands.
+
+It is also a crueller threat than a flood. A flood is a disaster you flee. A
+tide keeps *giving the island back* — a little smaller each time.
+
 ---
 
 ## 2. Saga structure
@@ -123,6 +147,7 @@ missing, the waterline higher, the rival at the door) so it isn't filler.
 | **2. the win** | Ralph charges, leaps, lands on Max. He gets the leaf back. | EXISTING `beat5.mp4` to 8.30s |
 | **3. THE TIDE** | He turns. The water is at the tree line. It wasn't there before. Max stops gloating. | **NEW — generate** |
 | **4. the button** | Both look at the water → at the last dry sand → **at each other**. Cut. | **NEW — generate** |
+| **4b. the leaf** | The leaf floats past them on the water, drifting out. Nobody grabs it. | **post — free** |
 
 **The last frame is the look between them.** Not friendship — arithmetic.
 That is the cliffhanger.
@@ -139,6 +164,17 @@ better than a voice mismatch, and better than narrating a gut-punch.
 
 Existing VO lines 1-4 carry acts 1-2 (~19s). Line 5 is **cut entirely** — it
 set up a "second rule" payoff that no longer happens.
+
+### The floating leaf (Charlie, locked)
+
+The last thing on screen is **the leaf, floating away on the water**. Neither
+of them reaches for it. The entire first act was a war over that leaf; the
+tide takes it in three seconds and nobody even tries.
+
+Cheapest possible version and it costs nothing to generate: composite the leaf
+(cut from `ralph_hero.png` or a beat-1 frame) drifting across the final water
+shot in post, with a slow horizontal drift + gentle bob. If TIDE-2 already
+frames water in the foreground, it goes straight in.
 
 ### Sound design for act 3
 
@@ -262,9 +298,11 @@ in the saga.
 
 ## 7. Open decisions
 
-- [ ] Reuse acts 1-2 footage, or regenerate the whole episode? Reuse is ~160cr,
-      full regen is ~400cr. **Recommend reuse** — the footage is fine, it was
-      the *structure* that failed.
+- [x] **REUSE acts 1-2 footage** (Charlie, 2026-07-19). ~160cr rather than
+      ~400cr — the footage was never the problem, the structure was.
+- [x] **The leaf floats away at the end** (Charlie) — added in post, free.
+- [x] **Tides go out** (Charlie's catch) — den on high ground, high tide =
+      Type A, low tide = Type B, marks on the wall are the countdown.
 - [ ] One clip now (TIDE-2 only) or top up for both?
 - [ ] Does the leaf survive the tide? (A leaf floating on the water in the last
       frame is free to add in post and would land hard.)
