@@ -95,8 +95,45 @@ landscape master. Don't gate weekly posting on any of this.
       upload the same square to all three (they all crop to a circle;
       `avatar_preview_circle.png` shows the result). `yt_banner_2048.png`
       is the YouTube channel banner (cast inside the 1235x338 safe area).
-- [ ] Bio line: `tiny dinos. big feelings. a couch brawler for 1-4 players 🦕`
-      + itch link when the page goes live (until then: "coming soon").
+- [ ] **Bios — paste verbatim** (all inside platform limits; the hook line
+      `tiny dinos. big feelings.` stays identical everywhere so the three
+      accounts read as one brand):
+
+      Instagram — name field (30): `Tiny Dinos 🦕`
+      Instagram — bio (117/150):
+      ```
+      tiny dinos. big feelings.
+      a couch brawler for 1-4 players 🦕
+      🎬 story episodes + real fights
+      ▶ @Thetinydinos on YouTube
+      ```
+      Instagram — link: `tinydinos.higgsfield.app` (swap to the itch page
+      when it goes live; keep the site as the second link).
+
+      TikTok — bio (75/80):
+      ```
+      tiny dinos. big feelings. 🦕
+      a couch brawler for 1-4 players
+      IG: @_tinydinos
+      ```
+
+      YouTube — tagline/first line: `tiny dinos. big feelings.`
+      YouTube — channel description:
+      ```
+      TINY DINOS is a couch brawler for 1-4 players — six little dinosaurs,
+      one island, and absolutely no personal space.
+
+      Here you get both halves: the story episodes (how each dino got the
+      way they are) and the real thing — actual gameplay, actual fights,
+      captured straight out of the game.
+
+      Made by one person. New dino, new island, new episode as they land.
+
+      🦕 tinydinos.higgsfield.app
+      📸 Instagram @_tinydinos
+      🎵 TikTok @_tinydinos
+      ```
+      No cadence promise anywhere — episodes ship when they ship.
 - [ ] Turn OFF "auto-add watermark" style options where offered; upload
       original files, never cross-share TikTok exports to Reels (the
       watermark tanks Reels reach).
