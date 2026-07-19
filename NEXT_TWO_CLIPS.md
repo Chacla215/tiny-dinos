@@ -19,6 +19,79 @@ Supersedes every earlier version of this file and every Ep1 ending before it.
    or generated video. No exceptions, no "brief" stills, no dissolves
    between stills.
 
+## ⇢ START HERE (2026-07-19, late) — Ep1 v4 is the open job
+
+v3 was built, uploaded UNLISTED (`youtube.com/shorts/2YEO8u0xYUc`) and Charlie
+reviewed it on WhatsApp. **v3 is superseded — do not post it.** His three
+corrections, verbatim:
+
+> "I don't want still in the short, what happened to the narration part of it?
+> Goes from max getting bonked to now they're together? You try to wrap it up
+> to quick and leave out key transition details"
+
+### Correction 2 is the big one: THE NARRATION IS NOT BANNED
+
+The iron rule is **no SUBTITLES** — the on-screen caption text. It was never
+"no narration". The v2 cut carried Arthur VO **audio** with captions burned on
+top; v3 stripped the captions *and* threw the voice away with them. That was
+the error. **Ep1 has a narrator. Put him back, as audio, with no text.**
+
+The Arthur lines still exist in the Higgsfield library and are downloadable —
+this is what "Arthur is unregenerable" actually means: no NEW lines, but the
+five Ep1 lines are safe. They are the locked take (`speech_rate:10,
+loudness_rate:15`). Re-fetch with
+`https://d8j0ntlcm91z4.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/<file>.wav`:
+
+| line | gen id | file | dur |
+|---|---|---|---|
+| "This is Ralph! King of a very tiny island… nobody… touches… the leaf." | `5b6e9ccf` | `hf_20260709_140447_5b6e9ccf-2c0c-4cba-aa60-f36a6ad3018e` | 8.11s |
+| "Max touched the leaf!" | `b70d9c73` | `hf_20260709_140448_b70d9c73-1e63-491e-8f81-9b29fdc8c20f` | 1.34s |
+| "Now, Ralph is not the fastest… he's mostly just… tiny!" | `20ba43d4` | `hf_20260709_140449_20ba43d4-9811-4abf-a9f8-bf74ab576e7a` | 6.46s |
+| "But this island takes care of its little king… help — from the sky!" | `441c4017` | `hf_20260709_140500_441c4017-cbce-4a34-939a-2b3220bc3106` | 8.11s |
+| "And Max? Oh, Max was about to learn Ralph's SECOND rule!" | `3d244e3f` | `hf_20260709_140501_3d244e3f-4e25-4cad-a0aa-047178845ea1` | 4.34s |
+
+(Cached at `wip/ep1/vo/` — gitignored, so use the table if they're gone.
+Ignore the Kevin / Mabel / Sterling takes of the same lines; Arthur is locked.
+`18add782` "fast… and being STRONG" is **Ep2's** line, not Ep1's.)
+
+### Corrections 1 + 3: the ending is rushed
+
+v3 already has zero stills, so "I don't want still" is either the rule restated
+or the very slow ocean push-in reading as frozen — watch for that. The real
+defect is the jump from the bonk to the two of them together: **v3 chopped the
+middle out of `tide.mp4`**, using 0.4–5.0 and 8.6–11.6 but skipping 5.4–8.6 —
+which is exactly the turn (camera drifts back, Ralph sees the sea, Max gets up).
+Play `tide.mp4` **continuously 0.4 → 11.6** and the transition is restored.
+
+A gap remains even so: tide ends with water creeping over footprints on a
+mostly-dry beach, and clip1b opens on an almost-submerged island. If that still
+reads as too big a leap, the fix is a **bridge clip** (~54cr) — generate the
+half-flooded beach as a still, use it as a video START FRAME. Charlie's call,
+since it costs credits.
+
+### v4 timeline (VO is the spine; times are finished-cut seconds)
+
+```
+0.00   beat5[7.20-8.70]   1.50  HOOK: the leap          + hook card
+1.50   beat1[0.60-3.60]   3.00  yawn, king              + signpost   VO1 @1.8
+4.50   beat1[6.60-11.60]  5.00  nap -> snatch -> wake                VO2 @10.1
+9.50   beat2[4.50-9.50]   5.00  rises furious, Max taunts
+14.50  beat3[3.00-7.50]   4.50  chase -> trip                        VO3 @12.8
+19.00  beat3[7.50-11.50]  4.00  spent, Max taunts                    VO4 @19.6
+23.00  beat4[1.20-4.50]   3.30  the sword falls (~24.3, under "from the sky")
+26.30  beat4[9.00-11.60]  2.60  pulls it free, hero stance
+28.90  beat5[3.60-8.70]   5.10  charge + leap                        VO5 @29.2
+34.00  clip1a[1.20-6.20]  5.00  THE STRIKE (contact ~36.0)
+39.00  tide[0.40-11.60]  11.20  lands, leaf reclaimed, THE TURN, water creeps
+50.20  clip1b[3.50-10.50] 7.00  ENDING: ocean POV, the look
+                          ~57s
+```
+
+Music must **duck under the VO** (sidechaincompress keyed off the voice bus);
+v3's flat music bed will bury Arthur. Keep: impact SFX on the contact, ocean
+wash under the ending, −14 LUFS master, and the two text overlays as the only
+on-screen text.
+
 ## 2026-07-19 PM update — top-up landed, clips FIRED, workshop recovered
 
 - Top-up landed: balance 502cr. Clips 1A + 1B generating (Seedance 2.0, 12s,
