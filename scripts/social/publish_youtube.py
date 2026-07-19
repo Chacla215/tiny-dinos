@@ -25,6 +25,7 @@ import mimetypes
 import os
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -33,14 +34,67 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 CLIENT = os.path.join(HERE, ".yt_client.json")
 TOKEN = os.path.join(HERE, ".yt_token.json")
 CAL = os.path.join(HERE, "post_calendar.json")
-SCOPE = "https://www.googleapis.com/auth/youtube.upload"
+
+# readonly rides along with upload purely so the target channel can be VERIFIED
+# before anything is sent. Charlie has several channels on one Google account
+# (Tiny Dinos and GoldFix), and device-flow consent silently binds to whichever
+# was picked at approval — an upload-only token cannot tell you which one it got.
+SCOPE = ("https://www.googleapis.com/auth/youtube.upload"
+         " https://www.googleapis.com/auth/youtube.readonly")
+
+# Pinned target. Every upload asserts the token resolves here first.
+# Set by running --check after --auth; None means "not yet verified", and
+# uploading is blocked until it is. Never fill this in by hand from memory.
+EXPECTED_CHANNEL_ID = "UC-UHvpQe8FAPuq_HUmuC4Zg"   # @thetinydinos, verified via --check
+EXPECTED_CHANNEL_TITLE = "Tiny Dinos"
 
 
-def _post(url, data, headers=None, raw=False):
+def _raw_post(url, data, headers=None, raw=False):
+    """POST that lets HTTPError through — callers that need the error body."""
     body = data if raw else urllib.parse.urlencode(data).encode()
     req = urllib.request.Request(url, data=body, headers=headers or {})
     with urllib.request.urlopen(req) as r:
         return json.loads(r.read().decode() or "{}")
+
+
+def _post(url, data, headers=None, raw=False):
+    try:
+        return _raw_post(url, data, headers, raw)
+    except urllib.error.HTTPError as e:
+        raise SystemExit(f"YouTube API {e.code}: {e.read().decode()[:500]}")
+
+
+def _get(url, tok):
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {tok}"})
+    try:
+        with urllib.request.urlopen(req) as r:
+            return json.loads(r.read().decode())
+    except urllib.error.HTTPError as e:
+        raise SystemExit(f"YouTube API {e.code}: {e.read().decode()[:500]}")
+
+
+def channel(tok):
+    """Which channel does this token actually publish to?"""
+    d = _get("https://www.googleapis.com/youtube/v3/channels"
+             "?part=snippet&mine=true", tok)
+    items = d.get("items") or []
+    if not items:
+        sys.exit("token resolves to no channel at all — re-run --auth")
+    return items[0]["id"], items[0]["snippet"]["title"]
+
+
+def assert_target(tok):
+    """Refuse to upload anywhere but the pinned channel."""
+    cid, title = channel(tok)
+    if EXPECTED_CHANNEL_ID is None:
+        sys.exit(f"EXPECTED_CHANNEL_ID is unset — token currently resolves to "
+                 f"'{title}' ({cid}). Confirm that is right, pin it in this "
+                 f"file, then upload. Nothing uploaded.")
+    if cid != EXPECTED_CHANNEL_ID:
+        sys.exit(f"WRONG CHANNEL — token resolves to '{title}' ({cid}), "
+                 f"expected '{EXPECTED_CHANNEL_TITLE}' ({EXPECTED_CHANNEL_ID}). "
+                 f"Nothing uploaded. Re-run --auth and pick the right channel.")
+    return cid, title
 
 
 def auth():
@@ -51,7 +105,7 @@ def auth():
     while True:
         time.sleep(d["interval"])
         try:
-            t = _post("https://oauth2.googleapis.com/token", {
+            t = _raw_post("https://oauth2.googleapis.com/token", {
                 "client_id": c["client_id"], "client_secret": c["client_secret"],
                 "device_code": d["device_code"],
                 "grant_type": "urn:ietf:params:oauth:grant-type:device_code"})
@@ -75,6 +129,8 @@ def access_token():
 def upload(post, publish_at=None):
     path = os.path.join(ROOT, post["file"])
     tok = access_token()
+    _, title = assert_target(tok)          # never upload to the wrong channel
+    print(f"uploading to '{title}'")
     status = {"privacyStatus": "public", "selfDeclaredMadeForKids": False}
     if publish_at:
         status = {"privacyStatus": "private", "publishAt": publish_at + ":00Z",
@@ -102,12 +158,20 @@ def upload(post, publish_at=None):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--auth", action="store_true")
+    ap.add_argument("--check", action="store_true",
+                    help="resolve the token to a channel and exit")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--post", metavar="ID")
     ap.add_argument("--at", metavar="ISO", help="schedule time UTC, e.g. 2026-07-21T17:00")
     a = ap.parse_args()
     if a.auth:
         return auth()
+    if a.check:
+        cid, title = channel(access_token())
+        pinned = ("unset — pin it once confirmed" if EXPECTED_CHANNEL_ID is None
+                  else ("MATCH" if cid == EXPECTED_CHANNEL_ID else "MISMATCH"))
+        print(f"token resolves to '{title}' ({cid}) — pinned: {pinned}")
+        return
     cal = json.load(open(CAL))
     if a.list:
         for p in cal["posts"]:

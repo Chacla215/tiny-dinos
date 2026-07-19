@@ -33,3 +33,4 @@ scripts/social/.yt_client.json
 scripts/social/.yt_token.json
 scripts/social/.ig_auth.json
 scripts/social/__pycache__/
+scripts/social/.yt_token.json.bak
