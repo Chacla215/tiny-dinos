@@ -126,16 +126,16 @@
     "tiktok"
    ],
    "type": "video",
-   "file": "assets/concept/shorts/wip/ep1/ep1_short.mp4",
+   "file": "assets/concept/shorts/wip/ep1/ep1_v5_narrated.mp4",
    "title": "TINY DINOS — Ep. 1: The Leaf",
    "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts",
-   "cover_hint": "the sword raise (frame 0.4s) — it IS the first frame",
+   "cover_hint": "the leap over Max — it IS the first frame (0.4s)",
    "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
    "status": "ready",
-   "note": "SHORT CUT (14.4s, captions+music, no VO): hook on the climax, ends on the RULE TWO button — a real payoff, not a cliffhanger. SEC pronunciation bug resolved (VO dropped entirely here)."
+   "note": "V5 STORY CUT (32.9s): the climax restored. beat5 was quarantined wholesale for a continuity break that only starts at ~8.4s — the clean 8.3s before it contains the charge, leap and lunge. Hook is the leap, ends on the RULE TWO button (a real ending, all-ages: cuts on the lunge, no impact shown). 27 cuts, -13.6 LUFS."
   },
   {
-   "id": "ep1-long",
+   "id": "ep1-short",
    "day": 1,
    "platforms": [
     "ig",
@@ -143,13 +143,13 @@
     "tiktok"
    ],
    "type": "video",
-   "file": "assets/concept/shorts/wip/ep1/ep1_v4_narrated.mp4",
+   "file": "assets/concept/shorts/wip/ep1/ep1_short.mp4",
    "title": "TINY DINOS — Ep. 1: The Leaf",
    "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts",
    "cover_hint": "the sword raise (frame 0.3s)",
    "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-   "status": "alternate — post ep1 (short) instead unless testing the narrated version",
-   "note": "31.4s narrated v4: hook-first + bookend, 19 cuts, VO5 trimmed off the 'SEC' misread, battle theme starts at its 3.5s drop, mastered -13.8 LUFS."
+   "status": "alternate — 14.4s captions-only teaser, no story arc",
+   "note": "Kept for A/B. Charlie's call: too short, a story clip needs drama to be worth watching."
   },
   {
    "id": "reel-sumo",
