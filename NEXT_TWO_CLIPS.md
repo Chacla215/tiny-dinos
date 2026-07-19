@@ -32,7 +32,44 @@ and wrong with it:
 - ❌ the ending after t1 is TWO STILLS with push-ins (shore still + ocean-POV
   still) — **rule 2 violation, this is the part that must be replaced**
 
-## CLIP 1 — Ep1's true ending: the ocean-POV shot IN MOTION (~54cr)
+## CLIP 1A — THE STRIKE (~54cr) — Charlie 2026-07-19: show the hit, no BONK card
+
+The leap footage cuts at 8.30, right before contact, and no footage of the
+hit exists — the BONK text card was papering over that gap and Charlie
+rejected it: **he wants to SEE the sword land on Max, with a reaction
+expression.** The card is removed from `build_ep1_final.sh` (a bare white
+flash marks the splice point until this clip exists).
+
+**Start frame (READY, QA'd):** `wip/ep1/strike_start.png` = beat5 @8.28 —
+Ralph airborne, sword raised, directly above Max on the rock. Both on-model.
+The model only has to complete the swing: one action, no world change.
+
+**Generate:** 12s, 9:16, 720p std, `generate_audio:false`, decline preset,
+`start_image = wip/ep1/strike_start.png`, both hero PNGs as references.
+
+**Prompt:**
+
+> Painterly chibi cartoon dinosaurs, storybook picture-book style, vivid
+> colors, bright sunny tropical beach. Continue this exact scene: the small
+> sage-green chibi dinosaur with tall teal-blue back spikes and cream belly
+> is mid-leap above the rock, golden-hilted sword raised. He brings the flat
+> of the sword down in one clean arc and lightly BONKS the small brick-red
+> chibi raptor on the top of the head. The raptor's eyes fly open huge and
+> crossed, his cheeks puff, he wobbles dizzily on the rock with little stars
+> circling his head, comically squashed — a funny cartoon reaction, not
+> hurt. The green leaf pops loose from his grip. The green dinosaur lands
+> on the sand beside the rock. Soft cartoon impact, all-ages, playful, no
+> blood, no injury, nobody cries. Exactly ONE green dinosaur and exactly
+> ONE red raptor. He carries exactly ONE sword and wears NO cape.
+
+**QA:** the hit lands ON SCREEN with Max's expression readable; flat-of-sword
+comedic bonk (not a slash); leaf comes loose; one sword, no cape, on-model.
+
+**Build splice:** best ~2–3s (swing → reaction) goes between seg5 (the leap)
+and seg5r (tide.mp4 resolution: Ralph on the rock, leaf reclaimed). Drop the
+white flash once it's in.
+
+## CLIP 1B — Ep1's true ending: the ocean-POV shot IN MOTION (~54cr)
 
 `wip/ep1/tide_ocean_pov.png` is APPROVED CONTENT (Charlie's own camera idea:
 looking at them from the ocean) and it is already perfect as a START FRAME:
@@ -109,18 +146,20 @@ Everything in `wip/ep2_den/` is ready and rule-compliant:
 
 | item | cr |
 |---|---|
-| clip 1 (Ep1 ocean ending) | 54 |
+| clip 1A (Ep1 strike) | 54 |
+| clip 1B (Ep1 ocean ending) | 54 |
 | clip 2 (Ep2 den) | 54 |
 | possible Ep2 ice mini-clip | 54 |
 | re-roll headroom | ~60 |
-| **safe top-up** | **~220** |
+| **safe top-up** | **~280** |
 
 Balance at write time: **2.5**.
 
 ## Fire order (next session)
 
-1. Top-up lands → generate clip 1 → QA → patch `build_ep1_final.sh` ending
-   → rebuild → text sweep + LUFS check → re-host → **Charlie watches** → post
+1. Top-up lands → generate clip 1A (strike) + clip 1B (ocean ending) → QA
+   both → splice 1A at the flash, replace the stills tail with 1B → rebuild
+   → text sweep + LUFS check → re-host → **Charlie watches** → post
 2. Generate clip 2 → QA → decide the ice ending (composite vs mini-clip) →
    `build_ep2.sh` → Charlie watches → schedule per calendar
 3. Only after both ship: write Ep3 "SHARE THE ROCK" production kit
