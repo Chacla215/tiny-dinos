@@ -127,13 +127,13 @@
     "tiktok"
    ],
    "type": "video",
-   "file": "assets/concept/shorts/wip/ep1/ep1_final.mp4",
+   "file": "wip/ep1/ep1_v3.mp4",
    "title": "TINY DINOS — Ep. 1: The Last Good Day",
    "caption": "nobody touches the leaf. then the ocean did. 🍃🌊 (ep. 1)",
-   "cover_hint": "the leap over Max — it IS the first frame (0.4s)",
+   "cover_hint": "the leap over Max — it IS the first frame (0.5s), under the hook card",
    "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-   "status": "BLOCKED on ~54cr: ending must be VIDEO (ocean-POV clip from tide_ocean_pov.png as start frame) — current cut ends on stills, rule violation. Spec = NEXT_TWO_CLIPS.md clip 1. Acts 0-2 + landing DONE.",
-   "note": "EP1 REVISION (35.8s). Fixes from Charlie: subtitles REMOVED (the v8 decision had been dropped by mistake), and the fight now RESOLVES — tide.mp4 0.8-5.4s (Ralph over Max, sword lowering, they separate) was ignored in the first build, which is why it jumped from mid-charge to two calm dinos in water and left the viewer confused. NO STILLS IN REELS (Charlie's rule) — stills are production aids only, so the flooded-island reveal is currently ABSENT and the episode ends weakly on a wave at their feet. TO FINISH: generate a video with tide_styled_a.png (already style-matched to the footage) as the START FRAME so the model only has to CONTINUE an already-flooded scene — the ask it failed when told to flood a dry beach. 54cr."
+   "status": "ready — v3 (44.2s, -15.0 LUFS) rebuilt 2026-07-19 from clean sources",
+   "note": "EP1 v3, the postable cut. The v2 that was hosted had NARRATION SUBTITLES burned into the picture (visible 4.5s-25s) and ended on two stills — both iron-rule violations, so v3 was rebuilt from the six clean beat sources (beat1-5 + tide, all re-downloadable from the Higgsfield library) plus the two clips generated 2026-07-19: clip1a THE STRIKE (the bonk now lands on screen with Max's X-eyed reaction, replacing the rejected BONK card) and clip1b the ocean-POV ending in motion. Only text is the hook card + the '12 SECONDS EARLIER' signpost. Build is scripts/social/build_ep1.sh — committed this time; the old build_ep1_final.sh was lost with the /tmp scratchpad. Do not extend beat5 past 8.7s (the model grows a cape)."
   },
   {
    "id": "ep1-short",

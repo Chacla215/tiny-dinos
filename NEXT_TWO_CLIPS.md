@@ -19,6 +19,27 @@ Supersedes every earlier version of this file and every Ep1 ending before it.
    or generated video. No exceptions, no "brief" stills, no dissolves
    between stills.
 
+## 2026-07-19 PM update — top-up landed, clips FIRED, workshop recovered
+
+- Top-up landed: balance 502cr. Clips 1A + 1B generating (Seedance 2.0, 12s,
+  9:16, 720p std, no audio, hero refs): job `43080158-50c4-49eb-8e30-546104970f2c`
+  (1A strike), job `d738743b-fed3-477f-9bc4-463cac702c18` (1B ocean ending).
+- **The /tmp workshop was WIPED** (build_ep1_final.sh, build_ep2.sh, strike_start,
+  tide_ocean_pov, segment mp4s all lost — session scratchpads are ephemeral).
+  Recovered into **repo `wip/` (persistent, use this from now on)**:
+  - `wip/ep1/tide_ocean_pov.png` — re-downloaded from Higgsfield gen `2ec8a136`
+  - `wip/ep1/strike_start.png` — beat5 @8.30 QA extract (the @8.28 original is
+    gone; visually the same airborne pose, promoted to start frame)
+  - `wip/ep1/tide.mp4` — Higgsfield gen `7e292293`
+  - `wip/ep1/ep1_final_v2.mp4` — the hosted 40.8s v2 cut, from the CDN
+  - `wip/ep2_den/ep2_start.png` (+ start2, ice_end, ice_end2) — from scratchpad
+- **Build scripts are NOT recovered** — `build_ep1_final.sh` must be rebuilt.
+  Plan: operate on `ep1_final_v2.mp4` directly (splice 1A at the white flash,
+  replace the stills tail after t1 with 1B). Rewrite as
+  `scripts/social/build_ep1_final.sh` and COMMIT it this time.
+- Media ids uploaded this session: strike_start `172dfdfd`, ralph_hero
+  `9f7e9ad4`, raptor_hero `0901826b`.
+
 ## Current Ep1 state (be precise — do not overclaim)
 
 `wip/ep1/ep1_final.mp4` (40.8s, −13.4 LUFS) is **NOT POSTABLE**. What's right
