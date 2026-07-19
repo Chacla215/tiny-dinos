@@ -132,7 +132,7 @@
    "cover_hint": "the leap over Max — it IS the first frame (0.4s)",
    "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
    "status": "BLOCKED — needs the flooded-island reveal as VIDEO (54cr); balance 12.5",
-   "note": "EP1 REVISION (35.8s). Fixes from Charlie: subtitles REMOVED (the v8 decision had been dropped by mistake), and the fight now RESOLVES — tide.mp4 0.8-5.4s (Ralph over Max, sword lowering, they separate) was ignored in the first build, which is why it jumped from mid-charge to two calm dinos in water and left the viewer confused. NO STILLS IN REELS (Charlie's rule) — stills are production aids only, so the flooded-island reveal is currently ABSENT and the episode ends weakly on a wave at their feet. TO FINISH: generate a video with tide_c.png (or a style-matched restyle of it) as the START FRAME so the model only has to CONTINUE an already-flooded scene — the ask it failed when told to flood a dry beach. 54cr."
+   "note": "EP1 REVISION (35.8s). Fixes from Charlie: subtitles REMOVED (the v8 decision had been dropped by mistake), and the fight now RESOLVES — tide.mp4 0.8-5.4s (Ralph over Max, sword lowering, they separate) was ignored in the first build, which is why it jumped from mid-charge to two calm dinos in water and left the viewer confused. NO STILLS IN REELS (Charlie's rule) — stills are production aids only, so the flooded-island reveal is currently ABSENT and the episode ends weakly on a wave at their feet. TO FINISH: generate a video with tide_styled_a.png (already style-matched to the footage) as the START FRAME so the model only has to CONTINUE an already-flooded scene — the ask it failed when told to flood a dry beach. 54cr."
   },
   {
    "id": "ep1-short",
