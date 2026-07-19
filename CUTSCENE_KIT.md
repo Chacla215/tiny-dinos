@@ -260,6 +260,49 @@ DIVES IN" reveal: profile-card flash → real gameplay of the CANNONBALL splash
 and a swan-dive KO. (Per Charlie: keep the personal story behind her OUT of
 public clips.)
 
+## STRUCTURE — what Ep1 taught us (2026-07-18, measured)
+
+Charlie's read on Ep1 v3: *"I don't know if a viewer would stay after the
+first 1.5 secs, slow build up, needs to be constant."* Measuring the actual
+file confirmed it and named the cause — **it wasn't a lack of motion, it was
+a lack of EVENTS.**
+
+v3, measured: 45.1s · ~3 hard cuts in the first 40s · a 5.2s static push-in
+at 35–40s · 5.0s of frozen cards at the end (11% of runtime) · and **the
+strongest image in the episode — Ralph raising the sword — buried at 34s**
+behind a calm wide shot of a yawn. Continuous slow drift inside one long take
+reads as "nothing is happening" even while pixels move: viewers respond to
+CHANGE, not motion.
+
+**Rules that follow, apply to every episode from here:**
+
+1. **Open on the peak image, not the establishing shot.** Cold-open on the
+   climax; earn the setup afterwards. Film grammar (setup→conflict→payoff)
+   is backwards for a feed.
+2. **Bookend it.** Close on the same image you opened on. A narrated story
+   won't loop invisibly (the VO restarts mid-thought), but the bookend still
+   reads as deliberate and seams cleanly if someone does loop.
+3. **Nothing on screen longer than ~3s.** Punch-ins and reframes on existing
+   takes manufacture beats for FREE — no regeneration needed. v4 went from
+   3 cuts to 19 this way, longest gap 2.5s.
+4. **No dead tail.** One closing card, ~1.2s. TBC cards cost 2.4s of frozen
+   frame at exactly the moment completion rate is decided.
+5. **WRITE THE VO SHORT.** This is the binding constraint nobody sees coming:
+   Ep1's five VO lines total **28.4s**, so no cut could go below ~30s no
+   matter how tight the visuals. The longest line (8.1s) sat over the
+   weakest footage. Budget VO per beat BEFORE generating, and keep total
+   narration under ~20s for a 25–30s episode.
+6. **Action-first briefs.** A recut fixes pacing, hook and length; it cannot
+   add action that was never generated. Ep1's footage is a character standing
+   and emoting — no chase, no scuffle, the leaf never snatched on camera.
+   Future episode prompts must specify things HAPPENING, not reactions to
+   things that happened offscreen.
+
+v4 (`build_ep1_v4.sh`, hook-first + bookend) applies 1–4 to existing footage:
+45.1s → 31.4s, 3 cuts → 19, mean motion 10.4 → 18.0. Rules 5–6 can only be
+fixed at generation time — they are the brief for any Ep1 regen and for
+Ep4–6, which are still only scripts and cost nothing to fix now.
+
 ## Format spec (all)
 
 - **9:16**, 720p, ~5–6s, `generate_audio:false` (we add stings/music in post).
