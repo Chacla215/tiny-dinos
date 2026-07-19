@@ -90,7 +90,11 @@ landscape master. Don't gate weekly posting on any of this.
       Dinos"). Cross-links in every bio: point IG/TikTok bios at each
       other and at the YT channel so the underscore/The mismatch never
       loses anyone.
-- [ ] Avatar: Ralph hero crop. Banner/bio image: the TINY DINOS closing card.
+- [x] **Avatar + banner BAKED** (`scripts/tools/gen_social_brand.py` →
+      `assets/concept/brand/avatar/`): `avatar_1024.png` is the master —
+      upload the same square to all three (they all crop to a circle;
+      `avatar_preview_circle.png` shows the result). `yt_banner_2048.png`
+      is the YouTube channel banner (cast inside the 1235x338 safe area).
 - [ ] Bio line: `tiny dinos. big feelings. a couch brawler for 1-4 players 🦕`
       + itch link when the page goes live (until then: "coming soon").
 - [ ] Turn OFF "auto-add watermark" style options where offered; upload
