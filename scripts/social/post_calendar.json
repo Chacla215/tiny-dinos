@@ -1,249 +1,249 @@
 {
- "_readme": [
-  "Season One posting calendar. Drives publish_youtube.py / publish_instagram.py.",
-  "'day' is relative to LAUNCH_DATE (set when Charlie picks it); post times are",
-  "17:00 local unless 'time' overrides. 'platforms': ig | yt | tiktok (tiktok",
-  "stays manual/1-tap: files + captions here are the prep pack).",
-  "Paths are repo-relative. Items with status 'blocked' name their gate.",
-  "Rewritten 2026-07-19 against the RISING TIDE reboot (SAGA_OUTLINE.md): ep1 = re-shot ending pending 54cr clip; ep2 = HIGH WATER MARK den ep, not the old ep2_max sumo cut; old ep3 Steve kit is pre-reboot and retired."
- ],
- "launch_date": "TBD",
- "default_time": "17:00",
- "posts": [
-  {
-   "id": "mosaic-1",
-   "day": 0,
-   "time": "12:00",
-   "platforms": [
-    "ig"
-   ],
-   "type": "photo",
-   "file": "assets/concept/brand/grid_mosaic/post_1_of_9.png",
-   "caption": "🦕",
-   "status": "ready"
-  },
-  {
-   "id": "mosaic-2",
-   "day": 0,
-   "time": "12:04",
-   "platforms": [
-    "ig"
-   ],
-   "type": "photo",
-   "file": "assets/concept/brand/grid_mosaic/post_2_of_9.png",
-   "caption": "🌊",
-   "status": "ready"
-  },
-  {
-   "id": "mosaic-3",
-   "day": 0,
-   "time": "12:08",
-   "platforms": [
-    "ig"
-   ],
-   "type": "photo",
-   "file": "assets/concept/brand/grid_mosaic/post_3_of_9.png",
-   "caption": "🌴",
-   "status": "ready"
-  },
-  {
-   "id": "mosaic-4",
-   "day": 0,
-   "time": "12:12",
-   "platforms": [
-    "ig"
-   ],
-   "type": "photo",
-   "file": "assets/concept/brand/grid_mosaic/post_4_of_9.png",
-   "caption": "🌻",
-   "status": "ready"
-  },
-  {
-   "id": "mosaic-5",
-   "day": 0,
-   "time": "12:16",
-   "platforms": [
-    "ig"
-   ],
-   "type": "photo",
-   "file": "assets/concept/brand/grid_mosaic/post_5_of_9.png",
-   "caption": "🦖",
-   "status": "ready"
-  },
-  {
-   "id": "mosaic-6",
-   "day": 0,
-   "time": "12:20",
-   "platforms": [
-    "ig"
-   ],
-   "type": "photo",
-   "file": "assets/concept/brand/grid_mosaic/post_6_of_9.png",
-   "caption": "🏝️",
-   "status": "ready"
-  },
-  {
-   "id": "mosaic-7",
-   "day": 0,
-   "time": "12:24",
-   "platforms": [
-    "ig"
-   ],
-   "type": "photo",
-   "file": "assets/concept/brand/grid_mosaic/post_7_of_9.png",
-   "caption": "☀️",
-   "status": "ready"
-  },
-  {
-   "id": "mosaic-8",
-   "day": 0,
-   "time": "12:28",
-   "platforms": [
-    "ig"
-   ],
-   "type": "photo",
-   "file": "assets/concept/brand/grid_mosaic/post_8_of_9.png",
-   "caption": "☁️",
-   "status": "ready"
-  },
-  {
-   "id": "mosaic-9",
-   "day": 0,
-   "time": "12:32",
-   "platforms": [
-    "ig"
-   ],
-   "type": "photo",
-   "file": "assets/concept/brand/grid_mosaic/post_9_of_9.png",
-   "caption": "the whole island is here. episode one drops tomorrow. 🌋",
-   "status": "ready"
-  },
-  {
-   "id": "ep1",
-   "day": 1,
-   "platforms": [
-    "ig",
-    "yt",
-    "tiktok"
-   ],
-   "type": "video",
-   "file": "wip/ep1/ep1_v3.mp4",
-   "title": "TINY DINOS — Ep. 1: The Last Good Day",
-   "caption": "nobody touches the leaf. then the ocean did. 🍃🌊 (ep. 1)",
-   "cover_hint": "the leap over Max — it IS the first frame (0.5s), under the hook card",
-   "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-   "status": "ready — v3 (44.2s, -15.0 LUFS) rebuilt 2026-07-19 from clean sources",
-   "note": "EP1 v3, the postable cut. The v2 that was hosted had NARRATION SUBTITLES burned into the picture (visible 4.5s-25s) and ended on two stills — both iron-rule violations, so v3 was rebuilt from the six clean beat sources (beat1-5 + tide, all re-downloadable from the Higgsfield library) plus the two clips generated 2026-07-19: clip1a THE STRIKE (the bonk now lands on screen with Max's X-eyed reaction, replacing the rejected BONK card) and clip1b the ocean-POV ending in motion. Only text is the hook card + the '12 SECONDS EARLIER' signpost. Build is scripts/social/build_ep1.sh — committed this time; the old build_ep1_final.sh was lost with the /tmp scratchpad. Do not extend beat5 past 8.7s (the model grows a cape)."
-  },
-  {
-   "id": "ep1-short",
-   "day": 1,
-   "platforms": [
-    "ig",
-    "yt",
-    "tiktok"
-   ],
-   "type": "video",
-   "file": "assets/concept/shorts/wip/ep1/ep1_short.mp4",
-   "title": "TINY DINOS — Ep. 1: The Leaf",
-   "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts",
-   "cover_hint": "the sword raise (frame 0.3s)",
-   "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-   "status": "alternate — 14.4s captions-only teaser, no story arc",
-   "note": "Kept for A/B. Charlie's call: too short, a story clip needs drama to be worth watching."
-  },
-  {
-   "id": "reel-sumo",
-   "day": 4,
-   "platforms": [
-    "ig",
-    "yt",
-    "tiktok"
-   ],
-   "type": "video",
-   "file": "wip/reels/reel_sumo.mp4",
-   "title": "SUMO but everyone is a dinosaur",
-   "caption": "sumo, but everyone is a dinosaur. last one in the ring wins 🥟 #indiegame #couchcoop #partygame #gamedev #tinydinos #Shorts",
-   "cover_hint": "POINT! moment ~7s",
-   "status": "ready"
-  },
-  {
-   "id": "card-steve-tease",
-   "day": 7,
-   "platforms": [
-    "ig"
-   ],
-   "type": "photo",
-   "file": "TBD-batchA-steve-card",
-   "caption": "the biggest guy on the island has never thrown a punch. tomorrow, someone picks a fight with him.",
-   "status": "blocked: Batch-A Steve card not generated"
-  },
-  {
-   "id": "ep2",
-   "day": 8,
-   "platforms": [
-    "ig",
-    "yt",
-    "tiktok"
-   ],
-   "type": "video",
-   "file": "assets/concept/shorts/wip/ep2_den/ep2_final.mp4",
-   "title": "TINY DINOS — Ep. 2: Fast Isn't Strong",
-   "caption": "the tide went out. it left a mark. and someone's at the door. (ep. 2)",
-   "status": "blocked: den clip (~54cr) — kit ready (NEXT_TWO_CLIPS.md clip 2); start frame ep2_start.png BUILT, den standing set generated"
-  },
-  {
-   "id": "reel-jessie",
-   "day": 11,
-   "platforms": [
-    "ig",
-    "yt",
-    "tiktok"
-   ],
-   "type": "video",
-   "file": "wip/reels/reel_jessie.mp4",
-   "title": "NEW CHALLENGER: Jessie the Deep Diver",
-   "caption": "new challenger: JESSIE. she was a champion diver. now she cannonballs people off islands 🌻 #indiegame #newcharacter #couchgames #tinydinos #Shorts",
-   "status": "ready"
-  },
-  {
-   "id": "ep3",
-   "day": 15,
-   "platforms": [
-    "ig",
-    "yt",
-    "tiktok"
-   ],
-   "type": "video",
-   "file": "TBD-ep3-share-the-rock",
-   "title": "TINY DINOS — Ep. 3: The Gentle Giant",
-   "caption": "one rock left. two dinosaurs. sumo rules. (ep. 3)",
-   "status": "blocked: not yet written for production — reboot Ep3 = 'SHARE THE ROCK' (SAGA_OUTLINE.md); the wip/ep3_steve kit is PRE-REBOOT, do not fire it"
-  },
-  {
-   "id": "cast-photo",
-   "day": 16,
-   "platforms": [
-    "ig"
-   ],
-   "type": "photo",
-   "file": "assets/concept/brand/grid_cast_4x5.png",
-   "caption": "the whole gang 🦕🦖 which one are you?",
-   "status": "ready"
-  },
-  {
-   "id": "reel-chaos",
-   "day": 18,
-   "platforms": [
-    "ig",
-    "yt",
-    "tiktok"
-   ],
-   "type": "video",
-   "file": "wip/reels/reel_chaos.mp4",
-   "title": "4 players. 1 island. 0 mercy.",
-   "caption": "couch chaos on laughing lava 🌋 4 players. 1 island. 0 mercy. #indiegame #couchcoop #partygame #tinydinos #Shorts",
-   "status": "ready"
-  }
- ]
+  "_readme": [
+    "Season One posting calendar. Drives publish_youtube.py / publish_instagram.py.",
+    "'day' is relative to LAUNCH_DATE (set when Charlie picks it); post times are",
+    "17:00 local unless 'time' overrides. 'platforms': ig | yt | tiktok (tiktok",
+    "stays manual/1-tap: files + captions here are the prep pack).",
+    "Paths are repo-relative. Items with status 'blocked' name their gate.",
+    "Rewritten 2026-07-19 against the RISING TIDE reboot (SAGA_OUTLINE.md): ep1 = re-shot ending pending 54cr clip; ep2 = HIGH WATER MARK den ep, not the old ep2_max sumo cut; old ep3 Steve kit is pre-reboot and retired."
+  ],
+  "launch_date": "TBD",
+  "default_time": "17:00",
+  "posts": [
+    {
+      "id": "mosaic-1",
+      "day": 0,
+      "time": "12:00",
+      "platforms": [
+        "ig"
+      ],
+      "type": "photo",
+      "file": "assets/concept/brand/grid_mosaic/post_1_of_9.png",
+      "caption": "🦕",
+      "status": "ready"
+    },
+    {
+      "id": "mosaic-2",
+      "day": 0,
+      "time": "12:04",
+      "platforms": [
+        "ig"
+      ],
+      "type": "photo",
+      "file": "assets/concept/brand/grid_mosaic/post_2_of_9.png",
+      "caption": "🌊",
+      "status": "ready"
+    },
+    {
+      "id": "mosaic-3",
+      "day": 0,
+      "time": "12:08",
+      "platforms": [
+        "ig"
+      ],
+      "type": "photo",
+      "file": "assets/concept/brand/grid_mosaic/post_3_of_9.png",
+      "caption": "🌴",
+      "status": "ready"
+    },
+    {
+      "id": "mosaic-4",
+      "day": 0,
+      "time": "12:12",
+      "platforms": [
+        "ig"
+      ],
+      "type": "photo",
+      "file": "assets/concept/brand/grid_mosaic/post_4_of_9.png",
+      "caption": "🌻",
+      "status": "ready"
+    },
+    {
+      "id": "mosaic-5",
+      "day": 0,
+      "time": "12:16",
+      "platforms": [
+        "ig"
+      ],
+      "type": "photo",
+      "file": "assets/concept/brand/grid_mosaic/post_5_of_9.png",
+      "caption": "🦖",
+      "status": "ready"
+    },
+    {
+      "id": "mosaic-6",
+      "day": 0,
+      "time": "12:20",
+      "platforms": [
+        "ig"
+      ],
+      "type": "photo",
+      "file": "assets/concept/brand/grid_mosaic/post_6_of_9.png",
+      "caption": "🏝️",
+      "status": "ready"
+    },
+    {
+      "id": "mosaic-7",
+      "day": 0,
+      "time": "12:24",
+      "platforms": [
+        "ig"
+      ],
+      "type": "photo",
+      "file": "assets/concept/brand/grid_mosaic/post_7_of_9.png",
+      "caption": "☀️",
+      "status": "ready"
+    },
+    {
+      "id": "mosaic-8",
+      "day": 0,
+      "time": "12:28",
+      "platforms": [
+        "ig"
+      ],
+      "type": "photo",
+      "file": "assets/concept/brand/grid_mosaic/post_8_of_9.png",
+      "caption": "☁️",
+      "status": "ready"
+    },
+    {
+      "id": "mosaic-9",
+      "day": 0,
+      "time": "12:32",
+      "platforms": [
+        "ig"
+      ],
+      "type": "photo",
+      "file": "assets/concept/brand/grid_mosaic/post_9_of_9.png",
+      "caption": "the whole island is here. episode one drops tomorrow. 🌋",
+      "status": "ready"
+    },
+    {
+      "id": "ep1",
+      "day": 1,
+      "platforms": [
+        "ig",
+        "yt",
+        "tiktok"
+      ],
+      "type": "video",
+      "file": "wip/ep1/ep1_v4.mp4",
+      "title": "TINY DINOS — Ep. 1: The Last Good Day",
+      "caption": "nobody touches the leaf. then the ocean did. 🍃🌊 (ep. 1)",
+      "cover_hint": "the leap over Max — it IS the first frame (0.5s), under the hook card",
+      "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
+      "status": "ready — v4 (58.3s, -13.9 LUFS) rebuilt 2026-07-19 after Charlie rejected v3",
+      "note": "EP1 v4, the postable cut. v3 was uploaded unlisted and REJECTED: it deleted the Arthur narration along with the burned-in captions (\"no subtitles\" was never \"no narration\"), and it chopped the middle out of tide.mp4, cutting the turn and making the ending feel rushed. v4 restores the five locked Arthur lines as AUDIO with no text, ducks the music ~10 dB under the voice bus, plays tide.mp4 continuously 0.40->11.60, and holds the strike 6.0s so Max's dazed reaction lands. Only text is the hook card + the '12 SECONDS EARLIER' signpost. Build is scripts/social/build_ep1.sh. Traps: do not extend beat5 past 8.7s (the model grows a cape); apad the VO bus or sidechaincompress truncates the music bed; never use bare loudnorm on this cut."
+    },
+    {
+      "id": "ep1-short",
+      "day": 1,
+      "platforms": [
+        "ig",
+        "yt",
+        "tiktok"
+      ],
+      "type": "video",
+      "file": "assets/concept/shorts/wip/ep1/ep1_short.mp4",
+      "title": "TINY DINOS — Ep. 1: The Leaf",
+      "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts",
+      "cover_hint": "the sword raise (frame 0.3s)",
+      "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
+      "status": "alternate — 14.4s captions-only teaser, no story arc",
+      "note": "Kept for A/B. Charlie's call: too short, a story clip needs drama to be worth watching."
+    },
+    {
+      "id": "reel-sumo",
+      "day": 4,
+      "platforms": [
+        "ig",
+        "yt",
+        "tiktok"
+      ],
+      "type": "video",
+      "file": "wip/reels/reel_sumo.mp4",
+      "title": "SUMO but everyone is a dinosaur",
+      "caption": "sumo, but everyone is a dinosaur. last one in the ring wins 🥟 #indiegame #couchcoop #partygame #gamedev #tinydinos #Shorts",
+      "cover_hint": "POINT! moment ~7s",
+      "status": "ready"
+    },
+    {
+      "id": "card-steve-tease",
+      "day": 7,
+      "platforms": [
+        "ig"
+      ],
+      "type": "photo",
+      "file": "TBD-batchA-steve-card",
+      "caption": "the biggest guy on the island has never thrown a punch. tomorrow, someone picks a fight with him.",
+      "status": "blocked: Batch-A Steve card not generated"
+    },
+    {
+      "id": "ep2",
+      "day": 8,
+      "platforms": [
+        "ig",
+        "yt",
+        "tiktok"
+      ],
+      "type": "video",
+      "file": "assets/concept/shorts/wip/ep2_den/ep2_final.mp4",
+      "title": "TINY DINOS — Ep. 2: Fast Isn't Strong",
+      "caption": "the tide went out. it left a mark. and someone's at the door. (ep. 2)",
+      "status": "blocked: den clip (~54cr) — kit ready (NEXT_TWO_CLIPS.md clip 2); start frame ep2_start.png BUILT, den standing set generated"
+    },
+    {
+      "id": "reel-jessie",
+      "day": 11,
+      "platforms": [
+        "ig",
+        "yt",
+        "tiktok"
+      ],
+      "type": "video",
+      "file": "wip/reels/reel_jessie.mp4",
+      "title": "NEW CHALLENGER: Jessie the Deep Diver",
+      "caption": "new challenger: JESSIE. she was a champion diver. now she cannonballs people off islands 🌻 #indiegame #newcharacter #couchgames #tinydinos #Shorts",
+      "status": "ready"
+    },
+    {
+      "id": "ep3",
+      "day": 15,
+      "platforms": [
+        "ig",
+        "yt",
+        "tiktok"
+      ],
+      "type": "video",
+      "file": "TBD-ep3-share-the-rock",
+      "title": "TINY DINOS — Ep. 3: The Gentle Giant",
+      "caption": "one rock left. two dinosaurs. sumo rules. (ep. 3)",
+      "status": "blocked: not yet written for production — reboot Ep3 = 'SHARE THE ROCK' (SAGA_OUTLINE.md); the wip/ep3_steve kit is PRE-REBOOT, do not fire it"
+    },
+    {
+      "id": "cast-photo",
+      "day": 16,
+      "platforms": [
+        "ig"
+      ],
+      "type": "photo",
+      "file": "assets/concept/brand/grid_cast_4x5.png",
+      "caption": "the whole gang 🦕🦖 which one are you?",
+      "status": "ready"
+    },
+    {
+      "id": "reel-chaos",
+      "day": 18,
+      "platforms": [
+        "ig",
+        "yt",
+        "tiktok"
+      ],
+      "type": "video",
+      "file": "wip/reels/reel_chaos.mp4",
+      "title": "4 players. 1 island. 0 mercy.",
+      "caption": "couch chaos on laughing lava 🌋 4 players. 1 island. 0 mercy. #indiegame #couchcoop #partygame #tinydinos #Shorts",
+      "status": "ready"
+    }
+  ]
 }
