@@ -260,6 +260,12 @@ DIVES IN" reveal: profile-card flash → real gameplay of the CANNONBALL splash
 and a swan-dive KO. (Per Charlie: keep the personal story behind her OUT of
 public clips.)
 
+> **SERIES REBOOT (2026-07-19): see `SAGA_RISING_TIDE.md`.** The shorts
+> season restarts on the RISING TIDE premise, alternating ISLAND (fight)
+> and DEN (2K-style cutscene, no fighting) episodes. The rules below still
+> govern craft; the story framing there supersedes the per-episode plans
+> in this file.
+
 ## STRUCTURE — what Ep1 taught us (2026-07-18, measured)
 
 Charlie's read on Ep1 v3: *"I don't know if a viewer would stay after the
