@@ -19,7 +19,29 @@ Supersedes every earlier version of this file and every Ep1 ending before it.
    or generated video. No exceptions, no "brief" stills, no dissolves
    between stills.
 
-## ⇢ START HERE (2026-07-19, late) — Ep1 v4 is the open job
+## ⇢ STATUS (2026-07-19, late) — Ep1 v4 IS BUILT, awaiting Charlie's watch
+
+`wip/ep1/ep1_v4.mp4` — 58.3s, -13.9 LUFS, peak -1.4 dBFS. Built by the
+committed `scripts/social/build_ep1.sh`. All three of Charlie's v3 corrections
+are addressed: Arthur VO restored as audio (music sidechain-ducks ~10 dB under
+him), `tide.mp4` plays continuously 0.40->11.60 so the turn is whole, and the
+strike holds 6.0s so Max's dazed reaction lands on screen.
+
+Verified, not assumed: text sweep clean past the signpost (3.05s); no dead air
+(the sweep caught and fixed a music dropout at t=40 caused by
+`sidechaincompress` truncating to its shorter input); ending holds ON the look.
+
+**ONE OPEN QUESTION for Charlie** — the world-state jump at 51.2s. `tide.mp4`
+ends on a wide, mostly-dry beach with footprints; `clip1b` opens on a tiny sand
+patch ringed by ocean. Narratively that jump IS the premise, but it happens in
+a hard cut. Options: (a) ship as-is, the rising water in the tide segment does
+signal it; (b) spend ~54cr on the bridge clip — generate the half-flooded beach
+as a still, use it as a video START FRAME. Balance is 394cr.
+
+(NOTE: the left-right dino swap across that cut is CORRECT — clip1b is a
+reverse angle from the sea, so the flip reads as the camera crossing.)
+
+### Superseded — the v4 brief as originally written
 
 v3 was built, uploaded UNLISTED (`youtube.com/shorts/2YEO8u0xYUc`) and Charlie
 reviewed it on WhatsApp. **v3 is superseded — do not post it.** His three
