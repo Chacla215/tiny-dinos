@@ -1,30 +1,248 @@
 {
-  "_readme": [
-    "Season One posting calendar. Drives publish_youtube.py / publish_instagram.py.",
-    "'day' is relative to LAUNCH_DATE (set when Charlie picks it); post times are",
-    "17:00 local unless 'time' overrides. 'platforms': ig | yt | tiktok (tiktok",
-    "stays manual/1-tap: files + captions here are the prep pack).",
-    "Paths are repo-relative. Items with status 'blocked' name their gate."
-  ],
-  "launch_date": "TBD",
-  "default_time": "17:00",
-  "posts": [
-    {"id": "mosaic-1", "day": 0, "time": "12:00", "platforms": ["ig"], "type": "photo", "file": "assets/concept/brand/grid_mosaic/post_1_of_9.png", "caption": "🦕", "status": "ready"},
-    {"id": "mosaic-2", "day": 0, "time": "12:04", "platforms": ["ig"], "type": "photo", "file": "assets/concept/brand/grid_mosaic/post_2_of_9.png", "caption": "🌊", "status": "ready"},
-    {"id": "mosaic-3", "day": 0, "time": "12:08", "platforms": ["ig"], "type": "photo", "file": "assets/concept/brand/grid_mosaic/post_3_of_9.png", "caption": "🌴", "status": "ready"},
-    {"id": "mosaic-4", "day": 0, "time": "12:12", "platforms": ["ig"], "type": "photo", "file": "assets/concept/brand/grid_mosaic/post_4_of_9.png", "caption": "🌻", "status": "ready"},
-    {"id": "mosaic-5", "day": 0, "time": "12:16", "platforms": ["ig"], "type": "photo", "file": "assets/concept/brand/grid_mosaic/post_5_of_9.png", "caption": "🦖", "status": "ready"},
-    {"id": "mosaic-6", "day": 0, "time": "12:20", "platforms": ["ig"], "type": "photo", "file": "assets/concept/brand/grid_mosaic/post_6_of_9.png", "caption": "🏝️", "status": "ready"},
-    {"id": "mosaic-7", "day": 0, "time": "12:24", "platforms": ["ig"], "type": "photo", "file": "assets/concept/brand/grid_mosaic/post_7_of_9.png", "caption": "☀️", "status": "ready"},
-    {"id": "mosaic-8", "day": 0, "time": "12:28", "platforms": ["ig"], "type": "photo", "file": "assets/concept/brand/grid_mosaic/post_8_of_9.png", "caption": "☁️", "status": "ready"},
-    {"id": "mosaic-9", "day": 0, "time": "12:32", "platforms": ["ig"], "type": "photo", "file": "assets/concept/brand/grid_mosaic/post_9_of_9.png", "caption": "the whole island is here. episode one drops tomorrow. 🌋", "status": "ready"},
-    {"id": "ep1", "day": 1, "platforms": ["ig", "yt", "tiktok"], "type": "video", "file": "assets/concept/shorts/wip/ep1/ep1_v3_narrated.mp4", "title": "TINY DINOS — Ep. 1: The Leaf", "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts", "cover_hint": "beat-4 stand-tall ~36s", "pinned_comment": "ep. 2 drops when this hits 100 likes 👀", "status": "ready-pending-SEC-check"},
-    {"id": "reel-sumo", "day": 4, "platforms": ["ig", "yt", "tiktok"], "type": "video", "file": "wip/reels/reel_sumo.mp4", "title": "SUMO but everyone is a dinosaur", "caption": "sumo, but everyone is a dinosaur. last one in the ring wins 🥟 #indiegame #couchcoop #partygame #gamedev #tinydinos #Shorts", "cover_hint": "POINT! moment ~7s", "status": "ready"},
-    {"id": "card-steve-tease", "day": 7, "platforms": ["ig"], "type": "photo", "file": "TBD-batchA-steve-card", "caption": "the biggest guy on the island has never thrown a punch. tomorrow, someone picks a fight with him.", "status": "blocked: Batch-A Steve card not generated"},
-    {"id": "ep2", "day": 8, "platforms": ["ig", "yt", "tiktok"], "type": "video", "file": "assets/concept/shorts/wip/ep2_max/ep2_narrated.mp4", "title": "TINY DINOS — Ep. 2: Fast Isn't Strong", "caption": "max does not lose. max picked sumo. max picked wrong. (ep. 2) #indiegame #couchgames #dinosaur #animation #tinydinos #Shorts", "status": "blocked: Charlie's call — regen off-model beats (~54cr/clip) or trim"},
-    {"id": "reel-jessie", "day": 11, "platforms": ["ig", "yt", "tiktok"], "type": "video", "file": "wip/reels/reel_jessie.mp4", "title": "NEW CHALLENGER: Jessie the Deep Diver", "caption": "new challenger: JESSIE. she was a champion diver. now she cannonballs people off islands 🌻 #indiegame #newcharacter #couchgames #tinydinos #Shorts", "status": "ready"},
-    {"id": "ep3", "day": 15, "platforms": ["ig", "yt", "tiktok"], "type": "video", "file": "TBD-ep3-final", "title": "TINY DINOS — Ep. 3: The Gentle Giant", "caption": "steve has never fought anybody. steve is a flower guy. (ep. 3) #tinydinos #Shorts", "status": "blocked: ~400cr top-up, then generate per wip/ep3_steve kit"},
-    {"id": "cast-photo", "day": 16, "platforms": ["ig"], "type": "photo", "file": "assets/concept/brand/grid_cast_4x5.png", "caption": "the whole gang 🦕🦖 which one are you?", "status": "ready"},
-    {"id": "reel-chaos", "day": 18, "platforms": ["ig", "yt", "tiktok"], "type": "video", "file": "wip/reels/reel_chaos.mp4", "title": "4 players. 1 island. 0 mercy.", "caption": "couch chaos on laughing lava 🌋 4 players. 1 island. 0 mercy. #indiegame #couchcoop #partygame #tinydinos #Shorts", "status": "ready"}
-  ]
+ "_readme": [
+  "Season One posting calendar. Drives publish_youtube.py / publish_instagram.py.",
+  "'day' is relative to LAUNCH_DATE (set when Charlie picks it); post times are",
+  "17:00 local unless 'time' overrides. 'platforms': ig | yt | tiktok (tiktok",
+  "stays manual/1-tap: files + captions here are the prep pack).",
+  "Paths are repo-relative. Items with status 'blocked' name their gate."
+ ],
+ "launch_date": "TBD",
+ "default_time": "17:00",
+ "posts": [
+  {
+   "id": "mosaic-1",
+   "day": 0,
+   "time": "12:00",
+   "platforms": [
+    "ig"
+   ],
+   "type": "photo",
+   "file": "assets/concept/brand/grid_mosaic/post_1_of_9.png",
+   "caption": "🦕",
+   "status": "ready"
+  },
+  {
+   "id": "mosaic-2",
+   "day": 0,
+   "time": "12:04",
+   "platforms": [
+    "ig"
+   ],
+   "type": "photo",
+   "file": "assets/concept/brand/grid_mosaic/post_2_of_9.png",
+   "caption": "🌊",
+   "status": "ready"
+  },
+  {
+   "id": "mosaic-3",
+   "day": 0,
+   "time": "12:08",
+   "platforms": [
+    "ig"
+   ],
+   "type": "photo",
+   "file": "assets/concept/brand/grid_mosaic/post_3_of_9.png",
+   "caption": "🌴",
+   "status": "ready"
+  },
+  {
+   "id": "mosaic-4",
+   "day": 0,
+   "time": "12:12",
+   "platforms": [
+    "ig"
+   ],
+   "type": "photo",
+   "file": "assets/concept/brand/grid_mosaic/post_4_of_9.png",
+   "caption": "🌻",
+   "status": "ready"
+  },
+  {
+   "id": "mosaic-5",
+   "day": 0,
+   "time": "12:16",
+   "platforms": [
+    "ig"
+   ],
+   "type": "photo",
+   "file": "assets/concept/brand/grid_mosaic/post_5_of_9.png",
+   "caption": "🦖",
+   "status": "ready"
+  },
+  {
+   "id": "mosaic-6",
+   "day": 0,
+   "time": "12:20",
+   "platforms": [
+    "ig"
+   ],
+   "type": "photo",
+   "file": "assets/concept/brand/grid_mosaic/post_6_of_9.png",
+   "caption": "🏝️",
+   "status": "ready"
+  },
+  {
+   "id": "mosaic-7",
+   "day": 0,
+   "time": "12:24",
+   "platforms": [
+    "ig"
+   ],
+   "type": "photo",
+   "file": "assets/concept/brand/grid_mosaic/post_7_of_9.png",
+   "caption": "☀️",
+   "status": "ready"
+  },
+  {
+   "id": "mosaic-8",
+   "day": 0,
+   "time": "12:28",
+   "platforms": [
+    "ig"
+   ],
+   "type": "photo",
+   "file": "assets/concept/brand/grid_mosaic/post_8_of_9.png",
+   "caption": "☁️",
+   "status": "ready"
+  },
+  {
+   "id": "mosaic-9",
+   "day": 0,
+   "time": "12:32",
+   "platforms": [
+    "ig"
+   ],
+   "type": "photo",
+   "file": "assets/concept/brand/grid_mosaic/post_9_of_9.png",
+   "caption": "the whole island is here. episode one drops tomorrow. 🌋",
+   "status": "ready"
+  },
+  {
+   "id": "ep1",
+   "day": 1,
+   "platforms": [
+    "ig",
+    "yt",
+    "tiktok"
+   ],
+   "type": "video",
+   "file": "assets/concept/shorts/wip/ep1/ep1_short.mp4",
+   "title": "TINY DINOS — Ep. 1: The Leaf",
+   "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts",
+   "cover_hint": "the sword raise (frame 0.4s) — it IS the first frame",
+   "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
+   "status": "ready",
+   "note": "SHORT CUT (14.4s, captions+music, no VO): hook on the climax, ends on the RULE TWO button — a real payoff, not a cliffhanger. SEC pronunciation bug resolved (VO dropped entirely here)."
+  },
+  {
+   "id": "ep1-long",
+   "day": 1,
+   "platforms": [
+    "ig",
+    "yt",
+    "tiktok"
+   ],
+   "type": "video",
+   "file": "assets/concept/shorts/wip/ep1/ep1_v4_narrated.mp4",
+   "title": "TINY DINOS — Ep. 1: The Leaf",
+   "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts",
+   "cover_hint": "the sword raise (frame 0.3s)",
+   "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
+   "status": "alternate — post ep1 (short) instead unless testing the narrated version",
+   "note": "31.4s narrated v4: hook-first + bookend, 19 cuts, VO5 trimmed off the 'SEC' misread, battle theme starts at its 3.5s drop, mastered -13.8 LUFS."
+  },
+  {
+   "id": "reel-sumo",
+   "day": 4,
+   "platforms": [
+    "ig",
+    "yt",
+    "tiktok"
+   ],
+   "type": "video",
+   "file": "wip/reels/reel_sumo.mp4",
+   "title": "SUMO but everyone is a dinosaur",
+   "caption": "sumo, but everyone is a dinosaur. last one in the ring wins 🥟 #indiegame #couchcoop #partygame #gamedev #tinydinos #Shorts",
+   "cover_hint": "POINT! moment ~7s",
+   "status": "ready"
+  },
+  {
+   "id": "card-steve-tease",
+   "day": 7,
+   "platforms": [
+    "ig"
+   ],
+   "type": "photo",
+   "file": "TBD-batchA-steve-card",
+   "caption": "the biggest guy on the island has never thrown a punch. tomorrow, someone picks a fight with him.",
+   "status": "blocked: Batch-A Steve card not generated"
+  },
+  {
+   "id": "ep2",
+   "day": 8,
+   "platforms": [
+    "ig",
+    "yt",
+    "tiktok"
+   ],
+   "type": "video",
+   "file": "assets/concept/shorts/wip/ep2_max/ep2_narrated.mp4",
+   "title": "TINY DINOS — Ep. 2: Fast Isn't Strong",
+   "caption": "max does not lose. max picked sumo. max picked wrong. (ep. 2) #indiegame #couchgames #dinosaur #animation #tinydinos #Shorts",
+   "status": "blocked: Charlie's call — regen off-model beats (~54cr/clip) or trim"
+  },
+  {
+   "id": "reel-jessie",
+   "day": 11,
+   "platforms": [
+    "ig",
+    "yt",
+    "tiktok"
+   ],
+   "type": "video",
+   "file": "wip/reels/reel_jessie.mp4",
+   "title": "NEW CHALLENGER: Jessie the Deep Diver",
+   "caption": "new challenger: JESSIE. she was a champion diver. now she cannonballs people off islands 🌻 #indiegame #newcharacter #couchgames #tinydinos #Shorts",
+   "status": "ready"
+  },
+  {
+   "id": "ep3",
+   "day": 15,
+   "platforms": [
+    "ig",
+    "yt",
+    "tiktok"
+   ],
+   "type": "video",
+   "file": "TBD-ep3-final",
+   "title": "TINY DINOS — Ep. 3: The Gentle Giant",
+   "caption": "steve has never fought anybody. steve is a flower guy. (ep. 3) #tinydinos #Shorts",
+   "status": "blocked: ~400cr top-up, then generate per wip/ep3_steve kit"
+  },
+  {
+   "id": "cast-photo",
+   "day": 16,
+   "platforms": [
+    "ig"
+   ],
+   "type": "photo",
+   "file": "assets/concept/brand/grid_cast_4x5.png",
+   "caption": "the whole gang 🦕🦖 which one are you?",
+   "status": "ready"
+  },
+  {
+   "id": "reel-chaos",
+   "day": 18,
+   "platforms": [
+    "ig",
+    "yt",
+    "tiktok"
+   ],
+   "type": "video",
+   "file": "wip/reels/reel_chaos.mp4",
+   "title": "4 players. 1 island. 0 mercy.",
+   "caption": "couch chaos on laughing lava 🌋 4 players. 1 island. 0 mercy. #indiegame #couchcoop #partygame #tinydinos #Shorts",
+   "status": "ready"
+  }
+ ]
 }
