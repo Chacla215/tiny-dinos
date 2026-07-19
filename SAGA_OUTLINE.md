@@ -116,6 +116,37 @@ The countdown lands. Water at the den floor. Ralph takes the leaf off the
 drying rock — dry at last, and now pointless. They leave.
 - **ends act one.** The career-mode journey begins.
 
+#### EP2 generation kit (ready to fire)
+
+One clip, 12s, 9:16, 720p std, `generate_audio:false`, decline the recommended
+preset. **No start frame** — the den is a new location, so it generates from
+text with Ralph as an identity reference (same situation as Ep3's beat 2).
+
+`image_references`: `assets/concept/ralph/ralph_hero.png` and
+`assets/concept/raptor/raptor_hero.png`.
+
+> Painterly chibi cartoon dinosaur, storybook picture-book style, vivid colors.
+> Interior of a small cosy den in the rocks above a tropical beach, warm
+> evening light from a low opening, sandy floor, a flat drying rock. A small
+> round sage-green chibi dinosaur with teal-blue back spikes, cream belly and
+> big amber eyes sits soaking wet, water dripping off him. He carefully sets a
+> single green leaf down on the drying rock, then reaches up and scratches a
+> short horizontal mark high on the stone wall with his claw. Below that mark
+> are several older scratched marks, all lower. He stares at the new mark. Then
+> he turns his head sharply toward the den opening, where a small brick-red
+> chibi raptor with darker red stripes and yellow eyes is standing silhouetted
+> in the doorway, also soaking wet, holding nothing, not attacking. Slow, quiet,
+> no fighting. Exactly ONE green dinosaur and exactly ONE red raptor in the
+> entire scene. No weapons. All-ages, warm and melancholy.
+
+Post work (free): speech bubbles, no narrator, no captions; the ice at the
+threshold can be composited if the generated clip doesn't carry it; ambient
+water/wind bed; master to -14 LUFS; ~18s final.
+
+**QA before accepting:** exactly one of each dino (identity refs can clone into
+the background — Ep2's original shoot failed this way), no weapons, no cape,
+the marks visibly stack with the newest highest.
+
 ---
 
 ## ACT TWO — THE CROSSING (sketch)
