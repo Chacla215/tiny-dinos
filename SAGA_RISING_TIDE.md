@@ -6,8 +6,9 @@ episode ends on a cliffhanger nobody saw coming, and the saga has no natural
 end. This supersedes the standalone "Ep1: The Leaf" framing — the leaf story
 survives, but only as act one of a much bigger problem.
 
-Read alongside `CUTSCENE_KIT.md` § STRUCTURE (the craft rules Ep1's failures
-taught us) and `CAREER_MODE_PLAN.md` (the saga's spine).
+Read alongside `SAGA_OUTLINE.md` (the whole arc written forward, so Ep1 can
+plant what later episodes pay off), `CUTSCENE_KIT.md` § STRUCTURE (the craft
+rules Ep1's failures taught us) and `CAREER_MODE_PLAN.md` (the saga's spine).
 
 ---
 
