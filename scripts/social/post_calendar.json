@@ -126,13 +126,13 @@
     "tiktok"
    ],
    "type": "video",
-   "file": "assets/concept/shorts/wip/ep1/ep1_final.mp4",
+   "file": "assets/concept/shorts/wip/ep1/ep1_rev.mp4",
    "title": "TINY DINOS — Ep. 1: The Last Good Day",
    "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts",
    "cover_hint": "the leap over Max — it IS the first frame (0.4s)",
    "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-   "status": "ready — Charlie to watch before posting",
-   "note": "EP1 FINAL (35.5s, -13.7 LUFS). RISING TIDE reboot: the leaf fight is now act one, and the episode ends with the tide taking the island. Acts 0-2 reuse existing footage (tightened); act 3 = the last 2.6s of the generated tide clip slowed 1.45x (the only part where water actually arrives) then a generated STILL of the flooded island on a slow push-in, dissolving to the same still with the leaf floating away untouched. Narrator goes silent for the tide; music stops dead; soft filtered-noise sea wash under act 3. VO line 5 cut entirely."
+   "status": "BLOCKED — needs the flooded-island reveal as VIDEO (54cr); balance 12.5",
+   "note": "EP1 REVISION (35.8s). Fixes from Charlie: subtitles REMOVED (the v8 decision had been dropped by mistake), and the fight now RESOLVES — tide.mp4 0.8-5.4s (Ralph over Max, sword lowering, they separate) was ignored in the first build, which is why it jumped from mid-charge to two calm dinos in water and left the viewer confused. NO STILLS IN REELS (Charlie's rule) — stills are production aids only, so the flooded-island reveal is currently ABSENT and the episode ends weakly on a wave at their feet. TO FINISH: generate a video with tide_c.png (or a style-matched restyle of it) as the START FRAME so the model only has to CONTINUE an already-flooded scene — the ask it failed when told to flood a dry beach. 54cr."
   },
   {
    "id": "ep1-short",
