@@ -4,7 +4,8 @@
   "'day' is relative to LAUNCH_DATE (set when Charlie picks it); post times are",
   "17:00 local unless 'time' overrides. 'platforms': ig | yt | tiktok (tiktok",
   "stays manual/1-tap: files + captions here are the prep pack).",
-  "Paths are repo-relative. Items with status 'blocked' name their gate."
+  "Paths are repo-relative. Items with status 'blocked' name their gate.",
+  "Rewritten 2026-07-19 against the RISING TIDE reboot (SAGA_OUTLINE.md): ep1 = re-shot ending pending 54cr clip; ep2 = HIGH WATER MARK den ep, not the old ep2_max sumo cut; old ep3 Steve kit is pre-reboot and retired."
  ],
  "launch_date": "TBD",
  "default_time": "17:00",
@@ -126,12 +127,12 @@
     "tiktok"
    ],
    "type": "video",
-   "file": "assets/concept/shorts/wip/ep1/ep1_rev.mp4",
+   "file": "assets/concept/shorts/wip/ep1/ep1_final.mp4",
    "title": "TINY DINOS — Ep. 1: The Last Good Day",
-   "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts",
+   "caption": "nobody touches the leaf. then the ocean did. 🍃🌊 (ep. 1)",
    "cover_hint": "the leap over Max — it IS the first frame (0.4s)",
    "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-   "status": "BLOCKED — needs the flooded-island reveal as VIDEO (54cr); balance 12.5",
+   "status": "ready — rebuilt 2026-07-19 on the restyled tide stills (style-matched, look = last beat, leaf composited); zero credits; Charlie eyeball before post",
    "note": "EP1 REVISION (35.8s). Fixes from Charlie: subtitles REMOVED (the v8 decision had been dropped by mistake), and the fight now RESOLVES — tide.mp4 0.8-5.4s (Ralph over Max, sword lowering, they separate) was ignored in the first build, which is why it jumped from mid-charge to two calm dinos in water and left the viewer confused. NO STILLS IN REELS (Charlie's rule) — stills are production aids only, so the flooded-island reveal is currently ABSENT and the episode ends weakly on a wave at their feet. TO FINISH: generate a video with tide_styled_a.png (already style-matched to the footage) as the START FRAME so the model only has to CONTINUE an already-flooded scene — the ask it failed when told to flood a dry beach. 54cr."
   },
   {
@@ -186,10 +187,10 @@
     "tiktok"
    ],
    "type": "video",
-   "file": "assets/concept/shorts/wip/ep2_max/ep2_narrated.mp4",
+   "file": "assets/concept/shorts/wip/ep2_den/ep2_final.mp4",
    "title": "TINY DINOS — Ep. 2: Fast Isn't Strong",
-   "caption": "max does not lose. max picked sumo. max picked wrong. (ep. 2) #indiegame #couchgames #dinosaur #animation #tinydinos #Shorts",
-   "status": "blocked: Charlie's call — regen off-model beats (~54cr/clip) or trim"
+   "caption": "the tide went out. it left a mark. and someone's at the door. (ep. 2)",
+   "status": "blocked: den clip (~54cr) — kit ready (NEXT_TWO_CLIPS.md clip 2); start frame ep2_start.png BUILT, den standing set generated"
   },
   {
    "id": "reel-jessie",
@@ -214,10 +215,10 @@
     "tiktok"
    ],
    "type": "video",
-   "file": "TBD-ep3-final",
+   "file": "TBD-ep3-share-the-rock",
    "title": "TINY DINOS — Ep. 3: The Gentle Giant",
-   "caption": "steve has never fought anybody. steve is a flower guy. (ep. 3) #tinydinos #Shorts",
-   "status": "blocked: ~400cr top-up, then generate per wip/ep3_steve kit"
+   "caption": "one rock left. two dinosaurs. sumo rules. (ep. 3)",
+   "status": "blocked: not yet written for production — reboot Ep3 = 'SHARE THE ROCK' (SAGA_OUTLINE.md); the wip/ep3_steve kit is PRE-REBOOT, do not fire it"
   },
   {
    "id": "cast-photo",
