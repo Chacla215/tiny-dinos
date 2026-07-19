@@ -126,13 +126,17 @@ def access_token():
     return r["access_token"]
 
 
-def upload(post, publish_at=None):
+def upload(post, publish_at=None, unlisted=False):
     path = os.path.join(ROOT, post["file"])
     tok = access_token()
     _, title = assert_target(tok)          # never upload to the wrong channel
     print(f"uploading to '{title}'")
     status = {"privacyStatus": "public", "selfDeclaredMadeForKids": False}
-    if publish_at:
+    if unlisted:
+        # link-shareable but not broadcast: the review step for a cut Charlie
+        # hasn't watched yet. Flip to Public in Studio, or re-post without --unlisted.
+        status = {"privacyStatus": "unlisted", "selfDeclaredMadeForKids": False}
+    elif publish_at:
         status = {"privacyStatus": "private", "publishAt": publish_at + ":00Z",
                   "selfDeclaredMadeForKids": False}
     meta = {"snippet": {"title": post.get("title", "TINY DINOS"),
@@ -151,8 +155,9 @@ def upload(post, publish_at=None):
         vid = _post(loc, fh.read(), raw=True,
                     headers={"Authorization": f"Bearer {tok}",
                              "Content-Type": "video/mp4"})
-    print(f"uploaded {post['id']} -> https://youtube.com/shorts/{vid['id']}"
-          + (f" (goes live {publish_at})" if publish_at else " (LIVE now)"))
+    state = ("UNLISTED — link works, not on the channel feed" if unlisted
+             else f"goes live {publish_at}" if publish_at else "LIVE now")
+    print(f"uploaded {post['id']} -> https://youtube.com/shorts/{vid['id']}  ({state})")
 
 
 def main():
@@ -163,6 +168,8 @@ def main():
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--post", metavar="ID")
     ap.add_argument("--at", metavar="ISO", help="schedule time UTC, e.g. 2026-07-21T17:00")
+    ap.add_argument("--unlisted", action="store_true",
+                    help="upload unlisted (shareable link, not broadcast)")
     a = ap.parse_args()
     if a.auth:
         return auth()
@@ -183,7 +190,7 @@ def main():
             sys.exit(f"no post '{a.post}' in calendar")
         if "yt" not in p["platforms"]:
             sys.exit(f"'{a.post}' is not a YouTube post")
-        return upload(p, a.at)
+        return upload(p, a.at, a.unlisted)
     ap.print_help()
 
 
