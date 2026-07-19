@@ -131,8 +131,8 @@
    "caption": "he has one rule. nobody touches the leaf. 🍃 (ep. 1) #indiegame #couchgames #dinosaur #animation #gamedev #cartoon #tinydinos #Shorts",
    "cover_hint": "the leap over Max — it IS the first frame (0.4s)",
    "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-   "status": "ready",
-   "note": "V5 STORY CUT (32.9s): the climax restored. beat5 was quarantined wholesale for a continuity break that only starts at ~8.4s — the clean 8.3s before it contains the charge, leap and lunge. Hook is the leap, ends on the RULE TWO button (a real ending, all-ages: cuts on the lunge, no impact shown). 27 cuts, -13.6 LUFS."
+   "status": "ready (VO line 5 pending Arthur voice install)",
+   "note": "V5 STORY CUT (32.1s, LOOPS): climax restored from the quarantined beat5 (its continuity break only starts ~8.4s; the clean 8.3s before it hold the charge, leap and lunge). Hook = the leap, dip-to-black into a '12 SECONDS EARLIER' signpost, ends on the RULE TWO button framed on the EXACT hook frame so last frame == first frame (seam 1.65). No outro card — it broke the loop. 27 cuts, -13.7 LUFS. OPEN: the narrator still doesn't say 'second rule' (vo_e5 trimmed before the 'SEC' misread) — needs the macOS 'Arthur' voice installed to regenerate the line in the matching narrator voice."
   },
   {
    "id": "ep1-short",
