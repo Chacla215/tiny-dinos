@@ -6,10 +6,11 @@ Supersedes every earlier version of this file and every Ep1 ending before it.
 ## THE TWO IRON RULES (Charlie's, violated twice today — never again)
 
 1. **NO SUBTITLES.** No narration captions, ever. Allowed on-screen text:
-   the hook card, a time signpost ("12 SECONDS EARLIER"), and momentary
-   impact cards in the game's emote language (BONK!). The caption code has
-   been DELETED from `build_ep1_final.sh` — do not resurrect it from any
-   older build script. This rule was violated twice by branching old scripts.
+   the hook card and a time signpost ("12 SECONDS EARLIER"). **Text cards do
+   NOT stand in for action** — the BONK! card was rejected: if a beat is
+   missing from footage, GENERATE the beat. The caption code has been
+   DELETED from `build_ep1_final.sh` — do not resurrect it from any older
+   build script. This rule was violated twice by branching old scripts.
 2. **NO STILLS IN THE SHIPPED VIDEO.** A still with a zoompan push-in is
    still a still and it reads as the video breaking. Stills are PRODUCTION
    AIDS ONLY: generate the changed world as a still (~1.5cr, iterate cheap),
