@@ -127,13 +127,13 @@
         "tiktok"
       ],
       "type": "video",
-      "file": "wip/ep1/ep1_v4.mp4",
+      "file": "wip/ep1/ep1_v5.mp4",
       "title": "TINY DINOS — Ep. 1: The Last Good Day",
       "caption": "nobody touches the leaf. then the ocean did. 🍃🌊 (ep. 1)",
       "cover_hint": "the leap over Max — it IS the first frame (0.5s), under the hook card",
       "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-      "status": "ready — v4 (58.3s, -13.9 LUFS) rebuilt 2026-07-19 after Charlie rejected v3",
-      "note": "EP1 v4, the postable cut. v3 was uploaded unlisted and REJECTED: it deleted the Arthur narration along with the burned-in captions (\"no subtitles\" was never \"no narration\"), and it chopped the middle out of tide.mp4, cutting the turn and making the ending feel rushed. v4 restores the five locked Arthur lines as AUDIO with no text, ducks the music ~10 dB under the voice bus, plays tide.mp4 continuously 0.40->11.60, and holds the strike 6.0s so Max's dazed reaction lands. Only text is the hook card + the '12 SECONDS EARLIER' signpost. Build is scripts/social/build_ep1.sh. Traps: do not extend beat5 past 8.7s (the model grows a cape); apad the VO bus or sidechaincompress truncates the music bed; never use bare loudnorm on this cut."
+      "status": "ready — v5 (59.5s, -14.0 LUFS) rebuilt 2026-07-19 after Charlie's v4 notes",
+      "note": "EP1 v5. v4 restored the Arthur narration and the turn; v5 answers Charlie's next three notes: the wrap-up was too slow, the outro card had to come back, and he wanted the two of them to end in a scuffle looking at the camera before the logo. Ending is now tide (continuous, turn intact, tail trimmed) -> the look -> MIX-UP clip A (they pile into a dust cloud) -> MIX-UP clip B (they clock the camera) -> logo card. The mix-up is two clips on purpose: the camera look is the button and Seedance drops the tail of a clip, so asking one clip for 'scuffle THEN look' would have put the punchline in the drop zone. Both scuffle clips generated wide, so they are punched in (crop 0.72) to read on a phone. Music returns for the scuffle and carries the card out."
     },
     {
       "id": "ep1-short",
