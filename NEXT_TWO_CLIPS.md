@@ -19,27 +19,33 @@ Supersedes every earlier version of this file and every Ep1 ending before it.
    or generated video. No exceptions, no "brief" stills, no dissolves
    between stills.
 
-## ⇢ STATUS (2026-07-19, late) — Ep1 v5 IS BUILT, awaiting Charlie's watch
+## ⇢ EP1 IS SHIPPED (2026-07-19) — Ep2 is the open job
 
-`wip/ep1/ep1_v5.mp4` — 59.5s, -14.0 LUFS, peak -1.5 dBFS. UNLISTED at
-**youtube.com/shorts/bU6X7sLyCao**. Built by `scripts/social/build_ep1.sh`.
+**Live:** YouTube **youtube.com/shorts/bU6X7sLyCao** (public) and Instagram
+@_tinydinos (media `18089456369412600`). TikTok is a manual upload — file
+`wip/ep1/ep1_v5.mp4`, caption in `post_calendar.json`.
 
-v5 answers Charlie's notes on v4: the wrap-up is 5.4s shorter (without touching
-the turn — tide still plays continuously, only its slow tail is gone), the two
-of them now end in a **mix-up looking at the camera**, and the **logo outro card
-is back**. The mix-up is two generated clips (`wip/ep1/mixup/mixupA.mp4`,
-`mixupB.mp4`), split so neither un-losable beat sits in Seedance's drop zone;
-both are punched in (crop 0.72) because they generated wide.
+Final cut: `wip/ep1/ep1_v5.mp4`, 59.5s, -14.0 LUFS, peak -1.5 dBFS, built by
+`scripts/social/build_ep1.sh`. The rejected v3 and v4 unlisted uploads were
+deleted from the channel (verified gone).
 
-Verified: -14.0 LUFS exactly, no dead air (short-term never drops below -22),
-text sweep clean before the card, ends on the logo.
+It took three review rounds. What each one taught, so Ep2 doesn't repeat them:
 
-**Open call for Charlie** — the world-state jump at ~48.4s (tide ends on a
-mostly-dry beach, clip1b opens on a nearly-submerged patch) is still there and
-still unspent. He chose to judge it on the cut rather than pre-buy the ~54cr
-bridge clip. Balance after the two mix-up clips: ~286cr.
+1. **v3** stripped the Arthur narration along with the burned-in captions.
+   "No subtitles" was never "no narration" — narration is AUDIO, captions are
+   PICTURE, and only the picture was ever banned.
+2. **v4** restored the voice and the turn but wrapped up too slowly and had no
+   outro. Long wordless stretches are what "too slow" actually means — after
+   the last VO line there were 24.7s of silence-with-pictures.
+3. **v5** tightened the wrap-up WITHOUT re-cutting the turn (trim the tail, not
+   the middle), added the mix-up ending, and brought the logo card back.
 
-### Superseded — the v4 status
+**The one thing never spent:** the world-state jump at ~48.4s (dry beach ->
+nearly-submerged patch in a hard cut). Charlie shipped without the ~54cr bridge
+clip. If Ep2 or a later episode wants that transition smoothed, the recipe is in
+the production laws below. Balance ~286cr.
+
+### Superseded — the v4 status### Superseded — the v4 status
 
 `wip/ep1/ep1_v4.mp4`, unlisted at youtube.com/shorts/UCunfepRkKg. Restored the
 Arthur VO and the turn; rejected for a slow wrap-up and no outro.
