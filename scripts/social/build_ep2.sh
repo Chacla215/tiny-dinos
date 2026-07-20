@@ -28,14 +28,16 @@ mkdir -p $BUILD
 #
 # name  source              in    dur   [crop]   starts at   beat
 segs=(
-  "s01 $EP/clip1_mark.mp4    0.60 7.00"   #  0.00  he scratches the mark, looks at it
-  "s02 $EP/clip2_visitor.mp4 0.40 7.50"   #  7.00  Max sets the ice down, steps back
-  "s03 $EP/clip3_ice.mp4     0.30 5.50"   # 14.50  it melts, alone. END on the ice.
+  "s01 $EP/clip1_mark.mp4    2.00 6.50"   #  0.00  reaches up, scratches, looks at it
+  "s02 $EP/clip2_visitor.mp4 0.40 7.00"   #  6.50  Max sets the ice down, steps back
+  "s03 $EP/clip3_ice.mp4     0.30 4.20"   # 13.50  it melts. END on the ice.
 )
-#                                                 ends ~20.00
-# NOTE: in/dur are FIRST GUESSES. QA each clip and retune — the un-losable
-# beat must land inside its window, and clip3 must end ON the ice, not drift
-# off it.
+#                                                 ends ~17.70
+# Windows are QA'd, not guessed.
+# TRAP in clip3: the model took "gets smaller" literally and melts the ice
+# clean away — it is GONE by 6.0s. Ending on an empty cave loses the whole
+# point of the episode, so the cut stops at 4.5s while the ice is still there
+# but visibly diminished. Do not extend s03.
 
 rm -f $BUILD/concat.txt
 for row in $segs; do
@@ -57,12 +59,13 @@ echo "cut length: ${DUR}s"
 # --- 2. sound -------------------------------------------------------------
 # Ambience-led, because silence is the point. The loudest thing in the episode
 # is the claw on stone — it is the title.
-SCRATCH_MS=2600     # claw meets stone (inside s01)
-ICE_SET_MS=10200    # the ice touches the sand (inside s02)
+SCRATCH_MS=2000     # claw meets stone (inside s01, QA'd)
+ICE_SET_MS=9600     # the ice touches the sand (inside s02, QA'd)
 
-# distant surf, low and constant — the tide that just went out
+# distant surf, low and constant — the tide that just went out.
+# NB: ffmpeg's tremolo requires f >= 0.1; 0.09 errors out.
 ffmpeg -y -v error -f lavfi -i "anoisesrc=c=brown:r=48000:a=0.30:d=${DUR}" \
-  -af "lowpass=f=420,highpass=f=70,tremolo=f=0.09:d=0.5,volume=1.5,\
+  -af "lowpass=f=420,highpass=f=70,tremolo=f=0.11:d=0.5,volume=1.5,\
 afade=t=in:st=0:d=2,afade=t=out:st=$(echo "$DUR-1.5"|bc):d=1.5" \
   -ac 2 $BUILD/surf.wav
 
