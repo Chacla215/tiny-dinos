@@ -132,12 +132,12 @@
       "caption": "nobody touches the leaf. then the ocean did. 🍃🌊 (ep. 1)",
       "cover_hint": "the leap over Max — it IS the first frame (0.5s), under the hook card",
       "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-      "status": "SHIPPED 2026-07-19 — YouTube public + Instagram live; TikTok manual",
+      "status": "PULLED BACK 2026-07-19 — v6 in progress (bridge clip); YT set private, IG post needs manual removal",
       "note": "EP1 v5 — SHIPPED. Took three review rounds: v3 lost the narration with the captions, v4 fixed that but wrapped up too slowly and had no outro, v5 tightened the ending and added the mix-up + logo card. Ending = tide (continuous, turn intact) -> the look -> mix-up A (dust cloud) -> mix-up B (they clock the camera) -> logo. The mix-up is two clips because Seedance drops the tail of a clip and the camera look is the button. Both punched in (crop 0.72) because they generated wide. Build = scripts/social/build_ep1.sh. The rejected v3/v4 unlisted uploads were deleted from the channel.",
       "live": {
-        "youtube": "https://youtube.com/shorts/bU6X7sLyCao",
-        "instagram_media_id": "18089456369412600",
-        "tiktok": "manual upload (API audit wall) — file wip/ep1/ep1_v5.mp4"
+        "youtube": "bU6X7sLyCao — PRIVATED by Charlie, do not re-publish this one, v6 gets a fresh upload",
+        "instagram_media_id": "18089456369412600 — STILL UP with the v5 cut, delete in the IG app",
+        "tiktok": "never posted"
       }
     },
     {
