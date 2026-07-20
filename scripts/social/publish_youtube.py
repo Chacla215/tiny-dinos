@@ -39,13 +39,19 @@ CAL = os.path.join(HERE, "post_calendar.json")
 # before anything is sent. Charlie has several channels on one Google account
 # (Tiny Dinos and GoldFix), and device-flow consent silently binds to whichever
 # was picked at approval — an upload-only token cannot tell you which one it got.
-# force-ssl is what lets --publish flip an existing video's visibility.
-# upload+readonly alone CANNOT do it: videos.update returns 403. Adding this
-# scope means the token can also edit and delete videos, so --publish asserts
-# the pinned channel first, exactly like upload does.
+# readonly rides along with upload purely so the target channel can be VERIFIED
+# before anything is sent. Charlie has several channels on one Google account
+# (Tiny Dinos and GoldFix), and device-flow consent silently binds to whichever
+# was picked at approval — an upload-only token cannot tell you which one it got.
+#
+# DO NOT ADD youtube.force-ssl (or plain youtube) HERE. Tried 2026-07-19 to make
+# --publish work: Google's DEVICE flow accepts only a fixed scope allowlist and
+# rejects both with `invalid_scope`, which breaks --auth outright — you cannot
+# even re-authorise. Flipping visibility over the API needs a different OAuth
+# client type entirely (Desktop app + loopback redirect), not just a wider scope
+# string. See publish() for what that would take.
 SCOPE = ("https://www.googleapis.com/auth/youtube.upload"
-         " https://www.googleapis.com/auth/youtube.readonly"
-         " https://www.googleapis.com/auth/youtube.force-ssl")
+         " https://www.googleapis.com/auth/youtube.readonly")
 
 # Pinned target. Every upload asserts the token resolves here first.
 # Set by running --check after --auth; None means "not yet verified", and
@@ -166,14 +172,26 @@ def upload(post, publish_at=None, unlisted=False):
 
 
 def publish(video_id):
-    """Flip an existing upload from unlisted/private to public.
+    """Report an upload's visibility, and flip it to public IF the token can.
 
-    The normal flow uploads UNLISTED so Charlie can watch the cut on a real
-    Shorts player before the world does. This is the second half of that flow.
-    Re-uploading without --unlisted would also work but leaves a duplicate on
-    the channel and a dead link in whatever was already shared.
+    The normal flow uploads UNLISTED so Charlie watches the cut on a real Shorts
+    player before the world does. This was meant to be the second half of that.
 
-    Needs the force-ssl scope; with an upload-only token videos.update 403s.
+    IT CANNOT ACTUALLY FLIP ANYTHING with the current auth, and that is not
+    fixable by widening SCOPE. videos.update needs youtube.force-ssl, but the
+    OAuth DEVICE flow this script uses (client type "TVs and Limited Input
+    devices") only permits a fixed scope allowlist that excludes it — asking for
+    it returns `invalid_scope` and breaks --auth completely.
+
+    Making it work would mean re-doing auth as a Desktop-app OAuth client with a
+    loopback redirect (a new client id in Cloud Console + a local redirect
+    server). That is a real change, not a flag. Until then the flip is a manual
+    Studio tap, which is arguably the better default anyway: a human eye on the
+    cut immediately before it goes public.
+
+    So this stays useful as a READ: it tells you exactly what is live and what
+    is not, which is how the v6 upload was caught sitting unlisted while
+    Instagram was already public.
     """
     tok = access_token()
     assert_target(tok)          # same pinned-channel guard as upload
@@ -199,6 +217,14 @@ def publish(video_id):
         with urllib.request.urlopen(req) as r:
             json.loads(r.read().decode() or "{}")
     except urllib.error.HTTPError as e:
+        if e.code == 403:
+            sys.exit(
+                f"'{title}' is {was.upper()} and this token CANNOT change that.\n"
+                f"  Flipping visibility needs the youtube.force-ssl scope, which\n"
+                f"  Google's device flow refuses to grant (see publish() docstring).\n"
+                f"  Flip it by hand instead:\n"
+                f"    YouTube Studio -> Content -> '{title}' -> Visibility -> Public\n"
+                f"    https://studio.youtube.com/video/{video_id}/edit")
         raise SystemExit(f"YouTube API {e.code}: {e.read().decode()[:500]}")
     print(f"'{title}' {was} -> PUBLIC")
     print(f"  https://youtube.com/shorts/{video_id}")
