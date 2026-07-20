@@ -39,10 +39,6 @@ CAL = os.path.join(HERE, "post_calendar.json")
 # before anything is sent. Charlie has several channels on one Google account
 # (Tiny Dinos and GoldFix), and device-flow consent silently binds to whichever
 # was picked at approval — an upload-only token cannot tell you which one it got.
-# readonly rides along with upload purely so the target channel can be VERIFIED
-# before anything is sent. Charlie has several channels on one Google account
-# (Tiny Dinos and GoldFix), and device-flow consent silently binds to whichever
-# was picked at approval — an upload-only token cannot tell you which one it got.
 #
 # DO NOT ADD youtube.force-ssl. Google's DEVICE flow accepts only a fixed scope
 # allowlist and rejects it with `invalid_scope`, which breaks --auth outright —
