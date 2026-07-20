@@ -21,31 +21,41 @@ Supersedes every earlier version of this file and every Ep1 ending before it.
 
 ## ⇢ EP1 IS SHIPPED (2026-07-19) — Ep2 is the open job
 
-**Live:** YouTube **youtube.com/shorts/bU6X7sLyCao** (public) and Instagram
-@_tinydinos (media `18089456369412600`). TikTok is a manual upload — file
-`wip/ep1/ep1_v5.mp4`, caption in `post_calendar.json`.
+**Live:** YouTube **youtube.com/shorts/8RxeWgCDLoU** (public) + Instagram
+@_tinydinos (media `18611634907012372`). TikTok is a manual upload — file
+`wip/ep1/ep1_v6.mp4`, caption in `post_calendar.json`.
 
-Final cut: `wip/ep1/ep1_v5.mp4`, 59.5s, -14.0 LUFS, peak -1.5 dBFS, built by
-`scripts/social/build_ep1.sh`. The rejected v3 and v4 unlisted uploads were
-deleted from the channel (verified gone).
+Final cut: `wip/ep1/ep1_v6.mp4`, 59.7s, -14.0 LUFS, peak -1.3 dBFS, built by
+`scripts/social/build_ep1.sh`. Every rejected cut (v3, v4, v5) was deleted from
+the channel, so exactly one Ep1 exists publicly.
 
-It took three review rounds. What each one taught, so Ep2 doesn't repeat them:
+Four review rounds. What each taught, so Ep2 doesn't repeat them:
 
 1. **v3** stripped the Arthur narration along with the burned-in captions.
    "No subtitles" was never "no narration" — narration is AUDIO, captions are
    PICTURE, and only the picture was ever banned.
-2. **v4** restored the voice and the turn but wrapped up too slowly and had no
-   outro. Long wordless stretches are what "too slow" actually means — after
-   the last VO line there were 24.7s of silence-with-pictures.
-3. **v5** tightened the wrap-up WITHOUT re-cutting the turn (trim the tail, not
-   the middle), added the mix-up ending, and brought the logo card back.
+2. **v4** restored voice + turn but "took too long to wrap up" and had no outro.
+   That complaint means **long wordless stretches**: after the last VO line
+   there were 24.7s of silence-with-pictures.
+3. **v5** tightened the wrap-up **by trimming the tail, not the middle** (the v3
+   mistake was cutting tide's middle, which killed the turn), added the mix-up
+   ending, and restored the logo card.
+4. **v6** added THE BRIDGE. Charlie shipped v5, then pulled it back before it
+   had any views and asked for the bridge after all — so the fix cost nothing
+   but a re-upload. Lesson: **an optional polish item declined at plan time can
+   still be worth raising once the cut exists**, because seeing it changes the
+   judgement.
 
-**The one thing never spent:** the world-state jump at ~48.4s (dry beach ->
-nearly-submerged patch in a hard cut). Charlie shipped without the ~54cr bridge
-clip. If Ep2 or a later episode wants that transition smoothed, the recipe is in
-the production laws below. Balance ~286cr.
+**The bridge recipe (reusable, cheap — this is the pattern for any world change):**
+generate the changed world as a STILL first (nano_banana edit of the *previous
+clip's own last frame*, ~1.5cr, iterate cheap), then pass that still as the
+video START FRAME so the model only continues an already-changed world instead
+of inventing the change. First roll, on-model, style matched. Same trick applies
+to Ep2's rising waterline.
 
-### Superseded — the v4 status### Superseded — the v4 status
+**Balance ~232cr.** Ep2 "HIGH WATER MARK" needs ~54.
+
+### Superseded — the v4 status### Superseded — the v4 status### Superseded — the v4 status
 
 `wip/ep1/ep1_v4.mp4`, unlisted at youtube.com/shorts/UCunfepRkKg. Restored the
 Arthur VO and the turn; rejected for a slow wrap-up and no outro.
