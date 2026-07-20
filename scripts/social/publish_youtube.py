@@ -120,7 +120,12 @@ def auth():
     c = json.load(open(CLIENT))
     d = _post("https://oauth2.googleapis.com/device/code",
               {"client_id": c["client_id"], "scope": SCOPE})
-    print(f"\n  1. Open {d['verification_url']}\n  2. Enter code: {d['user_code']}\n")
+    # flush=True is load-bearing: Python buffers stdout when it is not a TTY,
+    # so run non-interactively (backgrounded, piped, via a task runner) this
+    # code stayed trapped in the buffer and the poll below waited forever for
+    # an approval the user could not see. Bit us 2026-07-19.
+    print(f"\n  1. Open {d['verification_url']}\n  2. Enter code: {d['user_code']}\n",
+          flush=True)
     while True:
         time.sleep(d["interval"])
         try:
