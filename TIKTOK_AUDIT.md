@@ -152,3 +152,48 @@ Endpoints confirmed for that path:
   the **username** — basic only returns the display nickname.
 
 Step 2 (privacy policy URL) is DONE: **https://tinydinos.higgsfield.app/privacy**
+
+
+---
+
+## ⚠️ 2026-07-19 — Ep1 REPEATEDLY REMOVED from TikTok, no reason given
+
+Charlie uploaded Ep1 by hand several times; each upload vanished with **no
+stated violation**. Ep1 is live and healthy on YouTube and Instagram, so this
+is TikTok-specific.
+
+**Most likely cause is stacked signals, not one rule.** At upload time the
+account was **two days old with zero prior activity**, and its first post was a
+polished 60s video that already existed publicly on two other platforms, built
+from AI-generated footage, carrying embedded music. That reads to an automated
+system as a repost/distribution bot: new account + unoriginal content +
+undisclosed AIGC + fingerprintable audio.
+
+Note the audio is legally clean — battle theme is "Eat" by HoliznaCC0 and the
+SFX are Kenney, both CC0. But fingerprint matching does not check licences.
+
+**DO NOT KEEP RE-UPLOADING.** Repeated re-uploads of flagged content escalate
+from a video-level removal to an account-level penalty, and a days-old account
+has no history to absorb that.
+
+### The plan
+1. Check **Settings → Account → Account status** for a strike or restriction.
+   If one exists, stop entirely until it clears.
+2. **Appeal** the removals — no-reason removals are often automated and
+   sometimes reversed, and an appeal usually surfaces a real reason.
+3. **Warm the account up for several days**: follow, watch, comment, and post
+   one or two low-stakes things made natively in-app with TikTok's own audio.
+   No shortcut exists for this; it is the dominant factor.
+4. On the retry, change three things at once:
+   - toggle **AI-generated content ON** (free, removes a whole risk category);
+   - use **TikTok's in-app music** rather than the embedded track (kills the
+     fingerprint risk and reads as native creation) — a music-free master can
+     be exported from `scripts/social/build_ep1.sh` by dropping the music stems;
+   - consider a **different, shorter cut** (hook-only, 15-20s) since the exact
+     file has now been flagged repeatedly and may itself be fingerprinted.
+
+### Strategic note
+TikTok is one platform of three, it is the one where the posting API is already
+a dead end for us, and it is now actively rejecting the content. Letting TikTok
+receive **Ep2** — after the account has real history — is a better trade than
+burning a young account forcing Ep1 onto it.
