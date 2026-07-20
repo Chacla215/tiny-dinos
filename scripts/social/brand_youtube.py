@@ -6,13 +6,13 @@ More of the channel is automatable than we assumed. What this can and cannot do:
   AUTOMATABLE (this script)   banner image, channel description, keywords,
                               country, default language, the unsubscribed
                               channel trailer, the branding watermark
-
-  The banner DOES work, despite Google's docs carrying a blanket deprecation
-  notice on brandingSettings.image — verified end to end 2026-07-19:
-  channelBanners.insert returned a url and bannerExternalUrl read back set.
   MANUAL, no API exists       the AVATAR, the channel TITLE, the @handle,
                               and every profile field on Instagram and TikTok
                               (both are read-only for profile data)
+
+The banner DOES work, despite Google's docs carrying a blanket deprecation
+notice on brandingSettings.image — verified end to end 2026-07-19:
+channelBanners.insert returned a url and bannerExternalUrl read back set.
 
 THE DESTRUCTIVE TRAP — the whole reason this script is careful:
 channels.update behaves like videos.update. Google: "If you are submitting an
