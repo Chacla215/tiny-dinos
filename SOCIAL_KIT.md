@@ -203,3 +203,28 @@ Whatever retains best, make more of exactly that.
   everyone on-model.
 - All-ages: no memes-dependency, no edge; Saturday-morning energy.
 - The personal story behind JESSIE stays out of public clips.
+
+
+---
+
+## ⚠️ Publishing gates — learned 2026-07-19, the expensive way
+
+**Instagram publishing is the COMMIT.** Ep1 v5 was posted and was getting good
+views; it was deleted and v6 reposted to add the bridge clip, and the new post's
+reach is visibly slower. Instagram reads a repost as new AND duplicate — the
+accumulated momentum is gone. There is also no caption-edit API and no way to
+swap the video.
+
+So:
+
+1. **The unlisted-YouTube review gate applies to ALL platforms.** Get the cut
+   final there first. Only post to Instagram and TikTok once Charlie has watched
+   and approved it. Do not post the same night the cut is finished just because
+   it is ready.
+2. **Never delete + repost to fix a live Instagram post.** The fix costs more
+   than the flaw almost every time.
+3. **Caption edits are free and do not reset a post** — the one safe lever on a
+   live Reel. Use it for missing hashtags rather than reposting.
+4. **Check the metadata as carefully as the master.** Ep1 shipped to YouTube and
+   Instagram with NO hashtags and no tags[] because the reboot rewrote the
+   caption and dropped them. The video had a full QA pass; the caption had none.
