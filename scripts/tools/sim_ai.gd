@@ -10,7 +10,7 @@ const ARENAS := {
 	"RINGOUT(beach)": "res://scenes/arena_beach.tscn",
 }
 const SECONDS_PER_MATCH := 60.0
-const ROSTER := ["ralph", "raptor", "trike", "pterry", "bronto", "anky"]
+const ROSTER := ["ralph", "raptor", "trike", "pterry", "bronto", "anky", "spino"]
 
 var _mc: Node
 var _arena: Node

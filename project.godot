@@ -15,9 +15,11 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Tiny Dinos"
+config/version="1.0.0"
 config/description="A top-down competitive multiplayer dino combat game by Charlie Clark."
 run/main_scene="res://scenes/opening.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
+config/icon="res://icon.png"
 
 [autoload]
 
@@ -40,3 +42,4 @@ theme/custom="res://assets/themes/default_theme.tres"
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

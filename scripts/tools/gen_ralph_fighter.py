@@ -30,6 +30,7 @@ HERO_SRC = {
     "pterry": "assets/concept/pterry/pterry_hero.png",
     "bronto": "assets/concept/bronto/bronto_hero.png",
     "anky":   "assets/concept/anky/anky_hero.png",
+    "spino":  "assets/concept/spino/spino_hero.png",
 }
 
 CHAR_H = 132          # target character height in px (reads ~1:1 at gameplay scale)
@@ -168,6 +169,8 @@ PART_DEFS_BY_DINO = {
         "tail":      {"box": (0.00, 0.45, 0.24, 1.00), "pivot": (0.24, 0.72)},  # club
         "head":      {"box": (0.78, 0.35, 1.00, 0.85), "pivot": (0.80, 0.55)},
     },
+    # spino (JESSIE): upright chibi biped like Ralph — the default cut fits; the
+    # thick round tail on her left is covered by the default tail box.
 }
 
 

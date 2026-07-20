@@ -9,6 +9,12 @@ const CREATOR_SCENE := "res://scenes/ralph_creator.tscn"
 const TROPHIES_SCENE := "res://scenes/trophies.tscn"
 const SHOP_SCENE := "res://scenes/shop.tscn"
 const BACKDROP_PATH := "res://assets/tilesets/beauty_beach_bg.png"
+# The v1.0 brand lockup (one integrated painterly image: the cast climbing the
+# letters). When present it replaces the old two-sprite TINY/DINOS pair and the
+# intro becomes a single-logo slam (_play_intro_single). Old path kept as a
+# fallback so the scene still boots if the file is ever missing.
+const LOGO_PATH := "res://assets/sprites/title_logo.png"
+const LOGO_BAND_H := 400.0        # the vertical band the old two words occupied
 
 # Two crowd-pleasers flanking the logo, facing center (echoes the versus screen).
 const LEFT_DINO := "ralph"
@@ -49,6 +55,8 @@ var intro_done: bool = false      # gates the idle bob until the slam finishes
 var tiny_rest: Vector2            # logo-local resting spots, captured from the scene
 var dinos_rest: Vector2
 var shake_left: float = 0.0       # seconds of screen-shake remaining
+var single_logo: bool = false     # true when the integrated lockup is installed
+var logo_scale: Vector2 = Vector2.ONE   # the lockup's fitted rest scale
 
 func _ready() -> void:
 	# Defensive: returning here from a hit-paused match can leave time_scale low.
@@ -75,6 +83,9 @@ func _ready() -> void:
 	var shop_label: Label = $Menu/PlayItem.duplicate()
 	shop_label.name = "ShopItem"
 	$Menu.add_child(shop_label)
+	var settings_label: Label = $Menu/PlayItem.duplicate()
+	settings_label.name = "SettingsItem"
+	$Menu.add_child(settings_label)
 	# Progress readouts: SEASON shows your trophy count, GAUNTLET your best wave.
 	var season_base: String = "SEASON"
 	if MetaSave.seasons_won > 0:
@@ -101,6 +112,7 @@ func _ready() -> void:
 		{"label": shop_label, "base": shop_base, "action": "shop"},
 		{"label": trophies_label, "base": trophies_base, "action": "trophies"},
 		{"label": $Menu/HowToItem, "base": "HOW TO PLAY", "action": "howto"},
+		{"label": settings_label, "base": "SETTINGS", "action": "settings"},
 		{"label": $Menu/QuitItem, "base": "QUIT", "action": "quit"},
 	]
 	# Re-stack the menu to fit ALL items in the band beneath the subtitle, sizing
@@ -131,10 +143,29 @@ func _ready() -> void:
 	_refresh_menu()
 	prompt.text = "UP / DOWN  SELECT      A  CONFIRM"
 
+	# Install the integrated lockup when it exists: it rides the Tiny sprite
+	# (fitted to the old two-word band), the Dinos sprite goes dark.
+	if ResourceLoader.exists(LOGO_PATH):
+		single_logo = true
+		var logo_tex: Texture2D = load(LOGO_PATH)
+		tiny.texture = logo_tex
+		tiny.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # painterly, not pixel
+		var s: float = LOGO_BAND_H / float(logo_tex.get_height())
+		logo_scale = Vector2(s, s)
+		tiny.scale = logo_scale
+		tiny.position = Vector2(640.0, 8.0 + LOGO_BAND_H / 2.0)
+		dinos.visible = false
+
 	# TINY drops in and slams onto DINOS every time the title screen opens.
 	tiny_rest = tiny.position
 	dinos_rest = dinos.position
 	_play_intro()
+
+	# Nothing here is bound to a keyboard, so a first-time player has no way to
+	# learn the pad. Open the controller map over the intro on the very first
+	# launch; A or B dismisses it and _close_howto records that it was seen.
+	if not MetaSave.seen_howto:
+		_open_howto()
 
 func _process(delta: float) -> void:
 	t += delta
@@ -240,6 +271,8 @@ func _activate(action: String) -> void:
 			get_tree().change_scene_to_file(SHOP_SCENE)
 		"howto":
 			_open_howto()
+		"settings":
+			get_tree().change_scene_to_file("res://scenes/settings.tscn")
 		"quit":
 			get_tree().quit()
 
@@ -250,11 +283,17 @@ func _open_howto() -> void:
 func _close_howto() -> void:
 	howto_open = false
 	howto_panel.visible = false
+	# Reading it once — from the menu or the first-launch prompt — is enough.
+	# Recorded on close, not on open, so quitting mid-panel shows it again.
+	MetaSave.mark_howto_seen()
 
 # Intro: TINY drops from above and slams onto DINOS, which squashes flat and
 # springs back, launching TINY into a few decaying bounces before it settles
 # into the idle float. Pure Tween — one sequential chain with parallel beats.
 func _play_intro() -> void:
+	if single_logo:
+		_play_intro_single()
+		return
 	tiny.position = Vector2(tiny_rest.x, -240.0)   # start well above the screen
 	tiny.scale = Vector2.ONE
 	dinos.scale = Vector2.ONE
@@ -282,6 +321,28 @@ func _play_intro() -> void:
 	tw.tween_property(dinos, "scale", Vector2.ONE, 0.34) \
 		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 	tw.parallel().tween_property(tiny, "position:y", tiny_rest.y, 0.60) \
+		.set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.finished.connect(func() -> void: intro_done = true)
+
+# Single-lockup intro: the whole logo drops from above, slams (shake + dust),
+# squashes flat like a tennis ball and springs back round — the same beat
+# structure as the old two-part slam, on one sprite.
+func _play_intro_single() -> void:
+	tiny.position = Vector2(tiny_rest.x, -320.0)
+	tiny.scale = logo_scale
+	var tw := create_tween()
+	tw.tween_property(tiny, "position:y", tiny_rest.y, 0.42) \
+		.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_IN)
+	tw.tween_callback(_on_impact)
+	tw.tween_property(tiny, "scale", Vector2(logo_scale.x * 1.18, logo_scale.y * 0.72), 0.09) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(tiny, "position:y", tiny_rest.y + 26.0, 0.09)
+	tw.tween_property(tiny, "scale", Vector2(logo_scale.x * 0.92, logo_scale.y * 1.10), 0.14) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(tiny, "position:y", tiny_rest.y - 14.0, 0.14)
+	tw.tween_property(tiny, "scale", logo_scale, 0.40) \
+		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(tiny, "position:y", tiny_rest.y, 0.40) \
 		.set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	tw.finished.connect(func() -> void: intro_done = true)
 

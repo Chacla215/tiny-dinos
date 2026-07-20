@@ -1,5 +1,218 @@
 # Tiny Dinos — Progress Log
 
+## Session — 2026-07-18 (JESSIE the Deep Diver joins the roster; pterry → ACE)
+
+Charlie's ask: a personalized dino for his girlfriend named JESSIE — so the
+pterodactyl (who held the name) was renamed **ACE** (bio already called him a
+"self-proclaimed sky ace") and a brand-new **7th roster dino** was built:
+
+- **JESSIE (`spino`) — THE DEEP DIVER.** Light sunflower-yellow chibi
+  spinosaurus, sunflower-petal sail, straw bucket hat with brown band +
+  sunflower (her real hat), brown polka dots, big golden-hazel eyes (matched
+  to an iris photo), proudly bottom-heavy. Ex-D1-diver identity throughout:
+  - **Signature `swan_dive`** (dino.gd): ending a dodge opens a 1.2s window
+    where her next hit deals +35% damage / +25% knockback, then it's spent.
+    The inverse of ACE's flighty (hit→dodge refund; hers is dodge→hit).
+  - **Special `cannonball`**: leaping splash — self-dash 950 through the
+    windup, then the screech-path radial (r=150) fires around the landing.
+  - **Heavy = hip check**: 780 kb, the biggest single-hit shove in the game.
+  - Stats: 2nd-fastest (340), agile accel, roster-best dodge (210px, 0.5s cd,
+    cheap at 26 block), light 128 HP. Signature weapon: **nunchucks** (was
+    the only weapon with no owner).
+- **Art pipeline (no Charlie needed):** hero generated in-session via
+  Higgsfield nano_banana (ralph_hero as style ref; ~12 credits), iterated
+  live from Charlie's references (eye color macro, hat/polka-dot IG shots) →
+  `assets/concept/spino/spino_hero.png` → `gen_ralph_fighter.py spino
+  --smooth` (fallback/menu sheet, cell 141x168) + `--parts` (runtime limb
+  rig). She's the one rig-driven fighter (no `motion` flag); upgrade her to a
+  Seedance motion sheet at the next credits top-up.
+- **Wiring:** MatchConfig DINOS+ROSTER_ORDER (7 dinos), TIDE RIDERS rival
+  team now led by spino, creator grid 3+4 with a LEGENDARY-rarity profile,
+  sim_ai ROSTER, PLAYTEST/ITCH_PAGE/CUTSCENE_KIT copy (shorts chain now
+  Ralph→Max→Steve→Gus→Ace→Frank; new-Jessie is post-season material).
+
+## Session — 2026-07-15 (hurt + KO fighter clips — last arena-overhaul thread closed)
+
+On `feat/arena-overhaul`. The one open item flagged across the last two
+sessions was fighter hurt/KO frames: `dino.gd` has always *played* "hit"
+(flinch, `hit_anim_timer`) and "ko" (`is_downed`) clips whenever a motion
+sheet carries them, but the Seedance sources for those states were never
+generated — every `<dino>_motion.png` had idle/walk/attack only, so a jab, a
+heavy, and a full topple all showed the same pose.
+
+- **Hurt/KO clips synthesized, no new art (`f078d45`).** New
+  `scripts/tools/gen_dino_hurt.py` lifts each dino's idle pose off its baked
+  `_motion.png` and builds the two clips from cheap transforms (the
+  `gen_ralph_fighter.py` trick): **hit** = a 3-frame backward recoil
+  (lean + squash + shove that relaxes); **ko** = a 5-frame tip-over onto the
+  back (progressive flatten + impact squash + settle), the non-looping clip
+  holding the flat frame for the rest of the knockdown, then `get_up()` snaps
+  to idle. Rows appended below the existing grid (same cell, same feet
+  baseline), so every prior `ANIM_LAYOUTS` rect stays valid; `dino.gd` gained
+  the two new rows per dino across all 6 sheets. Real Seedance hit/ko clips
+  can replace this wholesale later via `gen_dino_motion.py`.
+- **Verified headless (`smoke_hurt.gd`).** Spawns one of each body plan on the
+  beach, forces `take_damage` then `knock_down`, asserts the sheet switches
+  `hit → ko → back to idle` on recovery. **4/4** across ralph/raptor/trike/
+  bronto. Caught + confirmed one true-positive: STEVE/bronto's **bulwark**
+  poise correctly no-flinches jabs ≤ `BULWARK_POISE_DMG` (24), so the test
+  hits at 30 to stagger through it — not a clip bug.
+- **Housekeeping (`191a549`).** Committed the orphan `.uid` sidecars the
+  arena-overhaul tool commits left behind. Tree is clean.
+- **Pre-playtest bug-hunt + hardening pass** (same session, so the controller
+  session isn't wasted on crashes). A static review agent traced the +704-line
+  `main.gd` / `dino_ai.gd` overhaul code; three fixes landed:
+  - `fix(weapons)` — **signature weapon was lost on first death in round-less
+    modes.** `grant_weapon` set `weapons[]` but never `initial_weapons`, so
+    `respawn()` restored bare fists; koth/eggs/beast/flood/bombtag never
+    re-grant (no `_end_round`). Now baked into the respawn loadout + idempotent.
+    New `smoke_weapon_respawn.gd`: 4/4 keep their weapon post-respawn in koth.
+  - `fix(arena)` — **ROGUE WAVE dropped `apply_burn`'s lethal return** (0-HP
+    zombie); every sibling event checks it. And **`_award_ko_sumo` diverged
+    from `_update_sumo`** (no `sumo_resetting` skip, no cross-side guard) →
+    possible double-count / friendly-fire point in 2v2 sumo. Both aligned.
+  - Re-verified: smoke_sumo → clean 5-0 MATCH OVER, smoke_events all six fire,
+    headless boot no parse errors.
+  - Left as NOTED-not-fixed (narrow/cosmetic, safe for playtest): `_sumo_reset_
+    bout` doesn't clear `is_falling` on a mid-sky-suction reset; `_safe_center()`
+    centroid skews slightly after the pier/bridge polygon merge (look-only).
+- **feat/arena-overhaul is now Claude-side COMPLETE + hardened.** Every thread
+  the overhaul opened is landed, smoke-verified, and bug-swept.
+
+### Launch-prep pass (same session — "as far as we can without playing")
+- **Pushed + opened draft PR #19** (`feat/arena-overhaul` → `feat/release-polish`,
+  so the diff is overhaul-only; #18 merges first, then this). Full summary in the
+  PR body.
+- **AI balance sim re-run** (`sim_ai.gd`, HARD vs HARD, lava+beach, rounds).
+  Sanity check that the 1.25× expansion + hazards + events didn't break match
+  resolution or balance: **every match resolved, no hangs.** Win% spread (both
+  arenas): ralph 73 / bronto 70 / trike 59 / anky 53 / **raptor 28 / pterry 16**.
+  pterry is crushed on the confined burn arena (0-10 vs bronto) and rung out on
+  beach — a real tuning flag for Charlie, NOT auto-tuned (CPU-only, 2-arena,
+  rounds-only, and dino feel is his gate; the tool's own caveat).
+- **Builds NOT re-exported — export templates are gone** (`~/Library/.../Godot/
+  export_templates` is empty; a 4.6.3 export fails without them). Re-downloading
+  ~1GB for a throwaway pre-playtest build isn't worth it; flagged in `ITCH_PAGE.md`
+  so the real post-merge export is a known one-command step once templates are
+  reinstalled. Existing `build/` zips remain stale (pre-overhaul, Jul 8).
+- **itch page copy refreshed** (`5e1f298`) — the "six islands, each its own tricks"
+  line predated the overhaul (aspirational when written, now literally true);
+  rewrote as "SIX LIVING ISLANDS" naming the real per-island mechanics + the
+  signature mid-brawl EVENTS (a selling point that was missing).
+
+### Remaining — all Charlie's gate
+Controller session on the first-guess tunings (DOHYO_RADIUS, hazard strengths,
+event cadence, hit/ko clip *feel*, and the pterry/raptor balance flag above) →
+merge PR #18 then #19 → reinstall export templates + re-export builds → itch
+(account/upload steps in `ITCH_PAGE.md`).
+
+## Session — 2026-07-10 (arena overhaul: expansion, island identity, sumo dohyo, mode AI)
+
+On `feat/arena-overhaul` (branched off `feat/release-polish`/PR #18). Charlie
+redirected pre-launch: work the graphics/gameplay depth before shipping. An
+audit found (a) all 6 arenas were mechanically identical — the hazard system in
+`main.gd` was fully coded but no arena scene had the trigger nodes — and (b) the
+CPU only understood the objective in 2 of 7 modes.
+
+- **Arena expansion 1.25x (`c7b9a05`).** `ARENA_SCALE` in `main.gd` scales all
+  world geometry (bg sprite, ring-out polygon, spawns, hazard subtrees) about
+  the screen centre and zooms the camera out to match — sprite scale x camera
+  zoom stays constant, so the painting is pixel-identical on screen and the
+  fighters get ~56% more island. No art regen. Shake compensated.
+- **Island identity pass (`754df54`).** Every island now PLAYS differently,
+  wired to what its painting already shows: LAVA = the glowing rim burns
+  (tick + shove back); ICIEST AGE = the frozen lake's inner 80% is slippery;
+  FALLS = constant downstream current (`global_current`); SPRINGS = three
+  geyser pools fling you away (damage-free `apply_burn` launch, dodge slips
+  it); PURPLE = the tree trunk + rock stacks are solid (drops reject their
+  interiors); BEACH = deliberately vanilla (beginner island).
+- **Sumo reworked into a real dohyo (`addf168`).** Small rope ring at center;
+  forced out = point to your last attacker, POINT! banner, bout resets
+  squared-up. First to 5. Was: rounds-with-renamed-score (the audit's most
+  redundant mode).
+- **Mode-aware AI (`511bbbc`).** Bots now play the objective in sumo (stay in
+  the ring), bombtag (flee the holder), beast (hunt the crown), flood (respect
+  the tide). Sumo CPU went from 5-0 self-elimination to a contested 5-3.
+- **Verification tools** (`shot_arena.gd`, `smoke_hazards.gd`, `smoke_sumo.gd`,
+  `smoke_modes.gd`): windowed one-shot arena captures with the debug ring, and
+  headless CPU-vs-CPU smoke-sims proving each mechanic fires in live play.
+- **Round 2 (same day, Charlie's picks — events yes, toggle no, bridges
+  selective, spawn-armed yes):**
+  - **Signature island events (`34d21d7`).** Announced + telegraphed ~6-9s
+    twist per island on a ~34s clock, always on: ERUPTION (4 lava bursts),
+    ROGUE WAVE (one shoreline surges, drags the outer band waterward),
+    COLD SNAP (whole platform ices 8s), FLASH FLOOD (current x2.4 + a log
+    bowls downstream), ALL GEYSERS (pools erupt continuously), FRUIT DROP
+    (healing fruit fight-magnet from the tree).
+  - **Walkable piers/bridges (`34d21d7`).** Beach's two diagonal piers and
+    Falls' two rope bridges union into the ring-out polygon
+    (Geometry2D.merge_polygons quad lobes) — narrow shove-off lanes on the
+    painted planks. Verified against the art with debug-ring screenshots.
+  - **Spawn-armed (`4d664d9` + `34d21d7`).** Everyone opens holding their
+    signature weapon (DINOS.weapons non-fists entry), re-granted each round;
+    mid-round drops stay as swap bait.
+- **Still open on this thread:** hurt/KO animation frames (code already looks
+  for "hit"/"ko" clips, none baked); DOHYO_RADIUS / hazard strengths / event
+  cadence are first-guess tunings for Charlie's controller session; `build/`
+  zips are now two feature-branches stale.
+
+## Session — 2026-07-09 (Phase 2 close-out: onboarding + UI text sweep)
+
+On `feat/release-polish` (PR #18). Closed the two Phase 2 items that did not
+actually need Charlie's controller session.
+
+- **First-run onboarding (`31ec53a`).** The game is gamepad-only with no
+  keyboard fallback, and HOW TO PLAY was the 8th of 10 title items — a
+  first-time player had nothing telling them the buttons exist. `title.gd`
+  now opens the existing controller-map panel over the logo intro on the
+  first launch ever; A or B dismisses it. New `MetaSave.seen_howto` flag
+  (settings section, defaults false, so existing saves see it once). Recorded
+  in `_close_howto`, not `_open_howto`, so quitting mid-panel re-shows it and
+  opening from the menu also counts. Verified against the real `title.tscn`
+  with a throwaway headless SceneTree probe (opens on fresh flag, stays shut
+  on set flag, closes + records on dismiss).
+- **UI text sweep (`7e5aecb`).** Seven end-of-match hints shipped lowercase
+  (`"press START for the title"` and friends) across exhibition, season,
+  career and gauntlet, against the ALL CAPS convention in CLAUDE.md.
+- **Win/quit flows: audited, no change.** The win screen is START-only because
+  `pause_manager.gd` deliberately gates pause off once `match_over` is true
+  (START is the restart button there). START → select → B → title, so it is
+  two hops home rather than a dead end. Feel-check it in Phase 1.
+
+## Session — 2026-07-09 (brand logo + shorts template v2 + Episode 1 produced)
+
+All on `feat/release-polish` (PR #18 still open, now includes this). Charlie
+directed live; Claude generated via Higgsfield (nano-banana images, Seedance
+video, seed_audio TTS).
+
+- **NEW BRAND LOGO (`aacae3b`).** Integrated painterly lockup after 4 gen
+  rounds with hero-PNG references: leaf dots the i in TiNY, Steve lunges
+  tongue-out to EAT it, Ralph climbs the scale-flanked D with his SWORD
+  raised, Gus chomps the S. `assets/sprites/title_logo.png` (magenta-keyed,
+  un-premultiply de-fringe). `title.gd`: single-logo slam intro
+  (`_play_intro_single`), old two-sprite path kept as fallback. **Ralph's
+  sword is now brand-wide.** Charlie must still SEE the title in-engine.
+- **Shorts template v2 LOCKED (`de297d9`, `e80f82d`)** from Charlie's pilot
+  notes: island immersion (composite heroes onto real arena art as start
+  frames), one weapon per short, personality beats, hype-the-game-through-the-
+  character, per-dino unique labels on a shared texture, ALWAYS end on the
+  closing graphic (bright beach + logo + "A COUCH BRAWLER FOR 1-4 PLAYERS"),
+  12s clips (54 cr each). Rebuilt `ralph_action_short_v2.mp4` (26.7s, wip/).
+- **EPISODE 1 PRODUCED — "THE LEAF" (65s, both mixes)** per Charlie's
+  monetization brief (hook fast / cliffhanger / narrator optional / captions
+  for muted feeds): 5 chained 12s Seedance beats (end-frame→start_image held
+  continuity), narrator = seed_audio "Arthur", music flips menu→battle at the
+  sword drop, TO BE CONTINUED card → closing card. Files in
+  `assets/concept/shorts/wip/ep1/` (`ep1_narrated.mp4` / `ep1_no_vo.mp4`, also
+  on Desktop) + `build_ep1.sh`. Script + 6 character arcs in CUTSCENE_KIT.md
+  (`1f7eecc`). Higgsfield balance ≈ **260 cr**.
+
+> **AWAITING CHARLIE:** (1) watch both Ep1 mixes — narrated vs not, Arthur's
+> voice, keep-or-reroll the (comically huge) sword; (2) title screen look
+> in-engine; (3) PR #18 merge + the Phase 1 playtest gate (unchanged); (4)
+> credits: ~260 left = 5-dino action batch OR ~one more episode — Ep2 (the
+> resolution) needs a top-up if both. Details in memory `career-mode-build`.
+
 ## Session — 2026-07-08 (v1.0 plan locked + feel-sweep landed on master)
 
 - **ROADMAP.md** (repo root, `46af9e3`): Charlie locked the destination —
@@ -21,6 +234,42 @@
 > auditions (idle-bob amplitude, combat SFX picks, fall feel, beat-drop intro
 > live), and a 2+ pad mode regression sweep. Claude turns findings into
 > atomic fixes, then Phase 2 (UI SFX + settings screen) on a fresh branch.
+
+## Session — 2026-07-08 (later: Phases 2+3 Claude-side, on `feat/release-polish`)
+
+Charlie skipped playtesting this session ("do as much as we can in other
+areas") — so everything NOT gated on his hands landed, 4 atomic commits:
+
+- **SETTINGS screen (`1f1d452`).** Title menu → SETTINGS (menu is 10 items
+  now, auto-restacks): MUSIC/SFX rows, LEFT/RIGHT drives a 10-segment ColorRect
+  knob (glyph-safe — no font gamble), SFX blips at each step so the mix is set
+  by ear, B backs out. Steps persist per bus (`MetaSave.volume_steps`), applied
+  RELATIVE to the authored bus-layout mix by the Audio autoload at startup
+  (full = shipped balance, 0 = mute via bus mute).
+- **Real UI SFX (`96a0193`).** The last gen_sfx.py placeholder synths replaced
+  with CC0 Kenney: ui_move=pluck, ui_confirm=rising chime, ui_back=tick,
+  emote=question chirp (Interface Sounds); win=jingles_PIZZA07 folk fanfare
+  (Music Jingles). Drop-in same filenames. **Blind picks — Charlie's ear check
+  folds into the Phase 1 session**; every slot is a one-file swap (packs via
+  OpenGameArt mirrors: kenney_interfaceSounds.zip / jingleSounds_Kenney.zip).
+- **Release packaging (`6ecce91`).** `export_presets.cfg` (macOS universal
+  ad-hoc signed / Windows x86_64 / Linux x86_64), 4.6.3 export templates
+  installed, `icon.png` (Ralph's head on a beach gradient, baked by PIL from
+  ralph_hero), version 1.0.0 + icon in project.godot. **ETC2/ASTC VRAM
+  compression enabled** (macOS universal/arm64 export refuses without it —
+  one-time full texture reimport). All 3 platforms exported clean; the
+  exported .app booted headless error-free. `build/` gitignored; 3 zips ready.
+- **itch.io page kit (`6278c00`).** `ITCH_PAGE.md` = full page copy (tagline,
+  body, tags, CONTROLLERS REQUIRED, AI-art disclosure note, ad-hoc-signing
+  install note, rebuild commands) + `assets/concept/itch/` (8 stills + 3 GIFs
+  pulled from the committed trailer — all 6 islands, GET READY card, group).
+
+> Validation: headless title + settings boots clean post-everything; all 6
+> arenas were validated pre-merge this morning. **What's left needing Charlie:**
+> Phase 1 controller session (career pacing, bob, SFX picks incl. the new UI
+> set, fall feel, intro) + itch account steps (create page, price, upload
+> `build/*.zip`, trailer→YouTube). Cover art (630×500) could come from the
+> shorts pipeline.
 
 ## Session — 2026-07-07 (gameplay QA + animation fix + audio SFX)
 

@@ -1,0 +1,66 @@
+{
+  "core_size": [
+    93,
+    132
+  ],
+  "order": [
+    "body",
+    "back_leg",
+    "tail",
+    "front_leg",
+    "head"
+  ],
+  "parts": {
+    "body": {
+      "tex": "res://assets/sprites/parts/spino/body.png",
+      "center": [
+        0.0,
+        0.0
+      ]
+    },
+    "back_leg": {
+      "tex": "res://assets/sprites/parts/spino/back_leg.png",
+      "center": [
+        -19.5,
+        38.0
+      ],
+      "pivot": [
+        -18.6,
+        26.4
+      ]
+    },
+    "tail": {
+      "tex": "res://assets/sprites/parts/spino/tail.png",
+      "center": [
+        -28.0,
+        -1.5
+      ],
+      "pivot": [
+        -20.46,
+        0.0
+      ]
+    },
+    "front_leg": {
+      "tex": "res://assets/sprites/parts/spino/front_leg.png",
+      "center": [
+        10.5,
+        38.0
+      ],
+      "pivot": [
+        11.16,
+        26.4
+      ]
+    },
+    "head": {
+      "tex": "res://assets/sprites/parts/spino/head.png",
+      "center": [
+        18.5,
+        -31.5
+      ],
+      "pivot": [
+        7.44,
+        -10.56
+      ]
+    }
+  }
+}

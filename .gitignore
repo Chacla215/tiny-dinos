@@ -27,3 +27,15 @@ assets/concept/trailer/trailer_roughcut.mp4
 
 # cutscene work-in-progress (pending approval before committing final shorts)
 assets/concept/shorts/wip/
+build/
+wip/
+scripts/social/.yt_client.json
+scripts/social/.yt_token.json
+scripts/social/.ig_auth.json
+scripts/social/__pycache__/
+scripts/social/.yt_token.json.bak
+scripts/social/.tt_client.json
+scripts/social/.tt_auth.json
+
+# social token keep-alive log (may echo token state)
+scripts/social/.token_health.log

@@ -20,13 +20,25 @@ const UI_SOUNDS := {
 const CROSSFADE := 0.7
 const SILENT_DB := -42.0
 
+# User-facing volume knobs (the SETTINGS screen). Steps scale each bus RELATIVE
+# to its authored mix in default_bus_layout.tres (Music sits at -5dB there), so
+# full = the shipped balance, 0 = mute. Persisted per bus in MetaSave.
+const VOLUME_BUSES := ["Music", "SFX"]
+const VOL_STEPS := 10
+
 var _players: Array[AudioStreamPlayer] = []
 var _active := 0          # index into _players of the one carrying the music
 var _current_track := ""
 var _ui_players: Dictionary = {}
+var _bus_base_db: Dictionary = {}   # bus name -> its authored bus-layout dB
 
 func _ready() -> void:
 	process_mode = PROCESS_MODE_ALWAYS  # music keeps playing under Pause
+	for bus in VOLUME_BUSES:
+		var idx := AudioServer.get_bus_index(bus)
+		if idx >= 0:
+			_bus_base_db[bus] = AudioServer.get_bus_volume_db(idx)
+		_apply_volume(bus, get_volume_step(bus))
 	for i in 2:
 		var p := AudioStreamPlayer.new()
 		p.bus = "Music"
@@ -83,3 +95,22 @@ func ui(sound: String) -> void:
 		return
 	p.pitch_scale = randf_range(0.97, 1.03)
 	p.play()
+
+# --- volume knobs (SETTINGS screen) ---
+
+func get_volume_step(bus: String) -> int:
+	return clampi(int(MetaSave.volume_steps.get(bus, VOL_STEPS)), 0, VOL_STEPS)
+
+func set_volume_step(bus: String, step: int) -> void:
+	step = clampi(step, 0, VOL_STEPS)
+	MetaSave.set_volume_step(bus, step)
+	_apply_volume(bus, step)
+
+func _apply_volume(bus: String, step: int) -> void:
+	var idx := AudioServer.get_bus_index(bus)
+	if idx < 0:
+		return
+	AudioServer.set_bus_mute(idx, step <= 0)
+	if step > 0:
+		var base: float = float(_bus_base_db.get(bus, 0.0))
+		AudioServer.set_bus_volume_db(idx, base + linear_to_db(float(step) / float(VOL_STEPS)))
