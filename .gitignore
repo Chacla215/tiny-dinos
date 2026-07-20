@@ -36,3 +36,6 @@ scripts/social/__pycache__/
 scripts/social/.yt_token.json.bak
 scripts/social/.tt_client.json
 scripts/social/.tt_auth.json
+
+# social token keep-alive log (may echo token state)
+scripts/social/.token_health.log
