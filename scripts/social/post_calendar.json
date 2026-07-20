@@ -132,8 +132,13 @@
       "caption": "nobody touches the leaf. then the ocean did. 🍃🌊 (ep. 1)",
       "cover_hint": "the leap over Max — it IS the first frame (0.5s), under the hook card",
       "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-      "status": "ready — v5 (59.5s, -14.0 LUFS) rebuilt 2026-07-19 after Charlie's v4 notes",
-      "note": "EP1 v5. v4 restored the Arthur narration and the turn; v5 answers Charlie's next three notes: the wrap-up was too slow, the outro card had to come back, and he wanted the two of them to end in a scuffle looking at the camera before the logo. Ending is now tide (continuous, turn intact, tail trimmed) -> the look -> MIX-UP clip A (they pile into a dust cloud) -> MIX-UP clip B (they clock the camera) -> logo card. The mix-up is two clips on purpose: the camera look is the button and Seedance drops the tail of a clip, so asking one clip for 'scuffle THEN look' would have put the punchline in the drop zone. Both scuffle clips generated wide, so they are punched in (crop 0.72) to read on a phone. Music returns for the scuffle and carries the card out."
+      "status": "SHIPPED 2026-07-19 — YouTube public + Instagram live; TikTok manual",
+      "note": "EP1 v5 — SHIPPED. Took three review rounds: v3 lost the narration with the captions, v4 fixed that but wrapped up too slowly and had no outro, v5 tightened the ending and added the mix-up + logo card. Ending = tide (continuous, turn intact) -> the look -> mix-up A (dust cloud) -> mix-up B (they clock the camera) -> logo. The mix-up is two clips because Seedance drops the tail of a clip and the camera look is the button. Both punched in (crop 0.72) because they generated wide. Build = scripts/social/build_ep1.sh. The rejected v3/v4 unlisted uploads were deleted from the channel.",
+      "live": {
+        "youtube": "https://youtube.com/shorts/bU6X7sLyCao",
+        "instagram_media_id": "18089456369412600",
+        "tiktok": "manual upload (API audit wall) — file wip/ep1/ep1_v5.mp4"
+      }
     },
     {
       "id": "ep1-short",
