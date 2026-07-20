@@ -246,9 +246,80 @@ def publish(video_id):
     print(f"  https://youtube.com/shorts/{video_id}")
 
 
+def sync_meta(post_id, video_id=None, dry_run=False):
+    """Push a calendar entry's title/caption/tags onto an ALREADY-UPLOADED video.
+
+    Ep1 shipped with no hashtags and no tags[] at all — the reboot rewrote the
+    caption and dropped them, and the uploader never sent tags. This repairs a
+    live video rather than forcing a re-upload (which on YouTube would mean a
+    new URL, and on Instagram would cost the post's momentum).
+
+    THE DESTRUCTIVE TRAP: videos.update overwrites the whole part you send, and
+    updating `snippet` makes title AND categoryId mandatory — omit description
+    or tags and they are DELETED. So this reads the current snippet, changes
+    only what the calendar specifies, and writes the whole object back.
+    """
+    cal = json.load(open(CAL))
+    post = next((x for x in cal["posts"] if x["id"] == post_id), None)
+    if not post:
+        sys.exit(f"no post '{post_id}' in calendar")
+    vid = video_id or (post.get("live") or {}).get("youtube", "").rsplit("/", 1)[-1]
+    if not vid:
+        sys.exit("no video id — pass one explicitly")
+
+    tok = access_token()
+    assert_target(tok)
+    cur = _get(f"https://www.googleapis.com/youtube/v3/videos?part=snippet&id={vid}", tok)
+    items = cur.get("items") or []
+    if not items:
+        sys.exit(f"no video '{vid}' on this channel")
+    sn = dict(items[0]["snippet"])
+
+    before = (sn.get("description", ""), tuple(sn.get("tags", [])))
+    sn["title"] = post.get("title", sn["title"])
+    sn["description"] = post.get("caption", sn.get("description", ""))
+    if post.get("tags"):
+        sn["tags"] = post["tags"]
+    # title + categoryId are REQUIRED whenever snippet is updated
+    body = {"id": vid, "snippet": {"title": sn["title"],
+                                   "categoryId": sn.get("categoryId", "20"),
+                                   "description": sn["description"],
+                                   "tags": sn.get("tags", [])}}
+    after = (sn["description"], tuple(sn.get("tags", [])))
+    print(f"video {vid}")
+    print(f"  description: {len(before[0])} chars -> {len(after[0])} chars")
+    print(f"  tags       : {len(before[1])} -> {len(after[1])}")
+    if dry_run:
+        print("--- DRY RUN, nothing sent:")
+        print(json.dumps(body, indent=2, ensure_ascii=False))
+        return
+    if before == after:
+        print("already up to date")
+        return
+    req = urllib.request.Request(
+        "https://www.googleapis.com/youtube/v3/videos?part=snippet",
+        data=json.dumps(body).encode(), method="PUT",
+        headers={"Authorization": f"Bearer {tok}",
+                 "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req) as r:
+            json.loads(r.read().decode() or "{}")
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode()
+        if e.code == 403 and "SCOPE" in detail.upper():
+            sys.exit("403 insufficient scope — needs the wider `youtube` scope.\n"
+                     "  Run: python3 scripts/social/publish_youtube.py --auth")
+        raise SystemExit(f"YouTube API {e.code}: {detail[:400]}")
+    print("metadata updated")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--auth", action="store_true")
+    ap.add_argument("--sync-meta", metavar="POST_ID",
+                    help="push a calendar entry's title/caption/tags onto the live video")
+    ap.add_argument("--video", metavar="VIDEO_ID", help="override the video id for --sync-meta")
+    ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--publish", metavar="VIDEO_ID",
                     help="flip an existing unlisted upload to public")
     ap.add_argument("--check", action="store_true",
@@ -261,6 +332,8 @@ def main():
     a = ap.parse_args()
     if a.auth:
         return auth()
+    if a.sync_meta:
+        return sync_meta(a.sync_meta, a.video, a.dry_run)
     if a.publish:
         return publish(a.publish)
     if a.check:
