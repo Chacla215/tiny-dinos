@@ -127,13 +127,13 @@
         "tiktok"
       ],
       "type": "video",
-      "file": "wip/ep1/ep1_v5.mp4",
+      "file": "wip/ep1/ep1_v6.mp4",
       "title": "TINY DINOS — Ep. 1: The Last Good Day",
       "caption": "nobody touches the leaf. then the ocean did. 🍃🌊 (ep. 1)",
       "cover_hint": "the leap over Max — it IS the first frame (0.5s), under the hook card",
       "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-      "status": "PULLED BACK 2026-07-19 — v6 in progress (bridge clip); YT set private, IG post needs manual removal",
-      "note": "EP1 v5 — SHIPPED. Took three review rounds: v3 lost the narration with the captions, v4 fixed that but wrapped up too slowly and had no outro, v5 tightened the ending and added the mix-up + logo card. Ending = tide (continuous, turn intact) -> the look -> mix-up A (dust cloud) -> mix-up B (they clock the camera) -> logo. The mix-up is two clips because Seedance drops the tail of a clip and the camera look is the button. Both punched in (crop 0.72) because they generated wide. Build = scripts/social/build_ep1.sh. The rejected v3/v4 unlisted uploads were deleted from the channel.",
+      "status": "v6 (59.7s, -14.0 LUFS) — bridge clip added, awaiting Charlie's watch",
+      "note": "EP1 v6. Adds THE BRIDGE: tide used to end on a wide DRY beach and clip1b opened on a nearly-submerged patch — one hard cut across a big world-state change. Built per the production law: nano_banana edit of tide's own last frame to raise the water (~1.5cr), then that still as a video START FRAME so the model only continued an already-changed world. Everything else gave back the 2.6s it costs, so runtime held under 60. Ending is now tide -> BRIDGE (water at their feet) -> the look -> mix-up A -> mix-up B (camera look) -> logo card. Build = scripts/social/build_ep1.sh.",
       "live": {
         "youtube": "bU6X7sLyCao — PRIVATED by Charlie, do not re-publish this one, v6 gets a fresh upload",
         "instagram_media_id": "18089456369412600 — STILL UP with the v5 cut, delete in the IG app",

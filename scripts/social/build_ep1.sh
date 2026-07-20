@@ -14,7 +14,7 @@
 # v4 (Charlie's review of the unlisted v3): narration restored as audio, music
 # ducked under the voice bus, tide.mp4 played continuously so the turn survives.
 #
-# v5 (Charlie's review of the unlisted v4): "the end takes too long to wrap up",
+# v6 adds the BRIDGE clip (see the segment block). v5 (Charlie's review of the unlisted v4): "the end takes too long to wrap up",
 # "I want the outro back", "I want them to end in a scuffle looking at the
 # camera and then go into our logo outro". The wrap-up is 5.4s shorter, the
 # mix-up is two new generated clips, and the logo card is back. See the block
@@ -29,8 +29,9 @@ EP=wip/ep1
 SRC=$EP/src
 VO=$EP/vo
 MIX=$EP/mixup
+BRG=$EP/bridge
 BUILD=$EP/build
-OUT=$EP/ep1_v5.mp4
+OUT=$EP/ep1_v6.mp4
 mkdir -p $BUILD $EP/cards
 
 # --- 1. the two allowed text overlays -------------------------------------
@@ -54,14 +55,15 @@ segs=(
   "s07 $SRC/beat4.mp4  1.20 3.30"   # 23.00  the sword falls out of the sky (~24.3)
   "s08 $SRC/beat4.mp4  9.00 2.60"   # 26.30  he pulls it free, hero stance
   "s09 $SRC/beat5.mp4  3.60 5.10"   # 28.90  the charge and the leap
-  "s10 $EP/clip1a_strike_v1.mp4 1.20 5.60"  # 34.00  THE STRIKE (contact ~35.85)
-  "s11 $SRC/tide.mp4   0.40 8.80"   # 39.60  lands, leaf reclaimed, THE TURN
-  "s12 $EP/clip1b_ocean_v1.mp4 3.50 4.00"   # 48.40  the look between them
-  "s13 $MIX/mixupA.mp4 0.60 2.80 0.72"      # 52.40  THE MIX-UP: they pile in
-  "s14 $MIX/mixupB.mp4 1.60 2.60 0.72"      # 55.20  they clock the camera
-  "s15 $BUILD/outro.mp4 0.00 1.50"          # 57.80  the logo card
+  "s10 $EP/clip1a_strike_v1.mp4 1.20 5.00"  # 34.00  THE STRIKE (contact ~35.80)
+  "s11 $SRC/tide.mp4   0.80 8.40"   # 39.00  lands, leaf reclaimed, THE TURN
+  "s12 $BRG/bridge.mp4 1.20 2.60"           # 47.40  THE BRIDGE: water at their feet
+  "s13 $EP/clip1b_ocean_v1.mp4 3.50 3.20"   # 50.00  the look between them
+  "s14 $MIX/mixupA.mp4 0.60 2.40 0.72"      # 53.20  THE MIX-UP: they pile in
+  "s15 $MIX/mixupB.mp4 1.60 2.60 0.72"      # 55.60  they clock the camera
+  "s16 $BUILD/outro.mp4 0.00 1.40"          # 58.20  the logo card
 )
-#                                                    ends 59.30 (under the 60s line)
+#                                                    ends 59.60 (under the 60s line)
 #
 # WHY THE ENDING IS SHAPED LIKE THIS (Charlie, after watching v4 unlisted):
 # "the end takes too long to wrap up", "I want the outro back", and "I want them
@@ -77,6 +79,13 @@ segs=(
 #     clip. One clip asking for "scuffle THEN look at camera" puts the punchline
 #     in exactly the drop zone. Split in two, each clip's un-losable beat is
 #     first: A erupts, B looks down the lens.
+#   - THE BRIDGE (v6). tide ended on a wide DRY beach with footprints and
+#     clip1b opened on a nearly-submerged patch — one hard cut across a big
+#     world-state change. The fix follows the production law exactly: generate
+#     the changed world as a cheap STILL (nano_banana edit of tide's own last
+#     frame, water risen to their feet, ~1.5cr), then use that still as a video
+#     START FRAME so the model only has to continue an already-changed world.
+#     Everything else gave back the 2.6s it costs, so the runtime held under 60.
 #   - The outro card is back. It was cut at v5 because it broke the loop, but
 #     the RISING TIDE reboot deliberately ended that: the episode now stops dead
 #     on a cliffhanger instead of looping to its first frame, so the reason the
@@ -158,9 +167,9 @@ ffmpeg -y -v error $vo_inputs \
 #           over ocean noise and the outro lands on nothing.
 # Between them the ocean wash carries the turn alone, which is the point: the
 # quiet is what makes the scuffle land.
-CONTACT_MS=35850   # sword meets skull, in finished-timeline milliseconds
-SWING_MS=35400     # the whoosh just before it
-SCUFFLE_IN=52.40   # the mix-up starts here
+CONTACT_MS=35800   # sword meets skull, in finished-timeline milliseconds
+SWING_MS=35350     # the whoosh just before it
+SCUFFLE_IN=53.20   # the mix-up starts here
 MUSIC_FADE=42.00   # music1 starts leaving as the turn begins
 
 ffmpeg -y -v error -i assets/music/battle_theme.mp3 \
@@ -177,13 +186,13 @@ ffmpeg -y -v error -i $BUILD/music.wav -i $BUILD/voice.wav \
 # scuffle re-enters ON energy instead of on another slow ramp. No ducking needed
 # — all five VO lines are done by 33.5s.
 ffmpeg -y -v error -i assets/music/battle_theme.mp3 \
-  -af "atrim=30:37.5,asetpts=PTS-STARTPTS,adelay=52000:all=1,afade=t=in:st=52.0:d=0.4,volume=0.66" \
+  -af "atrim=30:37.5,asetpts=PTS-STARTPTS,adelay=53000:all=1,afade=t=in:st=53.0:d=0.4,volume=0.66" \
   -ac 2 -ar 48000 -t $DUR $BUILD/music2.wav
 
 # Ocean wash: brown noise, lowpassed, slow swell — carries the turn on its own.
 # It now bows OUT under the scuffle rather than running to the end.
 ffmpeg -y -v error -f lavfi -i "anoisesrc=c=brown:r=48000:a=0.28:d=${DUR}" \
-  -af "lowpass=f=520,highpass=f=90,tremolo=f=0.12:d=0.55,afade=t=in:st=40:d=4,afade=t=out:st=52.0:d=1.5,volume=2.6" \
+  -af "lowpass=f=520,highpass=f=90,tremolo=f=0.12:d=0.55,afade=t=in:st=40:d=4,afade=t=out:st=53.0:d=1.5,volume=2.6" \
   -ac 2 $BUILD/ocean.wav
 
 ffmpeg -y -v error -i assets/sfx/swing.wav -af "adelay=${SWING_MS}:all=1,volume=2.2" \
@@ -195,10 +204,10 @@ ffmpeg -y -v error -i assets/sfx/drop_land.wav -af "adelay=${CONTACT_MS}:all=1,v
 # different sounds so it reads as a tussle and not a metronome. Kept well under
 # the music so it is texture, not percussion.
 scuffle=(
-  "hit_chomp.wav 52700 1.0"
-  "hit_claw.wav  53250 0.9"
-  "hit_chomp.wav 53900 0.95"
-  "hit_claw.wav  54600 0.85"
+  "hit_chomp.wav 53450 1.0"
+  "hit_claw.wav  53950 0.9"
+  "hit_chomp.wav 54500 0.95"
+  "hit_claw.wav  55050 0.85"
 )
 sc_inputs=(); sc_filters=""; sc_labels=""; i=0
 for row in $scuffle; do
