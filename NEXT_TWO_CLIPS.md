@@ -1,5 +1,14 @@
 # NEXT TWO CLIPS — the definitive spec (read this FIRST, trust nothing older)
 
+> ## ⛔ BEFORE GENERATING ANYTHING: read `CLIP_PREFLIGHT.md`
+> Written after Ep2 v1 came back unusable (~163cr) with defects that were all
+> visible in its inputs beforehand. The two rules that would have saved it:
+> **fire ONE clip and look at it before firing the rest**, and **a start frame
+> is not "ready" until you have cropped in on the characters' faces yourself.**
+> Also: *"Arthur cannot generate new lines"* is **FALSE** — the preset
+> `30fc8796-ceb6-4a66-b3a7-4a145ef7f346` is live in `list_voices`.
+
+
 **Rewritten 2026-07-19 evening after two rule violations in one day.**
 Supersedes every earlier version of this file and every Ep1 ending before it.
 
