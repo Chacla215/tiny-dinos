@@ -15,18 +15,42 @@ Copy is in `SOCIAL_KIT.md` under "Bios — paste verbatim".
 
 ---
 
-## 1. Handles — DECIDE, do not assume
+## 1. Handles — DEFERRED TO 2026-08-17 (decided 2026-07-19)
 
-TikTok + Instagram are **@_tinydinos**, YouTube is **@Thetinydinos**.
-**A YouTube handle cannot start with an underscore**, so matching YouTube to
-the others is impossible.
+**TikTok will not allow another handle change until 2026-08-17** (30-day
+cooldown from claiming @_tinydinos on 2026-07-18). Charlie's call: **wait and
+rename all three together on the 17th** rather than renaming YouTube and
+Instagram now.
 
-⚠️ Do not trust HTTP checks for TikTok/Instagram availability — both return
-**200 for handles that do not exist** (control-tested). Check inside their apps.
+Why waiting won: renaming early means publicly advertising a handle nobody
+owns on TikTok yet — a real, if small, squatting window — plus updating the
+site, bios and kit twice. Four more weeks of mismatch costs almost nothing at
+this follower count, and Ep1's links are ID-based so nothing breaks either way.
 
-Either leave the mismatch, or move TikTok + Instagram to **@thetinydinos** —
-cheap right now, since those accounts are days old with almost no following,
-and YouTube's handle is the rate-limited one.
+### Current state (until the 17th)
+TikTok **@_tinydinos** · Instagram **@_tinydinos** · YouTube **@Thetinydinos**
+
+### Still to decide — the NAME
+Not chosen yet. A YouTube handle **cannot start with an underscore**, so
+@_tinydinos is impossible there and the new name has to be free on all three.
+
+Verified FREE on YouTube: `@playtinydinos`, `@tinydinosgame`,
+`@tinydinosisland`, `@tinydinosbrawl`, `@tinydinosgg`, `@tiny_dinos`,
+`@tinydinoshq`, `@tinydinosdev`, `@wearetinydinos`, `@thetinydinosgame`,
+`@tinydinosco`. TAKEN: `@tinydinos`, `@tinydinosclub`.
+
+⚠️ **TikTok and Instagram availability CANNOT be tested over HTTP** — both
+return 200 for handles that do not exist (control-tested 2026-07-19). Only
+YouTube 404s honestly. Check those two inside their apps.
+
+### On the day
+1. Confirm the chosen name is free on TikTok + Instagram (in-app).
+2. Rename all three.
+3. Tell Claude — the website `LINKS.youtube`, both bios, `SOCIAL_KIT.md` and
+   the YouTube channel description all need the swap in one pass.
+   ⚠️ The old YouTube handle stops resolving the moment it changes, taking the
+   website link with it. Channel-ID URLs
+   (`youtube.com/channel/UC-UHvpQe8FAPuq_HUmuC4Zg`) never break.
 
 ## 2. YouTube — avatar
 

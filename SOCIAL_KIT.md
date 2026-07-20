@@ -85,7 +85,10 @@ landscape master. Don't gate weekly posting on any of this.
 
 ## One-time account setup (15 min)
 
-- [ ] **HANDLE CONSISTENCY — OPEN, and NOT solvable the way first assumed.**
+- [ ] **HANDLE CONSISTENCY — DEFERRED TO 2026-08-17** (TikTok's 30-day
+      rename cooldown). Rename all three together on that date; full plan and
+      the vetted candidate list live in `ACCOUNT_SETUP.md`.
+      Background:
       TikTok + Instagram are **@_tinydinos**; YouTube is **@Thetinydinos**.
       A YouTube handle **cannot start with an underscore**, so @_tinydinos is
       impossible there — the earlier claim that it was "free" came from a bare
