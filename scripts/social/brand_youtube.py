@@ -6,6 +6,10 @@ More of the channel is automatable than we assumed. What this can and cannot do:
   AUTOMATABLE (this script)   banner image, channel description, keywords,
                               country, default language, the unsubscribed
                               channel trailer, the branding watermark
+
+  The banner DOES work, despite Google's docs carrying a blanket deprecation
+  notice on brandingSettings.image — verified end to end 2026-07-19:
+  channelBanners.insert returned a url and bannerExternalUrl read back set.
   MANUAL, no API exists       the AVATAR, the channel TITLE, the @handle,
                               and every profile field on Instagram and TikTok
                               (both are read-only for profile data)
@@ -36,6 +40,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -138,7 +143,30 @@ def _write_branding(tok, mutate, dry_run):
         print("no change needed")
         return
     _req(f"{API}/channels?part=brandingSettings", tok, "PUT", body)
-    print("branding updated")
+
+    # "branding updated" is NOT proof. Read it back and confirm.
+    #
+    # THE ORDERING HAZARD, learned 2026-07-19: read-modify-write is only safe if
+    # the READ is fresh. Running --trailer then --banner back to back, the
+    # banner's read happened before the trailer had propagated, so it wrote back
+    # a branding object with no trailer and silently DELETED it. The API
+    # reported success both times. Applying the trailer again afterwards fixed
+    # it. So: verify, and if you are setting several things, expect to re-check.
+    time.sleep(6)
+    fresh = fetch_branding(tok).get("brandingSettings", {})
+    lost = []
+    for key, want in (bs.get("channel") or {}).items():
+        if want and (fresh.get("channel") or {}).get(key) != want:
+            lost.append(f"channel.{key}")
+    for key, want in (bs.get("image") or {}).items():
+        if want and (fresh.get("image") or {}).get(key) != want:
+            lost.append(f"image.{key}")
+    if lost:
+        print(f"branding written, but these did NOT read back: {', '.join(lost)}")
+        print("  YouTube's read can lag a write by a few seconds — re-run --check")
+        print("  shortly. If still missing, apply that field again LAST.")
+    else:
+        print("branding updated (verified)")
 
 
 def cmd_apply(tok, dry_run):
