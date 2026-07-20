@@ -85,19 +85,23 @@ landscape master. Don't gate weekly posting on any of this.
 
 ## One-time account setup (15 min)
 
-- [ ] **HANDLE UNIFICATION (decided 2026-07-19):** YouTube was
-      **@Thetinydinos** while TikTok and Instagram are **@_tinydinos**.
-      `youtube.com/@_tinydinos` was checked and is FREE, so YouTube moves to
-      match. **Charlie must do this in YouTube Studio — there is no API for
-      handles.** Settings → Channel → Basic info → Handle.
-      ⚠️ When it changes, the OLD @Thetinydinos URL stops resolving: the
-      website's `LINKS.youtube` and this kit both need the swap at that
-      moment. Channel-ID URLs
-      (`youtube.com/channel/UC-UHvpQe8FAPuq_HUmuC4Zg`) never break and are
-      the safe fallback. YouTube also rate-limits handle changes, so decide
-      once.
+- [ ] **HANDLE CONSISTENCY — OPEN, and NOT solvable the way first assumed.**
+      TikTok + Instagram are **@_tinydinos**; YouTube is **@Thetinydinos**.
+      A YouTube handle **cannot start with an underscore**, so @_tinydinos is
+      impossible there — the earlier claim that it was "free" came from a bare
+      404 check and was wrong.
+      ⚠️ **Availability cannot be checked by HTTP status for TikTok/Instagram:**
+      both return **200 for handles that do not exist** (control-tested
+      2026-07-19). Only YouTube 404s honestly. Check TikTok/IG availability in
+      their own apps, which report it truthfully.
+      Known on YouTube: `@tinydinos` is TAKEN by someone else;
+      `@tinydinosgame`, `@tinydinosgg`, `@playtinydinos`, `@tiny_dinos` are free.
+      Options: leave the mismatch, or move TikTok+Instagram to
+      **@thetinydinos** to match YouTube (cheap — the accounts are days old
+      with almost no following, and YouTube's handle is the costlier one to
+      change).
 - [x] **Handles CLAIMED (2026-07-18):** TikTok **@_tinydinos** · Instagram
-      **@_tinydinos** · YouTube **@_tinydinos** (display name "Tiny
+      **@_tinydinos** · YouTube **@Thetinydinos** (display name "Tiny
       Dinos"). Cross-links in every bio: point IG/TikTok bios at each
       other and at the YT channel so the underscore/The mismatch never
       loses anyone.
@@ -116,7 +120,7 @@ landscape master. Don't gate weekly posting on any of this.
       tiny dinos. big feelings.
       a couch brawler for 1-4 players 🦕
       🎬 story episodes + real fights
-      ▶ @_tinydinos on YouTube
+      ▶ @Thetinydinos on YouTube
       ```
       Instagram — link: `tinydinos.higgsfield.app` (swap to the itch page
       when it goes live; keep the site as the second link).

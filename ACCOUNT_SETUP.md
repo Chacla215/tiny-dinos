@@ -15,16 +15,18 @@ Copy is in `SOCIAL_KIT.md` under "Bios — paste verbatim".
 
 ---
 
-## 1. YouTube — claim the unified handle FIRST
+## 1. Handles — DECIDE, do not assume
 
-`youtube.com/@_tinydinos` was checked and is **free**. Taking it makes all
-three accounts identical, which is the single most visible fix here.
+TikTok + Instagram are **@_tinydinos**, YouTube is **@Thetinydinos**.
+**A YouTube handle cannot start with an underscore**, so matching YouTube to
+the others is impossible.
 
-**Studio → Settings → Channel → Basic info → Handle → `@_tinydinos`**
+⚠️ Do not trust HTTP checks for TikTok/Instagram availability — both return
+**200 for handles that do not exist** (control-tested). Check inside their apps.
 
-⚠️ The moment this changes, `@Thetinydinos` stops resolving. Tell Claude when
-it's done and the website link gets swapped in the same breath. YouTube
-rate-limits handle changes, so decide once.
+Either leave the mismatch, or move TikTok + Instagram to **@thetinydinos** —
+cheap right now, since those accounts are days old with almost no following,
+and YouTube's handle is the rate-limited one.
 
 ## 2. YouTube — avatar
 
