@@ -45,8 +45,19 @@ text, watermark, multiple characters, extra limbs, deformed
 ## Per-dino quick reference (full bibles in dino_art_prompts.md)
 - **raptor (MAX)** — keep red scales + feather tuft, but cute/chibi not fierce.
 - **trike (GUS)** — keep three horns + frill, chunky-cute.
-- **pterry (JESSIE)** — keep wings + crest, round baby flyer.
+- **pterry (ACE)** — keep wings + crest, round baby flyer. (Renamed from
+  Jessie 2026-07-18 — the name moved to the new spino.)
 - **bronto (STEVE)** — keep long neck, gentle-giant chibi.
 - **anky (FRANK)** — keep club tail + armor plates + the little leaf sprout, rounded-cute.
+- **spino (JESSIE)** — CHARACTER BIBLE (added 2026-07-18, generated in-session
+  via Higgsfield nano_banana with ralph_hero.png as the style image): baby
+  spinosaurus, female. Light sunflower-yellow body, cream belly. Sail of
+  rounded SUNFLOWER-PETAL segments (golden, deeper tips). Woven straw bucket
+  sun hat with a thin brown band and a small sunflower tucked into the band,
+  sat back so the eyes stay visible. BIG golden-hazel amber eyes (honey-gold
+  iris, darker outer ring, sparkling catchlights). Brown polka dots scattered
+  on back/hips/tail. Proudly bottom-heavy: big round hips + thick round tail,
+  small upper body. Short rounded croc snout, sweet clever smile, rosy blush.
+  Champion-diver poise. Faces viewer's RIGHT.
 
 Keep each species' signature detail; change ONLY the render style toward Ralph.

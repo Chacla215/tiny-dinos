@@ -1,0 +1,30 @@
+{
+  "_readme": [
+    "Public CDN URLs for post_calendar assets, hosted via Higgsfield media_upload",
+    "(permanent CloudFront URLs, verified public). This is the --url source for",
+    "publish_instagram.py. Hosting flow (needs a Claude session for the MCP",
+    "calls): media_upload(filename) -> curl PUT to upload_url -> media_confirm",
+    "-> record the cloudfront url here. Uploaded 2026-07-19."
+  ],
+  "base": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE",
+  "hosted": {
+    "ep1": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/684ed8e9-89cd-4972-9e52-5d475dd9fff3.mp4",
+    "mosaic-1": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/8b128a1e-ac60-4808-8238-f6a36be2eb31.png",
+    "mosaic-2": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/265598c0-f7d1-45d2-924e-5240bb373785.png",
+    "mosaic-3": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/b58c0b4e-c285-4ff6-b4f0-a7d64f929e6c.png",
+    "mosaic-4": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/c2fa6aeb-689a-469b-91b9-482c5889d55e.png",
+    "mosaic-5": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/ca377bf2-9930-4e7d-91b2-ea829e0ed9ef.png"
+  },
+  "pending_upload": [
+    "mosaic-6",
+    "mosaic-7",
+    "mosaic-8",
+    "mosaic-9",
+    "cast-photo",
+    "reel-sumo",
+    "reel-jessie",
+    "reel-chaos"
+  ],
+  "note_ep1": "hosted file = ep1_v6.mp4 (59.7s, -14.0 LUFS, bridge clip + mix-up ending + logo outro, 2026-07-19). Supersedes v5. Instagram ingests from THIS url — re-host and update this key whenever the cut changes, or IG silently republishes the old edit.",
+  "ep1": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/cd5efbd4-17c9-464d-947b-772af5de8abc.mp4"
+}

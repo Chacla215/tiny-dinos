@@ -18,6 +18,11 @@ const SHEET_TRIKE := "res://assets/sprites/trike_motion.png"
 const SHEET_PTERRY := "res://assets/sprites/pterry_motion.png"
 const SHEET_BRONTO := "res://assets/sprites/bronto_motion.png"
 const SHEET_ANKY := "res://assets/sprites/anky_motion.png"
+# JESSIE (spino) is the one hero-bake fighter (gen_ralph_fighter.py --smooth):
+# no "motion" flag, so in-match she runs on the live limb rig (parts/spino/)
+# with this sheet as the menu/portrait + fallback art. Upgrade her to a
+# Seedance motion sheet like the rest next credits top-up.
+const SHEET_SPINO := "res://assets/sprites/spino_fighter.png"
 
 const ANIM_LAYOUTS := {
 	# Every fighter below is a 3D-baked sheet (Meshy model -> Blender toon bake,
@@ -31,6 +36,8 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 156, 154), Rect2(156, 0, 156, 154), Rect2(312, 0, 156, 154), Rect2(468, 0, 156, 154)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 154, 156, 154), Rect2(156, 154, 156, 154), Rect2(312, 154, 156, 154), Rect2(468, 154, 156, 154), Rect2(624, 154, 156, 154), Rect2(780, 154, 156, 154), Rect2(936, 154, 156, 154), Rect2(1092, 154, 156, 154)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 308, 156, 154), Rect2(156, 308, 156, 154), Rect2(312, 308, 156, 154), Rect2(468, 308, 156, 154), Rect2(624, 308, 156, 154)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 462, 156, 154), Rect2(156, 462, 156, 154), Rect2(312, 462, 156, 154)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 616, 156, 154), Rect2(156, 616, 156, 154), Rect2(312, 616, 156, 154), Rect2(468, 616, 156, 154), Rect2(624, 616, 156, 154)]},
 	},
 	"ralph": {
 		# Painterly motion sheet (135x153 cells, one row per anim) from
@@ -40,6 +47,8 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 135, 153), Rect2(135, 0, 135, 153), Rect2(270, 0, 135, 153), Rect2(405, 0, 135, 153)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 153, 135, 153), Rect2(135, 153, 135, 153), Rect2(270, 153, 135, 153), Rect2(405, 153, 135, 153), Rect2(540, 153, 135, 153), Rect2(675, 153, 135, 153), Rect2(810, 153, 135, 153), Rect2(945, 153, 135, 153)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 306, 135, 153), Rect2(135, 306, 135, 153), Rect2(270, 306, 135, 153), Rect2(405, 306, 135, 153), Rect2(540, 306, 135, 153)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 459, 135, 153), Rect2(135, 459, 135, 153), Rect2(270, 459, 135, 153)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 612, 135, 153), Rect2(135, 612, 135, 153), Rect2(270, 612, 135, 153), Rect2(405, 612, 135, 153), Rect2(540, 612, 135, 153)]},
 	},
 	"trike": {
 		# Painterly motion sheet (131x156 cells) from gen_dino_motion.py.
@@ -48,6 +57,8 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 131, 156), Rect2(131, 0, 131, 156), Rect2(262, 0, 131, 156), Rect2(393, 0, 131, 156)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 156, 131, 156), Rect2(131, 156, 131, 156), Rect2(262, 156, 131, 156), Rect2(393, 156, 131, 156), Rect2(524, 156, 131, 156), Rect2(655, 156, 131, 156), Rect2(786, 156, 131, 156), Rect2(917, 156, 131, 156)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 312, 131, 156), Rect2(131, 312, 131, 156), Rect2(262, 312, 131, 156), Rect2(393, 312, 131, 156), Rect2(524, 312, 131, 156)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 468, 131, 156), Rect2(131, 468, 131, 156), Rect2(262, 468, 131, 156)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 624, 131, 156), Rect2(131, 624, 131, 156), Rect2(262, 624, 131, 156), Rect2(393, 624, 131, 156), Rect2(524, 624, 131, 156)]},
 	},
 	"pterry": {
 		# Painterly motion sheet (244x157 cells — wide for the wings) from gen_dino_motion.py.
@@ -56,6 +67,8 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 244, 157), Rect2(244, 0, 244, 157), Rect2(488, 0, 244, 157), Rect2(732, 0, 244, 157)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 157, 244, 157), Rect2(244, 157, 244, 157), Rect2(488, 157, 244, 157), Rect2(732, 157, 244, 157), Rect2(976, 157, 244, 157), Rect2(1220, 157, 244, 157), Rect2(1464, 157, 244, 157), Rect2(1708, 157, 244, 157)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 314, 244, 157), Rect2(244, 314, 244, 157), Rect2(488, 314, 244, 157), Rect2(732, 314, 244, 157), Rect2(976, 314, 244, 157)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 471, 244, 157), Rect2(244, 471, 244, 157), Rect2(488, 471, 244, 157)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 628, 244, 157), Rect2(244, 628, 244, 157), Rect2(488, 628, 244, 157), Rect2(732, 628, 244, 157), Rect2(976, 628, 244, 157)]},
 	},
 	"bronto": {
 		# Painterly motion sheet (237x155 cells — wide for the neck-whip) from gen_dino_motion.py.
@@ -64,6 +77,8 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 237, 155), Rect2(237, 0, 237, 155), Rect2(474, 0, 237, 155), Rect2(711, 0, 237, 155)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 155, 237, 155), Rect2(237, 155, 237, 155), Rect2(474, 155, 237, 155), Rect2(711, 155, 237, 155), Rect2(948, 155, 237, 155), Rect2(1185, 155, 237, 155), Rect2(1422, 155, 237, 155), Rect2(1659, 155, 237, 155)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 310, 237, 155), Rect2(237, 310, 237, 155), Rect2(474, 310, 237, 155), Rect2(711, 310, 237, 155), Rect2(948, 310, 237, 155)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 465, 237, 155), Rect2(237, 465, 237, 155), Rect2(474, 465, 237, 155)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 620, 237, 155), Rect2(237, 620, 237, 155), Rect2(474, 620, 237, 155), Rect2(711, 620, 237, 155), Rect2(948, 620, 237, 155)]},
 	},
 	"anky": {
 		# Painterly motion sheet (231x161 cells) from gen_dino_motion.py.
@@ -72,6 +87,15 @@ const ANIM_LAYOUTS := {
 		"idle":   {"loop": true,  "speed": 6.0,  "rects": [Rect2(0, 0, 231, 161), Rect2(231, 0, 231, 161), Rect2(462, 0, 231, 161), Rect2(693, 0, 231, 161)]},
 		"walk":   {"loop": true,  "speed": 12.0, "rects": [Rect2(0, 161, 231, 161), Rect2(231, 161, 231, 161), Rect2(462, 161, 231, 161), Rect2(693, 161, 231, 161), Rect2(924, 161, 231, 161), Rect2(1155, 161, 231, 161), Rect2(1386, 161, 231, 161), Rect2(1617, 161, 231, 161)]},
 		"attack": {"loop": false, "speed": 14.0, "rects": [Rect2(0, 322, 231, 161), Rect2(231, 322, 231, 161), Rect2(462, 322, 231, 161), Rect2(693, 322, 231, 161), Rect2(924, 322, 231, 161)]},
+		"hit":    {"loop": false, "speed": 12.0, "rects": [Rect2(0, 483, 231, 161), Rect2(231, 483, 231, 161), Rect2(462, 483, 231, 161)]},
+		"ko":     {"loop": false, "speed": 10.0, "rects": [Rect2(0, 644, 231, 161), Rect2(231, 644, 231, 161), Rect2(462, 644, 231, 161), Rect2(693, 644, 231, 161), Rect2(924, 644, 231, 161)]},
+	},
+	"spino": {
+		# Smooth hero bake (gen_ralph_fighter.py spino --smooth), cell 129x168.
+		"sheet": SHEET_SPINO,
+		"idle":   {"loop": true,  "speed": 4.0,  "rects": [Rect2(0, 0, 129, 168), Rect2(129, 0, 129, 168)]},
+		"walk":   {"loop": true,  "speed": 8.0,  "rects": [Rect2(258, 0, 129, 168), Rect2(387, 0, 129, 168), Rect2(516, 0, 129, 168), Rect2(645, 0, 129, 168)]},
+		"attack": {"loop": false, "speed": 12.0, "rects": [Rect2(774, 0, 129, 168), Rect2(903, 0, 129, 168), Rect2(1032, 0, 129, 168)]},
 	},
 }
 
@@ -211,14 +235,18 @@ const BEAST_TINT := Color(1.5, 1.2, 0.5)
 # and its one special move. Set per-dino in MatchConfig.DINOS; the CPU inherits
 # every one for FREE because they hook the shared input/damage code, not a
 # player-only path. Values (see the hooks): combo_king (RALPH) / dash_cancel
-# (MAX) / charger (GUS) / bulwark (STEVE) / flighty (JESSIE) / spikeback (FRANK).
+# (MAX) / charger (GUS) / bulwark (STEVE) / flighty (ACE) / spikeback (FRANK) /
+# swan_dive (JESSIE).
 @export var signature: String = "none"
 const COMBO_KING_PER_HIT := 0.12   # RALPH: windup+recovery cut per live combo hit…
 const COMBO_KING_MAX_CUT := 0.36   # …capped here (3-hit chain = -36%, a real ramp)
 const BULWARK_POISE_DMG := 24      # STEVE: hits at/under this can't stagger or shove him
 const BULWARK_KB_FACTOR := 0.0     # …and their knockback is nullified (he stays planted)
-const FLIGHTY_DODGE_REFUND := 0.6  # JESSIE: landing a hit refunds this much of her dodge cd
+const FLIGHTY_DODGE_REFUND := 0.6  # ACE: landing a hit refunds this much of his dodge cd
 const SPIKEBACK_REFLECT := 0.35    # FRANK: reflects this share of BLOCKED damage at attacker
+const SWAN_DIVE_WINDOW := 1.2      # JESSIE: seconds after a dodge her next hit is empowered
+const SWAN_DIVE_DMG_MULT := 1.35   # …bonus damage on that dive-out strike
+const SWAN_DIVE_KB_MULT := 1.25    # …and bonus knockback (one hit, then it's spent)
 
 @export_group("Input")
 @export var player_id: String = "p1"
@@ -239,8 +267,8 @@ var ai: RefCounted = null
 @export var sprite_offset_y: float = -10.0
 ## Where a held weapon / carried foe anchors on THIS dino's body, so the grab
 ## reads as anatomically true: x = distance forward along facing, y = vertical
-## (negative = up). Hand-grabbers (Ralph/Max) sit near hand height; the wing-claw
-## (Jessie) a touch higher; mouth-grabbers (Gus/Frank low, Steve high on his neck)
+## (negative = up). Hand-grabbers (Ralph/Max/Jessie) sit near hand height; the
+## wing-claw (Ace) a touch higher; mouth-grabbers (Gus/Frank low, Steve high on his neck)
 ## anchor up at the snout. DINOS overrides this per dino; default = old hand anchor.
 @export var grip_offset: Vector2 = Vector2(18.0, -6.0)
 # Global visual-scale multiplier on every fighter (readability on the busy arenas).
@@ -282,6 +310,7 @@ var hit_targets_this_swing: Array = []
 var defense_state: int = DefenseState.NORMAL
 var block_durability: float
 var dodge_timer: float = 0.0
+var swan_dive_timer: float = 0.0   # JESSIE: live window where her next hit is empowered
 var dodge_cooldown_timer: float = 0.0
 var dodge_velocity: Vector2 = Vector2.ZERO
 var guard_break_timer: float = 0.0
@@ -1579,6 +1608,27 @@ func _spawn_thrown_weapon(id: String, dmg: int, kb: float) -> void:
 	item.global_position = global_position + facing * 40.0 + Vector2(0, -6)
 	item.rotation = facing.angle()
 
+# Spawn-armed: equip a weapon directly (match start / round reset), no ground
+# pickup involved. Throwing/dropping it mid-round still reverts you to fists —
+# the round reset hands it back.
+func grant_weapon(id: String) -> void:
+	if id == "" or id == "fists" or not (MatchConfig and MatchConfig.WEAPONS.has(id)):
+		return
+	# Idempotent: re-granting a signature you already hold just re-selects it (so
+	# the per-round re-grant after respawn doesn't stack two copies into slot 2).
+	if id in weapons:
+		active_weapon = weapons.find(id)
+	else:
+		var slot := _pickup_slot()
+		weapons[slot] = id
+		active_weapon = slot
+	# A signature weapon is OWNED — bake it into the respawn loadout so it comes
+	# back on EVERY life. Round modes re-grant via _end_round, but koth/eggs/beast/
+	# flood/bombtag never do; without this a KO'd fighter spends the rest of those
+	# matches on bare fists (respawn restores initial_weapons, captured pre-grant).
+	initial_weapons = weapons.duplicate()
+	_refresh_weapon()
+
 # Pickup (LT): grab the nearest weapon resting on the ground within reach and
 # equip it (filling a free fists slot, or replacing the active one).
 func try_pickup() -> void:
@@ -1680,7 +1730,9 @@ func update_attack(delta: float) -> void:
 			attack_phase_dur = maxf(current_attack_active, 0.001)
 			if current_is_special:
 				_spawn_special_flash()  # release "pop" (also clears the telegraph)
-			if current_is_special and (special_type == "screech" or special_type == "stomp"):
+			# cannonball (JESSIE) rides the same radial path: the self-dash leap
+			# happens through the windup, then the splash hits around the landing.
+			if current_is_special and (special_type == "screech" or special_type == "stomp" or special_type == "cannonball"):
 				_do_screech()
 			elif current_is_special and special_type == "tail_smash":
 				_do_tail_smash()  # FRANK: shockwave in every direction, no safe side
@@ -1725,6 +1777,12 @@ func try_hit(body: Node) -> void:
 	if beast_active:
 		dmg = int(round(dmg * BEAST_DMG_MULT))
 		kb *= BEAST_KB_MULT
+	# JESSIE swan dive: the first hit right out of a dodge strikes harder, then
+	# the window is spent — dodge again to set up the next one.
+	if signature == "swan_dive" and swan_dive_timer > 0.0:
+		dmg = int(round(dmg * SWAN_DIVE_DMG_MULT))
+		kb *= SWAN_DIVE_KB_MULT
+		swan_dive_timer = 0.0
 	body.take_damage(dmg, kb, self)
 	# Attacker follow-through: our own torso lurches into the blow so a clean
 	# connect has weight on the giving end, not just the receiving one.
@@ -1743,7 +1801,7 @@ func try_hit(body: Node) -> void:
 	# DASH CLAW: landing the rake renews the hunt — most of the cooldown refunds.
 	if current_is_special and special_type == "dash_claw":
 		special_cooldown_timer = minf(special_cooldown_timer, special_cooldown * 0.35)
-	# JESSIE flighty: landing a blow refunds most of her dodge cooldown, so she can
+	# ACE flighty: landing a blow refunds most of his dodge cooldown, so he can
 	# immediately dart back out — a relentless hit-and-run flyer.
 	if signature == "flighty" and dodge_cooldown_timer > 0.0:
 		dodge_cooldown_timer *= (1.0 - FLIGHTY_DODGE_REFUND)
@@ -1778,6 +1836,7 @@ func start_dodge() -> void:
 	play_scene_sfx("dodge", 0.1)
 
 func update_dodge(delta: float) -> void:
+	swan_dive_timer = maxf(0.0, swan_dive_timer - delta)
 	if defense_state == DefenseState.DODGING:
 		dodge_timer -= delta
 		afterimage_timer -= delta
@@ -1787,6 +1846,10 @@ func update_dodge(delta: float) -> void:
 		if dodge_timer <= 0.0:
 			defense_state = DefenseState.NORMAL
 			dodge_velocity = Vector2.ZERO
+			# JESSIE swan dive: coming out of a dodge opens a short window where
+			# her next hit lands with championship form (see try_hit).
+			if signature == "swan_dive":
+				swan_dive_timer = SWAN_DIVE_WINDOW
 
 func _spawn_afterimage() -> void:
 	var ghost := Sprite2D.new()

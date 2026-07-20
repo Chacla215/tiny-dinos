@@ -6,6 +6,8 @@ extends Node2D
 #   /opt/homebrew/bin/godot --write-movie /tmp/td_capture/beach.avi \
 #       scenes/_capture_gameplay.tscn -- --seconds 12 --arena beach
 # --arena: beach|lava|floes|falls|springs|purple (default beach)
+# --mode:  rounds|koth|eggs|sumo|bombtag|beast|flood (default rounds) — so mode
+#          clips (the sumo dohyo, the flood tide) can be REAL footage too.
 
 const ARENAS := {
 	"beach": ["res://scenes/arena_beach.tscn", "beauty_beach"],
@@ -31,10 +33,11 @@ func _ready() -> void:
 	MatchConfig.player_count = 4
 	MatchConfig.cpu_players = {"p1": true, "p2": true, "p3": true, "p4": true, "p5": false, "p6": false}
 	MatchConfig.cpu_difficulty = "hard"
-	# Spread signatures across the four so the passives show on camera.
-	MatchConfig.dino_choices = {"p1": "ralph", "p2": "raptor", "p3": "anky", "p4": "bronto", "p5": "pterry", "p6": "trike"}
+	# Spread signatures across the four so the passives show on camera (spino =
+	# JESSIE up front so the newest dino features in every capture).
+	MatchConfig.dino_choices = {"p1": "spino", "p2": "ralph", "p3": "raptor", "p4": "anky", "p5": "pterry", "p6": "trike"}
 	MatchConfig.island = entry[1]
-	MatchConfig.game_mode = "rounds"
+	MatchConfig.game_mode = _arg("--mode", "rounds")
 	MatchConfig.teams_enabled = false
 
 	var packed: PackedScene = load(entry[0])

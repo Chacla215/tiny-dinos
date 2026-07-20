@@ -547,20 +547,69 @@ func _apply_objective(owner: Node, dist_to_target: float) -> void:
 	if arena == null or not ("game_mode" in arena):
 		return
 	var goal := Vector2.INF
+	var urgent := false  # survival pulls (ring edge / rising tide) override the fight
 	if arena.game_mode == "koth":
 		if owner.global_position.distance_to(arena.hill_center) > arena.HILL_RADIUS * 0.6:
 			goal = arena.hill_center
 	elif arena.game_mode == "eggs":
 		goal = _nearest_egg(arena, owner)
+	elif arena.game_mode == "sumo":
+		# The rope scores, not the island edge: drifting past ~70% of the dohyo
+		# is match-losing, so pull back toward center hard.
+		if "dohyo_radius" in arena and arena.dohyo_radius > 0.0:
+			var c: Vector2 = arena.dohyo_center
+			var off: Vector2 = (owner.global_position - c) \
+				/ Vector2(arena.dohyo_radius, arena.dohyo_radius * arena.DOHYO_SQUASH)
+			if off.length() > 0.68:
+				goal = c
+				urgent = true
+	elif arena.game_mode == "bombtag":
+		# Holder: the normal brawl already chases (a landed hit passes the bomb).
+		# Everyone else: don't get touched — open distance from the holder.
+		var holder: String = arena.bomb_holder if "bomb_holder" in arena else ""
+		if holder != "" and holder != owner.player_id:
+			var hn: Node = _player_by_id(arena, holder)
+			if hn != null and owner.global_position.distance_to(hn.global_position) < 320.0:
+				goal = owner.global_position + (owner.global_position - hn.global_position)
+				urgent = true
+	elif arena.game_mode == "beast":
+		# Only KO-ing the beast moves the score: converge on the crown.
+		# (The beast itself just brawls — greedy is correct while banking.)
+		var bp: String = arena.beast_pid if "beast_pid" in arena else ""
+		if bp != "" and bp != owner.player_id:
+			var bn: Node = _player_by_id(arena, bp)
+			if bn != null:
+				goal = bn.global_position
+	elif arena.game_mode == "flood":
+		# The tide is closing: if a step outward would already be wet, hug center.
+		var shrink: float = arena.zone_shrink if "zone_shrink" in arena else 1.0
+		if shrink < 0.9 and arena.has_method("is_in_safe_zone"):
+			var c2: Vector2 = arena._safe_center()
+			var out_dir: Vector2 = (owner.global_position - c2).normalized()
+			if not arena.is_in_safe_zone(owner.global_position + out_dir * 110.0):
+				goal = c2
+				urgent = true
 	if goal == Vector2.INF:
 		return
 	var to_goal: Vector2 = goal - owner.global_position
 	if to_goal.length() < 6.0:
 		return
-	var w: float = 0.7 if dist_to_target > 260.0 else 0.3
+	var w: float
+	if urgent:
+		w = 0.9
+	else:
+		w = 0.7 if dist_to_target > 260.0 else 0.3
 	move_dir = move_dir * (1.0 - w) + to_goal.normalized() * w
 	if move_dir.length() > 0.05:
 		move_dir = move_dir.normalized()
+
+func _player_by_id(arena: Node, pid: String) -> Node:
+	if not ("active_players" in arena):
+		return null
+	for p in arena.active_players:
+		if p.player_id == pid:
+			return p
+	return null
 
 func _nearest_egg(arena: Node, owner: Node) -> Vector2:
 	if not ("eggs" in arena):

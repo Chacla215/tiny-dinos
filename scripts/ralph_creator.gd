@@ -4,7 +4,7 @@ extends Control
 ## as they land. Gamepad-only:
 ##   GRID:   D-pad navigates,  A opens profile,  B → title
 ##   PROFILE: ◀▶ cycles skins,  A equips,  B → grid
-## The grid features the 6 playable dinos (Ralph included). Flavor copy is
+## The grid features the 7 playable dinos (Ralph included). Flavor copy is
 ## hand-curated in PROFILES; stats and cooldowns derive from MatchConfig.DINOS
 ## so balance numbers stay the single source of truth. Portraits use the hero
 ## art at assets/concept/<dino>/<dino>_hero.png, falling back to the in-match
@@ -27,10 +27,11 @@ const TEXT := Color("dce2ec")
 const TEXT_DIM := Color("8b95a8")
 const GREEN := Color("7fd06a")
 
-# Grid: Ralph first as featured mascot, then the rest of the roster. Two rows.
+# Grid: Ralph first as featured mascot, then the rest of the roster. Two rows
+# (rows may be uneven; nav clamps the column when switching rows).
 const GRID_ROWS := [
 	["ralph", "raptor", "trike"],
-	["pterry", "bronto", "anky"],
+	["pterry", "bronto", "anky", "spino"],
 ]
 
 # Skins are shared across every dino (see MatchConfig.SKINS). The carousel
@@ -92,14 +93,14 @@ const PROFILES := {
 		"has_creator": false,
 	},
 	"pterry": {
-		"display_name": "JESSIE",
+		"display_name": "ACE",
 		"subtitle": "THE SKY ACE",
 		"rarity": "RARE",
-		"bio": "Jessie the pterodactyl, self-proclaimed sky ace. Every landing is on purpose, every wing-bandage is a story.",
+		"bio": "Ace the pterodactyl earned his callsign the hard way. Every landing is on purpose, every wing-bandage is a story.",
 		"personality": "COCKY • BREEZY • AERIAL",
 		"move_name": "SCREECH",
-		"passive": "HIT & RUN — landing a hit refunds her dodge",
-		"move_desc": "A piercing wail that slows every enemy caught in range. Jessie's favorite icebreaker.",
+		"passive": "HIT & RUN — landing a hit refunds his dodge",
+		"move_desc": "A piercing wail that slows every enemy caught in range. Ace's favorite icebreaker.",
 		"move_type": "SONIC",
 		"hero": "res://assets/concept/pterry/pterry_hero.png",
 		"has_creator": false,
@@ -115,6 +116,19 @@ const PROFILES := {
 		"move_desc": "Steve sweeps his long neck in a wide arc, scooping every enemy along the way. Raised guards crumble — blocking the whip drains far more.",
 		"move_type": "PHYSICAL",
 		"hero": "res://assets/concept/bronto/bronto_hero.png",
+		"has_creator": false,
+	},
+	"spino": {
+		"display_name": "JESSIE",
+		"subtitle": "THE DEEP DIVER",
+		"rarity": "LEGENDARY",
+		"bio": "Jessie the spinosaurus, champion diver with a sunflower tucked in her sail. The smartest brawler on the island — and the splashiest.",
+		"personality": "BRILLIANT • GRACEFUL • SUNNY",
+		"move_name": "CANNONBALL",
+		"passive": "SWAN DIVE — a hit right after a dodge strikes harder",
+		"move_desc": "Jessie leaps into a perfect cannonball and comes down with a splash that sends everyone flying. The judges score it a ten. Every time.",
+		"move_type": "PHYSICAL",
+		"hero": "res://assets/concept/spino/spino_hero.png",
 		"has_creator": false,
 	},
 	"anky": {
@@ -604,8 +618,16 @@ func _refresh_profile(dino_id: String) -> void:
 
 
 # A one-line "playstyle" tag derived from whichever core stat (HP/ATK/DEF/SPD)
-# stands out most for this dino — tracks balance automatically.
+# stands out most for this dino — tracks balance automatically. A dino holding
+# the roster's BEST dodge reads as a skirmisher instead: mobility is their
+# identity but isn't one of the four bars (added for JESSIE, applies to
+# whoever tops dodge_distance as balance shifts).
 func _playstyle_tag(dino_id: String) -> String:
+	var best_dodge := 0.0
+	for d in MatchConfig.ROSTER_ORDER:
+		best_dodge = maxf(best_dodge, float(MatchConfig.DINOS[d].get("dodge_distance", 0.0)))
+	if float(MatchConfig.DINOS.get(dino_id, {}).get("dodge_distance", 0.0)) >= best_dodge:
+		return "GRACEFUL SKIRMISHER"
 	var rows: Array = _stats_for(dino_id)
 	var maxes: Array = _stat_maxes()
 	var labels := ["FRONTLINE BRUISER", "HEAVY HITTER", "STONE WALL", "HIT-AND-RUN"]

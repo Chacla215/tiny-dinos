@@ -1,5 +1,14 @@
 # Trailer shots — drop `.mp4`s here
 
+> **CONTINUITY QA (2026-07-18, Charlie's review):** generated shots may
+> hallucinate props — he caught Ralph producing a second sword from nowhere,
+> and a confusing sumo moment. Rule (see CUTSCENE_KIT § POSTING RULES):
+> every generated shot gets a frame-by-frame prop check (one held weapon per
+> dino, correct signature weapon, nothing appears/vanishes), and any shot
+> representing GAMEPLAY gets replaced with real capture
+> (`scenes/_capture_gameplay.tscn`, supports `--mode sumo` etc.). Generated
+> footage stays for clearly-cinematic story beats only.
+
 Prompts live in `PASTE_ME.md` (PASTE 7–12). Every shot: painterly-chibi style,
 5–8s, 16:9, biggest resolution. Extra takes welcome (`shot01_island_take2.mp4`).
 

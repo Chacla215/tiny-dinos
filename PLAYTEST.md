@@ -43,8 +43,11 @@ match — does the hook actually change how you fight?
       hit-and-run chaining feel like his game plan?
 - [ ] **GUS** (trike) — HEADBUTT CHARGE is armored (can't be shoved out of
       it). Do you charge *through* attacks on purpose?
-- [ ] **JESSIE** (pterry) — SCREECH radial + bow affinity. Does kiting feel
+- [ ] **ACE** (pterry) — SCREECH radial + bow affinity. Does kiting feel
       distinct from the bruisers?
+- [ ] **JESSIE** (spino) — SWAN DIVE: does dodge-then-strike feel like a
+      deliberate game plan? Is the CANNONBALL splash readable? Is her hip-check
+      heavy (biggest shove in the game) fun near ledges?
 - [ ] **STEVE** (bronto) — NECK WHIP guard-crushes (2x block drain). Is it the
       answer to turtlers?
 - [ ] **FRANK** (anky) — TAIL SMASH is a true radial shockwave, no safe side.
