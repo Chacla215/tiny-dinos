@@ -85,8 +85,19 @@ landscape master. Don't gate weekly posting on any of this.
 
 ## One-time account setup (15 min)
 
+- [ ] **HANDLE UNIFICATION (decided 2026-07-19):** YouTube was
+      **@Thetinydinos** while TikTok and Instagram are **@_tinydinos**.
+      `youtube.com/@_tinydinos` was checked and is FREE, so YouTube moves to
+      match. **Charlie must do this in YouTube Studio — there is no API for
+      handles.** Settings → Channel → Basic info → Handle.
+      ⚠️ When it changes, the OLD @Thetinydinos URL stops resolving: the
+      website's `LINKS.youtube` and this kit both need the swap at that
+      moment. Channel-ID URLs
+      (`youtube.com/channel/UC-UHvpQe8FAPuq_HUmuC4Zg`) never break and are
+      the safe fallback. YouTube also rate-limits handle changes, so decide
+      once.
 - [x] **Handles CLAIMED (2026-07-18):** TikTok **@_tinydinos** · Instagram
-      **@_tinydinos** · YouTube **@Thetinydinos** (display name "Tiny
+      **@_tinydinos** · YouTube **@_tinydinos** (display name "Tiny
       Dinos"). Cross-links in every bio: point IG/TikTok bios at each
       other and at the YT channel so the underscore/The mismatch never
       loses anyone.
@@ -105,7 +116,7 @@ landscape master. Don't gate weekly posting on any of this.
       tiny dinos. big feelings.
       a couch brawler for 1-4 players 🦕
       🎬 story episodes + real fights
-      ▶ @Thetinydinos on YouTube
+      ▶ @_tinydinos on YouTube
       ```
       Instagram — link: `tinydinos.higgsfield.app` (swap to the itch page
       when it goes live; keep the site as the second link).
