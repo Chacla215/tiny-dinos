@@ -132,10 +132,11 @@
       "caption": "nobody touches the leaf. then the ocean did. 🍃🌊 (ep. 1)",
       "cover_hint": "the leap over Max — it IS the first frame (0.5s), under the hook card",
       "pinned_comment": "ep. 2 drops when this hits 100 likes 👀",
-      "status": "SHIPPED 2026-07-19 — v6 public on YouTube + live on Instagram; TikTok manual",
+      "status": "SHIPPED + VERIFIED 2026-07-19 — YouTube PUBLIC (confirmed via API), Instagram live",
       "note": "EP1 v6. Adds THE BRIDGE: tide used to end on a wide DRY beach and clip1b opened on a nearly-submerged patch — one hard cut across a big world-state change. Built per the production law: nano_banana edit of tide's own last frame to raise the water (~1.5cr), then that still as a video START FRAME so the model only continued an already-changed world. Everything else gave back the 2.6s it costs, so runtime held under 60. Ending is now tide -> BRIDGE (water at their feet) -> the look -> mix-up A -> mix-up B (camera look) -> logo card. Build = scripts/social/build_ep1.sh.",
       "live": {
         "youtube": "https://youtube.com/shorts/8RxeWgCDLoU",
+        "instagram": "https://www.instagram.com/reel/Da_u22hAV5q/",
         "instagram_media_id": "18611634907012372",
         "tiktok": "manual upload — file wip/ep1/ep1_v6.mp4"
       }
