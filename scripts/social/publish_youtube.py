@@ -159,10 +159,19 @@ def upload(post, publish_at=None, unlisted=False):
     elif publish_at:
         status = {"privacyStatus": "private", "publishAt": publish_at + ":00Z",
                   "selfDeclaredMadeForKids": False}
-    meta = {"snippet": {"title": post.get("title", "TINY DINOS"),
-                        "description": post.get("caption", ""),
-                        "categoryId": "20"},   # Gaming
-            "status": status}
+    # tags[] were never being sent, and Ep1 shipped with none. Warn rather than
+    # fail — a missing caption or tag set on a launch post is a discovery loss
+    # that is invisible until someone thinks to look.
+    snippet = {"title": post.get("title", "TINY DINOS"),
+               "description": post.get("caption", ""),
+               "categoryId": "20"}            # Gaming
+    if post.get("tags"):
+        snippet["tags"] = post["tags"]
+    else:
+        print("  ! no tags[] in the calendar entry — uploading untagged")
+    if "#" not in snippet["description"]:
+        print("  ! caption has no hashtags — uploading without them")
+    meta = {"snippet": snippet, "status": status}
     init = urllib.request.Request(
         "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
         data=json.dumps(meta).encode(),
