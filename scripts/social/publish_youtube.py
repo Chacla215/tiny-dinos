@@ -44,13 +44,21 @@ CAL = os.path.join(HERE, "post_calendar.json")
 # (Tiny Dinos and GoldFix), and device-flow consent silently binds to whichever
 # was picked at approval — an upload-only token cannot tell you which one it got.
 #
-# DO NOT ADD youtube.force-ssl (or plain youtube) HERE. Tried 2026-07-19 to make
-# --publish work: Google's DEVICE flow accepts only a fixed scope allowlist and
-# rejects both with `invalid_scope`, which breaks --auth outright — you cannot
-# even re-authorise. Flipping visibility over the API needs a different OAuth
-# client type entirely (Desktop app + loopback redirect), not just a wider scope
-# string. See publish() for what that would take.
-SCOPE = ("https://www.googleapis.com/auth/youtube.upload"
+# DO NOT ADD youtube.force-ssl. Google's DEVICE flow accepts only a fixed scope
+# allowlist and rejects it with `invalid_scope`, which breaks --auth outright —
+# you cannot even re-authorise. (Tried 2026-07-19. Verified by hitting
+# /device/code directly: force-ssl REJECTED, plain youtube OK.)
+#
+# Plain `youtube` IS on the device-flow allowlist and IS accepted by
+# videos.update, which is what --publish needs to flip visibility. So the flip
+# works on this client type after all — no Desktop-app/loopback migration.
+#   https://developers.google.com/identity/protocols/oauth2/limited-input-device
+#   https://developers.google.com/youtube/v3/docs/videos/update
+#
+# `youtube` is a superset of upload+readonly; the narrower two are kept
+# explicitly so the grant reads honestly on the consent screen.
+SCOPE = ("https://www.googleapis.com/auth/youtube"
+         " https://www.googleapis.com/auth/youtube.upload"
          " https://www.googleapis.com/auth/youtube.readonly")
 
 # Pinned target. Every upload asserts the token resolves here first.
@@ -177,21 +185,17 @@ def publish(video_id):
     The normal flow uploads UNLISTED so Charlie watches the cut on a real Shorts
     player before the world does. This was meant to be the second half of that.
 
-    IT CANNOT ACTUALLY FLIP ANYTHING with the current auth, and that is not
-    fixable by widening SCOPE. videos.update needs youtube.force-ssl, but the
-    OAuth DEVICE flow this script uses (client type "TVs and Limited Input
-    devices") only permits a fixed scope allowlist that excludes it — asking for
-    it returns `invalid_scope` and breaks --auth completely.
+    THE DESTRUCTIVE TRAP, per the videos.update docs: the `part` you send is
+    OVERWRITTEN WHOLESALE. "If the request body does not specify a value, the
+    existing privacy setting will be removed and the video will revert to the
+    default." So a naive body of just {privacyStatus} silently wipes
+    embeddable / license / publicStatsViewable / containsSyntheticMedia /
+    selfDeclaredMadeForKids. This function therefore READS the whole status
+    object first and writes it back with only privacyStatus changed.
 
-    Making it work would mean re-doing auth as a Desktop-app OAuth client with a
-    loopback redirect (a new client id in Cloud Console + a local redirect
-    server). That is a real change, not a flag. Until then the flip is a manual
-    Studio tap, which is arguably the better default anyway: a human eye on the
-    cut immediately before it goes public.
-
-    So this stays useful as a READ: it tells you exactly what is live and what
-    is not, which is how the v6 upload was caught sitting unlisted while
-    Instagram was already public.
+    It also sends part=status ALONE — never snippet — because updating snippet
+    makes title and categoryId mandatory and drops description and tags if they
+    are not resupplied.
     """
     tok = access_token()
     assert_target(tok)          # same pinned-channel guard as upload
@@ -205,9 +209,11 @@ def publish(video_id):
     if was == "public":
         print(f"'{title}' is ALREADY public — nothing to do")
         return
-    body = json.dumps({"id": video_id,
-                       "status": {"privacyStatus": "public",
-                                  "selfDeclaredMadeForKids": False}}).encode()
+    # preserve every other status field — see the docstring's trap note
+    status = dict(items[0]["status"])
+    status["privacyStatus"] = "public"
+    status.pop("publishAt", None)        # only legal on never-published private videos
+    body = json.dumps({"id": video_id, "status": status}).encode()
     req = urllib.request.Request(
         "https://www.googleapis.com/youtube/v3/videos?part=status",
         data=body, method="PUT",
