@@ -19,7 +19,32 @@ Supersedes every earlier version of this file and every Ep1 ending before it.
    or generated video. No exceptions, no "brief" stills, no dissolves
    between stills.
 
-## ⇢ STATUS (2026-07-19, late) — Ep1 v4 IS BUILT, awaiting Charlie's watch
+## ⇢ STATUS (2026-07-19, late) — Ep1 v5 IS BUILT, awaiting Charlie's watch
+
+`wip/ep1/ep1_v5.mp4` — 59.5s, -14.0 LUFS, peak -1.5 dBFS. UNLISTED at
+**youtube.com/shorts/bU6X7sLyCao**. Built by `scripts/social/build_ep1.sh`.
+
+v5 answers Charlie's notes on v4: the wrap-up is 5.4s shorter (without touching
+the turn — tide still plays continuously, only its slow tail is gone), the two
+of them now end in a **mix-up looking at the camera**, and the **logo outro card
+is back**. The mix-up is two generated clips (`wip/ep1/mixup/mixupA.mp4`,
+`mixupB.mp4`), split so neither un-losable beat sits in Seedance's drop zone;
+both are punched in (crop 0.72) because they generated wide.
+
+Verified: -14.0 LUFS exactly, no dead air (short-term never drops below -22),
+text sweep clean before the card, ends on the logo.
+
+**Open call for Charlie** — the world-state jump at ~48.4s (tide ends on a
+mostly-dry beach, clip1b opens on a nearly-submerged patch) is still there and
+still unspent. He chose to judge it on the cut rather than pre-buy the ~54cr
+bridge clip. Balance after the two mix-up clips: ~286cr.
+
+### Superseded — the v4 status
+
+`wip/ep1/ep1_v4.mp4`, unlisted at youtube.com/shorts/UCunfepRkKg. Restored the
+Arthur VO and the turn; rejected for a slow wrap-up and no outro.
+
+### old v4 detail
 
 `wip/ep1/ep1_v4.mp4` — 58.3s, -13.9 LUFS, peak -1.4 dBFS. Built by the
 committed `scripts/social/build_ep1.sh`. All three of Charlie's v3 corrections
