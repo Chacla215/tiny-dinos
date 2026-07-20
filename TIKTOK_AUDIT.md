@@ -87,3 +87,68 @@ prove which account we are posting as.
 - [ ] Step 4 — submitted
 - [ ] Upload audit passed
 - [ ] Direct Post audit passed → flip TikTok to automated in the calendar
+
+---
+
+## ⚠️ 2026-07-19 RESEARCH — read before spending more effort here
+
+Verified against developers.tiktok.com. Two findings change the plan.
+
+### 1. The Direct Post audit is designed around a GUI, and we do not have one
+
+TikTok's [content sharing guidelines] make these MANDATORY for audit approval:
+
+- a **privacy selector with NO default value**, populated from
+  `/v2/post/publish/creator_info/query/`, where the user cannot publish until
+  they explicitly choose;
+- a **commercial content disclosure toggle** (default off) which, when on,
+  requires choosing "Your Brand" and/or "Branded Content", with at least one
+  checked before publish is enabled;
+- specific declaration text shown for each of those choices.
+
+A headless single-operator CLI structurally cannot satisfy "a dropdown with no
+default". **Assume Direct Post audit will not pass for a CLI.** This is not a
+question of writing better code.
+
+### 2. Unaudited clients cannot post publicly AT ALL
+
+- "All content posted by unaudited clients will be restricted to private
+  viewing mode." Max 5 posting users / 24h.
+- There is an explicit error `403 unaudited_client_can_only_post_to_private_accounts`,
+  which suggests **@_tinydinos itself may have to be set to private** to post
+  via API pre-audit. Unverified whether this is enforced at init or only on
+  publish — one throwaway test would settle it, but it is a bad trade to flip a
+  public account private to find out.
+
+### What this leaves
+
+| path | outcome | verdict |
+|---|---|---|
+| Direct Post + audit | public posts, fully automated | **likely unreachable** (GUI requirements) |
+| Inbox upload (`video.upload`) | video lands in TikTok drafts, Charlie captions + taps publish in-app | **the realistic ceiling** |
+| Manual (today) | Charlie uploads the file by hand | works, ~1 min/episode |
+
+The inbox path saves the file transfer but still needs Charlie in the app, so it
+is a marginal gain over today's manual flow. **Recommendation: do not pursue the
+audit.** Revisit only if TikTok ships an API posture for first-party CLI tools.
+
+### If we build anything, build the inbox uploader
+
+Endpoints confirmed for that path:
+- OAuth: `GET https://www.tiktok.com/v2/auth/authorize/` (register app as
+  **Desktop** platform — only then is `http://localhost:PORT/callback` a legal
+  redirect; Web platform rejects localhost). PKCE mandatory; TikTok's desktop
+  doc specifies a **hex-encoded** SHA256 challenge, which is non-standard —
+  build that encoding as a one-line switch and fall back to base64url.
+- Token: `POST https://open.tiktokapis.com/v2/oauth/token/`; access token lives
+  **24h**, refresh token 365d, and the refresh response MAY return a new refresh
+  token which must be persisted.
+- Inbox init: `POST /v2/post/publish/inbox/video/init/` with `source_info` only
+  (no `post_info`). Then `PUT` the file to the returned `upload_url` with
+  `Content-Range`; single chunk is legal (`chunk_size = video_size`,
+  `total_chunk_count = 1`) and our ~60s shorts are far inside the 128 MB
+  single-chunk ceiling. Poll `POST /v2/post/publish/status/fetch/`.
+- `--check` needs scope `user.info.profile` (NOT just `user.info.basic`) to read
+  the **username** — basic only returns the display nickname.
+
+Step 2 (privacy policy URL) is DONE: **https://tinydinos.higgsfield.app/privacy**
