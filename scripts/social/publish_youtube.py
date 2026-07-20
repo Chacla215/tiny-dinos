@@ -39,8 +39,13 @@ CAL = os.path.join(HERE, "post_calendar.json")
 # before anything is sent. Charlie has several channels on one Google account
 # (Tiny Dinos and GoldFix), and device-flow consent silently binds to whichever
 # was picked at approval — an upload-only token cannot tell you which one it got.
+# force-ssl is what lets --publish flip an existing video's visibility.
+# upload+readonly alone CANNOT do it: videos.update returns 403. Adding this
+# scope means the token can also edit and delete videos, so --publish asserts
+# the pinned channel first, exactly like upload does.
 SCOPE = ("https://www.googleapis.com/auth/youtube.upload"
-         " https://www.googleapis.com/auth/youtube.readonly")
+         " https://www.googleapis.com/auth/youtube.readonly"
+         " https://www.googleapis.com/auth/youtube.force-ssl")
 
 # Pinned target. Every upload asserts the token resolves here first.
 # Set by running --check after --auth; None means "not yet verified", and
@@ -160,9 +165,50 @@ def upload(post, publish_at=None, unlisted=False):
     print(f"uploaded {post['id']} -> https://youtube.com/shorts/{vid['id']}  ({state})")
 
 
+def publish(video_id):
+    """Flip an existing upload from unlisted/private to public.
+
+    The normal flow uploads UNLISTED so Charlie can watch the cut on a real
+    Shorts player before the world does. This is the second half of that flow.
+    Re-uploading without --unlisted would also work but leaves a duplicate on
+    the channel and a dead link in whatever was already shared.
+
+    Needs the force-ssl scope; with an upload-only token videos.update 403s.
+    """
+    tok = access_token()
+    assert_target(tok)          # same pinned-channel guard as upload
+    cur = _get("https://www.googleapis.com/youtube/v3/videos"
+               f"?part=status,snippet&id={video_id}", tok)
+    items = cur.get("items") or []
+    if not items:
+        sys.exit(f"no video '{video_id}' on this channel — check the id")
+    title = items[0]["snippet"]["title"]
+    was = items[0]["status"]["privacyStatus"]
+    if was == "public":
+        print(f"'{title}' is ALREADY public — nothing to do")
+        return
+    body = json.dumps({"id": video_id,
+                       "status": {"privacyStatus": "public",
+                                  "selfDeclaredMadeForKids": False}}).encode()
+    req = urllib.request.Request(
+        "https://www.googleapis.com/youtube/v3/videos?part=status",
+        data=body, method="PUT",
+        headers={"Authorization": f"Bearer {tok}",
+                 "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req) as r:
+            json.loads(r.read().decode() or "{}")
+    except urllib.error.HTTPError as e:
+        raise SystemExit(f"YouTube API {e.code}: {e.read().decode()[:500]}")
+    print(f"'{title}' {was} -> PUBLIC")
+    print(f"  https://youtube.com/shorts/{video_id}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--auth", action="store_true")
+    ap.add_argument("--publish", metavar="VIDEO_ID",
+                    help="flip an existing unlisted upload to public")
     ap.add_argument("--check", action="store_true",
                     help="resolve the token to a channel and exit")
     ap.add_argument("--list", action="store_true")
@@ -173,6 +219,8 @@ def main():
     a = ap.parse_args()
     if a.auth:
         return auth()
+    if a.publish:
+        return publish(a.publish)
     if a.check:
         cid, title = channel(access_token())
         pinned = ("unset — pin it once confirmed" if EXPECTED_CHANNEL_ID is None
