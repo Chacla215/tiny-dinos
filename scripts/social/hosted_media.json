@@ -25,6 +25,6 @@
     "reel-jessie",
     "reel-chaos"
   ],
-  "note_ep1": "hosted file = ep1_v5.mp4 (59.5s, -14.0 LUFS, mix-up ending + logo outro, 2026-07-19). Supersedes the v2 40.8s interim and the v3/v4 cuts. This is the URL Instagram ingests; re-host and update this key whenever the cut changes.",
-  "ep1": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/46ee5cff-f848-444e-98ca-9d2d74e380f8.mp4"
+  "note_ep1": "hosted file = ep1_v6.mp4 (59.7s, -14.0 LUFS, bridge clip + mix-up ending + logo outro, 2026-07-19). Supersedes v5. Instagram ingests from THIS url — re-host and update this key whenever the cut changes, or IG silently republishes the old edit.",
+  "ep1": "https://d2ol7oe51mr4n9.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/cd5efbd4-17c9-464d-947b-772af5de8abc.mp4"
 }
