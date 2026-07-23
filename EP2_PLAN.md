@@ -257,3 +257,91 @@ write defensively, and its start frame should move the ice to the threshold
 3. `build_ep2.sh`: swap in the narrated mix (VO spine + ducked ambience;
    the wordless ambience-led mix design above is superseded)
 4. Text sweep (should find nothing), −14 LUFS, unlisted YT → Charlie watches
+
+---
+
+# 2026-07-23 (later) — LONGER EPISODE + THE EP1→EP2 BRIDGE (Charlie's asks)
+
+Charlie: 24s is too short, and he wants to SEE how we bridge into the den
+scene. Both solved together: the episode gains an opening CLIP 0 that bridges
+Ep1's ending into the den, and every clip now generates at 12s. Target
+**~35-40s**.
+
+## The bridge chain (every cut explainable — rule 3)
+
+Ep1 v6 ends (~58s): Ralph + Max scuffling on the LAST tiny sand patch, sea
+everywhere, daylight. Extracted end frame: `wip/ep2_den/ep1_end_frame.png`
+(media `16fd80b1`). The chain from there:
+
+1. **CLIP 0 start still** = bridge-recipe edit of that exact frame —
+   **DONE, QA'd: `wip/ep2_den/still_0_v2.png`** (gen `4721a5fe`; v1 with
+   grinning Max = `05e0f37f`, superseded). Sea receded to the horizon, the
+   patch is now the crest of a wide wet beach (puddles, seaweed, shells),
+   golden sunset matching the den scenes, both dinos sitting APART, soaked,
+   dripping, worried closed-mouth faces looking toward the vanished sea,
+   grounded with contact shadows, and **the den mouth visible in the rocks
+   upper-left** — the geography Ralph walks toward.
+2. **CLIP 0 action (12s, use ~10s):** un-losable beat FIRST — they realize
+   the sea is GONE. Then Ralph pushes to his feet, shakes off water, picks
+   his leaf off his head... and trudges up the beach toward the den opening
+   in the rocks, leaving wet footprints; Max stays seated, watching him go.
+   Constant movement: dripping, puddle ripples, swaying fronds, the walk.
+3. **CUT to CLIP 1 (den interior):** motivated — we followed him home. He is
+   soaked in both shots, same sunset light, and the leaf is on the drying
+   rock (he carried it in during the cut).
+4. **CLIP 2 payoff for free:** Max arriving at the doorway soaked is now
+   EXPLAINED — we left him sitting on that beach and he followed.
+
+The day→sunset shift and Max's exit from the frame happen ACROSS THE EPISODE
+BOUNDARY (viewer reads "later..."), never inside a clip — nothing to ask
+"how?" about.
+
+## CLIP 0 prompt draft (~54cr at 12s; final pass next session)
+
+> Storybook cartoon chibi dinosaurs, warm golden sunset over a wide wet
+> beach. Continue this exact scene. IMMEDIATELY both little dinosaurs look
+> out at the sand where the sea used to be, eyes huge, and the small green
+> dinosaur scrambles to his feet and shakes water off like a puppy, drops
+> flying. He plucks the small leaf from behind his head, holds it in one
+> hand, and walks away up the beach toward the dark cave opening in the
+> rocks, leaving small wet footprints in the sand, water still dripping off
+> his tail. The red raptor stays sitting on the sand and turns his head to
+> watch him go, mouth closed, uneasy. Puddles ripple in the breeze, palm
+> fronds sway, the distant water glitters. Exactly ONE green dinosaur and
+> exactly ONE red raptor. NO weapons, NO cape, nobody fights. All-ages.
+
+QA gates: sea stays receded (no water returning), Max stays SEATED and does
+not follow, leaf leaves WITH Ralph, den mouth stays where it is, faces stay
+worried. Usable window ends before any drift.
+
+## Arthur VO0 (GENERATED — opens the episode)
+
+| # | line | gen id | dur | file |
+|---|---|---|---|---|
+| 0 | "The big water finally went home... and the island got to be an island again!" | `86d0f359` | 7.05s | vo0_water_went_home.wav |
+
+Re-fetch stamp `180452`-series: vo0 `181001_86d0f359-59d0-4c2a-9b4f-ac8ba548f3f6`.
+Total VO now ~28s across five lines — right density for a ~36s episode
+(Ep1: ~28s VO in 60s).
+
+## Revised timeline (~36s) and budget
+
+```
+0.0   clip0 [morning after]  ~10.0  sea's gone -> Ralph walks to den   VO0
+10.0  clip1 [the mark]        ~9.0  scratch, stare                     VO1, VO2
+19.0  clip2 [the visitor]    ~10.0  Max at the door, sets the ice      VO3
+29.0  clip3 [the ice]         ~7.0  the melt, hold on it. END.         VO4
+                             ~36s
+```
+
+| item | cr |
+|---|---|
+| clip 0 morning after (12s) | 54 |
+| clip 1 re-roll (12s) | 54 |
+| clip 2 THE VISITOR (12s) | 54 |
+| clip 3 THE ICE (8-10s, defensive prompt) | 36-45 |
+| headroom / one re-roll | ~54 |
+| **top-up target** | **~270** |
+
+Balance after this session: ~3.2cr. Fire order unchanged (preflight clip 2/3
+stills -> clip 1 re-roll first as the pilot of the batch -> then 0, 2, 3).
