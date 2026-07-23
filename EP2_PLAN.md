@@ -163,20 +163,37 @@ Higgsfield gen id, so they are recoverable from the library/CDN.**
 2. Pilot-first at 10s (45cr) instead of 12s (54cr) — Seedance bills 4.5cr/s,
    shorter pilot buys headroom.
 
-## The four Arthur lines (GENERATED, QA'd for duration, cached wip/ep2_den/vo/)
+## The four Arthur lines — Ep1-REGISTER TAKES (Charlie 2026-07-23: "Arthur
+## should match the tone of the first clip"; the somber v1 takes are archived
+## at wip/ep2_den/vo/somber_v1/ and SUPERSEDED)
 
-| # | line | gen id | dur |
-|---|---|---|---|
-| 1 | "The sea always gives the island back. Ralph keeps track." | `a20c003b` | 3.72s |
-| 2 | "It has never... EVER... been that high." | `f1627172` | 4.91s |
-| 3 | "And Max? Max didn't come to fight." | `05196bd6` | 2.63s |
-| 4 | "Ice. On a warm little island... Now where would THAT come from?" | `7724e640` | 6.42s |
+Same locked delivery (preset `30fc8796`, speech_rate:10, loudness_rate:15);
+the register is Ep1's playful storyteller — exclamations, comic ellipsis
+timing, the "And Max? Oh, Max…" callback.
 
-Re-fetch: `https://d8j0ntlcm91z4.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/hf_20260723_<time>_<gen id full>.wav`
-(vo1 `175223_a20c003b-0ef6-4478-b4a0-9ec768992667`, vo2 `175300_f1627172-1058-4ab0-b786-e9c2f2eda881`,
-vo3 `175301_05196bd6-8a49-409a-b261-b62ba1808ef6`, vo4 `7724e640-803f-4946-ac2c-3420868a6d3d` at `175302`).
-17.7s total speech → episode stretches to ~22s. Mix: music/ambience ducks
-under VO, same sidechain chain as Ep1.
+| # | line | gen id | dur | file (wip/ep2_den/vo/) |
+|---|---|---|---|---|
+| 1 | "This is Ralph's wall! One scratch... for every time the sea got pushy." | `96194289` | 5.05s | vo1_ralphs_wall.wav |
+| 2 | "But it had never... EVER... been THAT high." | `e9e96cfa` | 5.01s | vo2_never_that_high.wav |
+| 3 | "And Max? Oh, Max didn't come to fight... not this time." | `0143c155` | 6.17s | vo3_not_this_time.wav |
+| 4 | "He brought ice. ICE! On a tropical island... now where would THAT come from?" | `dcc68da0` | 4.64s | vo4_ice_where_from.wav |
+
+Re-fetch: `https://d8j0ntlcm91z4.cloudfront.net/user_3G9RgW1xzgz2TkE3tUOlVwesChE/hf_20260723_<time>_<full gen id>.wav`
+(vo1 `180452_96194289-2cba-46c4-a6bb-0d8bcbedf060`, vo2 `180453_e9e96cfa-c28e-4d9f-8762-0a340b91a4a1`,
+vo3 `180455_0143c155-fe2d-4147-b033-e7d8fa910f14`, vo4 `180456_dcc68da0-9bcf-4029-83c0-f8f2ab70374a`).
+20.9s total speech → episode lands ~24s. Mix: music/ambience ducks under VO,
+same sidechain chain as Ep1.
+
+## Charlie's three scene rules (2026-07-23 — bake into EVERY prompt + QA gate)
+
+1. **One Arthur, one register** — every episode's narration in Ep1's playful
+   storybook voice, whatever the story's mood.
+2. **Constant movement** — every prompt names something physically moving at
+   all times (drips, waves, fronds, breathing); QA rejects frozen stretches.
+3. **Everything explainable** — nothing a viewer would ask "HOW?" about: no
+   floating characters, no effects away from their cause (the sky-marks), no
+   materializing props, no mismatched shadows. Anchor every effect to its
+   physical cause and surface in the prompt.
 
 ## STILL A is FINAL: `wip/ep2_den/still_a_v2.png` (gen `ca189650-3df8-4724-95fc-1b929c75cc1d`)
 
@@ -212,6 +229,9 @@ the clip cannot carry the story.
   Nothing appears in the sky; the sky and sea stay exactly as they are."
 - drips read as drool when they come from the mouth — say "water drips off
   the back of his head and his tail", not his chin.
+- keep the constant-movement clauses (drips falling, waves through the
+  doorway, swaying fronds) and run the returned clip through the
+  "would a viewer ask HOW?" gate — Charlie's three scene rules above.
 - start frame = still_a_v2.png (gen `ca189650`), ralph_hero ref, 10s, 9:16,
   720p std, generate_audio:false, decline preset `24bae836` (IN THE DARK).
 
